@@ -1,0 +1,14 @@
+---
+- name: Despliegue PWA BarcelonaXplorer
+  hosts: nodos_pro
+  gather_facts: false
+  vars:
+    ansistrano_deploy_from: "../src/"
+    # Ruta en el PC 11 donde se construirá la estructura (releases, shared, current)
+    ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
+    ansistrano_deploy_via: "rsync"
+    ansistrano_keep_releases: 3
+    # Llama al hook de Docker justo después de actualizar el enlace simbólico
+    ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
+  roles:
+    - ansistrano.deploy

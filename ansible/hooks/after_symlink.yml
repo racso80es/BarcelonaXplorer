@@ -1,0 +1,5 @@
+---
+- name: Recargar orquestación Docker en la nueva versión
+  shell: docker compose -p barcelonaxplorer down && docker compose -p barcelonaxplorer up -d --build --remove-orphans
+  args:
+    chdir: "{{ ansistrano_deploy_to }}/current"

@@ -1,0 +1,10 @@
+---
+- name: Rollback PWA BarcelonaXplorer a la versión anterior
+  hosts: nodos_pro
+  gather_facts: false
+  vars:
+    ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
+    # Reutilizamos el hook para que Docker se reinicie tras el rollback
+    ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
+  roles:
+    - ansistrano.rollback
