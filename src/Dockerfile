@@ -1,5 +1,8 @@
 FROM node:20-alpine AS base
 
+# Blindaje Criptográfico para el Motor de Prisma
+RUN apk add --no-cache libc6-compat openssl
+
 # Fase 1: Dependencias
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -12,6 +15,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npx prisma generate
 RUN npm run build
 
 # Fase 3: Producción (Runner)
