@@ -1,9 +1,8 @@
 import { PrismaClient } from '@prisma/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Database, Globe, Activity } from 'lucide-react';
 
-// Instancia global para evitar conexiones fantasma en desarrollo
 const prisma = new PrismaClient();
-
-// Directriz de Vía del Yunque: Evitar caché estática, evaluar en cada recarga
 export const dynamic = 'force-dynamic';
 
 export default async function SystemAdmin() {
@@ -12,14 +11,11 @@ export default async function SystemAdmin() {
     await prisma.$queryRaw`SELECT 1`;
     dbStatus = { ok: true, msg: 'Conexión S+ Grade Establecida' };
   } catch (error: any) {
-    // AQUÍ INYECTAMOS LA TELEMETRÍA CRUDA
     dbStatus = { ok: false, msg: `Fallo: ${error.message || 'Desconocido'}` };
   }
 
-  // Sensor 2: Aduana y Salida de Red (Cloudflare)
   let netStatus = { ok: false, msg: 'Desconectada' };
   try {
-    // Un ping rápido a un DNS externo para validar el enrutamiento Docker -> Pi -> Internet
     const res = await fetch('https://1.1.1.1', { cache: 'no-store' });
     if (res.ok) netStatus = { ok: true, msg: 'Ruta de salida abierta' };
   } catch (error) {
@@ -27,33 +23,50 @@ export default async function SystemAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8 font-mono">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl text-emerald-400 font-bold mb-8">[ NÚCLEO ] : Telemetría del Sistema</h1>
-        
-        <div className="grid gap-6">
-          {/* Tarjeta MySQL */}
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-gray-300">Persistencia Híbrida (MySQL)</h2>
-            <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-3 ${dbStatus.ok ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className={dbStatus.ok ? 'text-green-400' : 'text-red-400'}>{dbStatus.msg}</span>
-            </div>
-          </div>
-
-          {/* Tarjeta Red */}
-          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-gray-300">Aduana / Red Externa</h2>
-            <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-3 ${netStatus.ok ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className={netStatus.ok ? 'text-green-400' : 'text-red-400'}>{netStatus.msg}</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex items-center space-x-3 border-b border-zinc-800 pb-4">
+          <Activity className="text-emerald-400 w-8 h-8" />
+          <h1 className="text-3xl font-bold tracking-tight">[ NÚCLEO ] Telemetría</h1>
         </div>
         
-        <p className="mt-8 text-sm text-gray-500 border-l-2 border-gray-600 pl-4 py-2">
-          Directriz Táctica: En la próxima iteración arquitectónica, esta ruta será acorazada mediante middleware para responder únicamente a peticiones originadas desde el rango VPN.
-        </p>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Tarjeta MySQL */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">
+                Persistencia Híbrida (MySQL)
+              </CardTitle>
+              <Database className="h-4 w-4 text-zinc-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center mt-2">
+                <div className={`w-2.5 h-2.5 rounded-full mr-3 ${dbStatus.ok ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                <span className={`font-mono text-sm ${dbStatus.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {dbStatus.msg}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tarjeta Red */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">
+                Aduana / Red Externa
+              </CardTitle>
+              <Globe className="h-4 w-4 text-zinc-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center mt-2">
+                <div className={`w-2.5 h-2.5 rounded-full mr-3 ${netStatus.ok ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                <span className={`font-mono text-sm ${netStatus.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {netStatus.msg}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
