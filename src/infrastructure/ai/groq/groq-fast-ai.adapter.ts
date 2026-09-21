@@ -12,13 +12,15 @@ const FALLBACK_MESSAGE =
   '⚠️ Radar BX temporalmente fuera de alcance. Consejo general: confirma horarios en la web oficial antes de desplazarte.';
 
 /**
- * System Prompt minimalista (< 100 tokens).
- * Instruye al modelo como el "Radar de BarcelonaXplorer".
+ * Fallback del System Prompt si la variable de entorno no está configurada.
  */
-const SYSTEM_PROMPT =
-  'Eres el Radar de BarcelonaXplorer. Emite UN único consejo directo de 1 frase. ' +
-  'Céntrate en advertencias logísticas o el "Escudo Anti-Trampas" local de Barcelona. ' +
-  'Sin saludos, sin listas, sin explicaciones adicionales.';
+const DEFAULT_SYSTEM_PROMPT =
+  'Eres el Radar de BarcelonaXplorer. Da un único consejo directo de 1 frase.';
+
+/**
+ * Fallback de max_tokens si la variable de entorno no está configurada.
+ */
+const DEFAULT_MAX_TOKENS = 100;
 
 /**
  * Adaptador de infraestructura para inferencia rápida via Groq.
@@ -46,17 +48,25 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
     context: FastContextDto,
   ): Promise<ReadableStream> {
     try {
+      const systemPrompt =
+        process.env.GROQ_RADAR_SYSTEM_PROMPT || DEFAULT_SYSTEM_PROMPT;
+
+      const maxTokens = parseInt(
+        process.env.GROQ_RADAR_MAX_TOKENS || String(DEFAULT_MAX_TOKENS),
+        10,
+      );
+
       const userMessage = this.buildUserMessage(context);
 
       const stream = await this.client.chat.completions.create({
         model: this.model,
         stream: true,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
         temperature: 0.6,
-        max_tokens: 150,
+        max_tokens: maxTokens,
       });
 
       return this.toReadableStream(stream);
@@ -66,20 +76,24 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
   }
 
   /**
-   * Construye el mensaje de usuario a partir del DTO tipado.
-   * Evita inyectar información innecesaria — economía termodinámica.
+   * Construye el mensaje de usuario en formato compacto.
+   * Estructura: "Contexto: {hora} - {ubicación}. Intención: {intención}"
    */
   private buildUserMessage(context: FastContextDto): string {
-    const parts: string[] = [`Intención: ${context.intention}`];
+    const contextParts: string[] = [];
 
-    if (context.currentLocation) {
-      parts.push(`Ubicación: ${context.currentLocation}`);
-    }
     if (context.localTime) {
-      parts.push(`Hora local: ${context.localTime}`);
+      contextParts.push(context.localTime);
+    }
+    if (context.currentLocation) {
+      contextParts.push(context.currentLocation);
     }
 
-    return parts.join('. ') + '.';
+    const contextStr = contextParts.length > 0
+      ? `Contexto: ${contextParts.join(' - ')}. `
+      : '';
+
+    return `${contextStr}Intención: ${context.intention}`;
   }
 
   /**

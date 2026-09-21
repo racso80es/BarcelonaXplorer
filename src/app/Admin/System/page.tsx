@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, Globe, Activity } from 'lucide-react';
 import { AiTelemetryCard, AiTelemetryCardSkeleton } from './AiTelemetryCard';
+import { GroqTelemetryCard, GroqTelemetryCardSkeleton } from './GroqTelemetryCard';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ export default async function SystemAdmin() {
           <h1 className="text-3xl font-bold tracking-tight">[ NÚCLEO ] Telemetría</h1>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Tarjeta MySQL */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -70,8 +71,14 @@ export default async function SystemAdmin() {
           </Card>
 
           {/* Tarjeta Motor IA (Asíncrona vía Suspense) */}
+          {/* Sensor B: Motor IA Gemini (Asíncrono vía Suspense) */}
           <Suspense fallback={<AiTelemetryCardSkeleton />}>
             <AiTelemetryCard />
+          </Suspense>
+
+          {/* Sensor C: Motor Rápido Groq (Asíncrono vía Suspense) */}
+          <Suspense fallback={<GroqTelemetryCardSkeleton />}>
+            <GroqTelemetryCard />
           </Suspense>
         </div>
       </div>

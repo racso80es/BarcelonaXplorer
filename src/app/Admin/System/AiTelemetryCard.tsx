@@ -2,6 +2,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
 import { GeminiClient } from '@/infrastructure/ai/gemini-client';
 
+/**
+ * Extrae un mensaje de error legible para humanos, sin exponer
+ * JSON crudo ni estructuras internas de la API en el frontend.
+ */
+function sanitizeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // Detectar mensajes que son JSON embebido (ej: '{"error":{"message":"..."}}')
+    const msg = error.message;
+    if (msg.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(msg);
+        if (typeof parsed?.error?.message === 'string') {
+          return parsed.error.message;
+        }
+      } catch {
+        // No es JSON válido — usar fallback
+      }
+    }
+    return msg;
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const err = error as Record<string, unknown>;
+    if (typeof err.message === 'string') return err.message;
+    const nested = err.error as Record<string, unknown> | undefined;
+    if (typeof nested?.message === 'string') return nested.message as string;
+  }
+
+  return 'Error de invocación desconocido';
+}
+
 async function checkAiStatus() {
   const startTime = Date.now();
   try {
@@ -13,10 +44,10 @@ async function checkAiStatus() {
       msg: `Operativo (${latency} ms)`,
       model: process.env.GEMINI_MODEL || 'gemini-flash-latest',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       ok: false,
-      msg: `Fallo: ${error.message || 'Error de invocación'}`,
+      msg: sanitizeErrorMessage(error),
       model: process.env.GEMINI_MODEL || 'gemini-flash-latest',
     };
   }
@@ -34,14 +65,14 @@ export async function AiTelemetryCard() {
         <Bot className="h-4 w-4 text-zinc-500" />
       </CardHeader>
       <CardContent>
-        <div className="flex items-center mt-2">
+        <div className="flex items-start mt-2">
           <div
-            className={`w-2.5 h-2.5 rounded-full mr-3 ${
+            className={`w-2.5 h-2.5 rounded-full mr-3 mt-1 shrink-0 ${
               aiStatus.ok ? 'bg-emerald-500' : 'bg-red-500'
             }`}
           />
           <span
-            className={`font-mono text-sm truncate ${
+            className={`font-mono text-sm flex-1 break-words ${
               aiStatus.ok ? 'text-emerald-400' : 'text-red-400'
             }`}
           >
