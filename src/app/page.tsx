@@ -1,4 +1,5 @@
 import { Compass, Map, ShieldAlert } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -33,10 +34,10 @@ export default function Home() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-          <button className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold h-12 px-8 rounded-md transition-colors flex items-center justify-center">
+          <Link href="/orchestrator" className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold h-12 px-8 rounded-md transition-colors flex items-center justify-center">
             <Map className="w-4 h-4 mr-2" />
-            Explorar Templates
-          </button>
+            Iniciar Orquestador
+          </Link>
           <button className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold h-12 px-8 rounded-md border border-zinc-700 transition-colors flex items-center justify-center">
             <ShieldAlert className="w-4 h-4 mr-2" />
             Conoce el Escudo Anti-Trampas

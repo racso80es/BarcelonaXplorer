@@ -1,3 +1,5 @@
+import { TacticalRoute } from '@/domain/entities/tactical-route.entity';
+
 export interface AiGeneratorPort {
-  generateText(prompt: string): Promise<string>;
+  generateTacticalRoute(prompt: string): Promise<TacticalRoute>;
 }

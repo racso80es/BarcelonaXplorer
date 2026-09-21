@@ -64,7 +64,8 @@ describe('GroqFastAiAdapter', () => {
   });
 
   it('debe convertir el stream de Groq en un ReadableStream legible', async () => {
-    const expectedChunks = ['Evita ', 'las Ramblas ', 'a medianoche.'];
+    const validJsonChunk = JSON.stringify({ category: 'security', observation: 'Evita las Ramblas a medianoche.', severityLevel: 3 }) + '\n';
+    const expectedChunks = [validJsonChunk];
     mockCreate.mockResolvedValue(createMockGroqStream(expectedChunks));
 
     const adapter = new GroqFastAiAdapter(createMockGroqClient(mockCreate));
@@ -76,7 +77,7 @@ describe('GroqFastAiAdapter', () => {
     expect(stream).toBeInstanceOf(ReadableStream);
 
     const text = await readStreamToString(stream);
-    expect(text).toBe('Evita las Ramblas a medianoche.');
+    expect(text).toBe(validJsonChunk);
   });
 
   it('debe incluir ubicación y hora local en el mensaje cuando se proporcionan', async () => {
@@ -150,7 +151,7 @@ describe('GroqFastAiAdapter', () => {
 
     const text = await readStreamToString(stream);
     expect(text).toContain('Radar BX temporalmente fuera de alcance');
-    expect(text).toContain('confirma horarios en la web oficial');
+    expect(text).toContain('Verifica las web oficiales.');
   });
 
   it('debe lanzar error si GROQ_API_KEY no está configurada', () => {

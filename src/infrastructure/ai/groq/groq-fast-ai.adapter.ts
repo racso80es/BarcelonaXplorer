@@ -3,31 +3,37 @@ import type {
   FastContextDto,
   FastInteractionAiPort,
 } from '@/application/ports/out/fast-interaction-ai.port';
+import { FastInsight } from '@/domain/entities/fast-insight.entity';
+import { FastInsightZodSchema } from '@/infrastructure/ai/schemas/fast-insight.schema';
 
 /**
  * Mensaje genérico devuelto cuando la API de Groq falla.
  * Degradación elegante: el usuario recibe un consejo útil, nunca un error crudo.
  */
-const FALLBACK_MESSAGE =
-  '⚠️ Radar BX temporalmente fuera de alcance. Consejo general: confirma horarios en la web oficial antes de desplazarte.';
+const FALLBACK_MESSAGE = JSON.stringify({
+  category: 'transit',
+  observation: 'Radar BX temporalmente fuera de alcance. Verifica las web oficiales.',
+  severityLevel: 2
+});
 
 /**
  * Fallback del System Prompt si la variable de entorno no está configurada.
  */
 const DEFAULT_SYSTEM_PROMPT =
-  'Eres el Radar de BarcelonaXplorer. Da un único consejo directo de 1 frase.';
+  'Eres el Radar de BarcelonaXplorer. Analiza el contexto e intención. Genera entre 1 y 3 advertencias o insights rápidos ("chispas"). IMPERATIVO: Devuelve tu respuesta EXCLUSIVAMENTE en formato NDJSON (Newline Delimited JSON). Cada línea debe ser un objeto JSON válido con este exacto esquema: {"category": "environmental" | "security" | "transit", "observation": "Tu mensaje corto", "severityLevel": 1 | 2 | 3}. No incluyas markdown, bloques de código, ni texto adicional.';
 
 /**
  * Fallback de max_tokens si la variable de entorno no está configurada.
  */
-const DEFAULT_MAX_TOKENS = 100;
+const DEFAULT_MAX_TOKENS = 500;
 
 /**
  * Adaptador de infraestructura para inferencia rápida via Groq.
  *
  * Implementa el puerto FastInteractionAiPort convirtiendo la respuesta
  * streaming de Groq en un ReadableStream (Web Streams API) compatible
- * con el consumo SSE en Next.js App Router.
+ * con el consumo SSE en Next.js App Router. Aplica el Zod Shield para proteger
+ * a las capas superiores.
  */
 export class GroqFastAiAdapter implements FastInteractionAiPort {
   private readonly client: Groq;
@@ -48,8 +54,13 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
     context: FastContextDto,
   ): Promise<ReadableStream> {
     try {
-      const systemPrompt =
+      const baseSystemPrompt =
         process.env.GROQ_RADAR_SYSTEM_PROMPT || DEFAULT_SYSTEM_PROMPT;
+
+      // La instrucción NDJSON es un detalle técnico inmutable de la infraestructura.
+      const technicalInstruction = ' IMPERATIVO: Devuelve tu respuesta EXCLUSIVAMENTE en formato NDJSON (Newline Delimited JSON). Cada línea debe ser un objeto JSON válido con este exacto esquema: {"category": "environmental" | "security" | "transit", "observation": "Tu mensaje corto", "severityLevel": 1 | 2 | 3}. No incluyas markdown ni texto adicional.';
+      
+      const systemPrompt = baseSystemPrompt.includes('NDJSON') ? baseSystemPrompt : `${baseSystemPrompt}${technicalInstruction}`;
 
       const maxTokens = parseInt(
         process.env.GROQ_RADAR_MAX_TOKENS || String(DEFAULT_MAX_TOKENS),
@@ -98,7 +109,9 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
 
   /**
    * Convierte el AsyncIterable de Groq en un ReadableStream (Web Streams API).
-   * Cada chunk de contenido delta se codifica como texto UTF-8.
+   * Implementa el Escudo Zod: intercepta el buffer, intenta parsear cada línea
+   * con FastInsightZodSchema, instancia la entidad pura FastInsight y lo serializa
+   * hacia el Stream codificado en NDJSON.
    */
   private toReadableStream(
     groqStream: AsyncIterable<Groq.Chat.Completions.ChatCompletionChunk>,
@@ -108,16 +121,65 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
     return new ReadableStream({
       async start(controller) {
         try {
+          console.log('[GroqFastAiAdapter] Stream start');
+          let buffer = '';
           for await (const chunk of groqStream) {
             const content = chunk.choices[0]?.delta?.content;
             if (content) {
-              controller.enqueue(encoder.encode(content));
+              buffer += content;
+              
+              // Intentar extraer líneas completas del buffer
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || ''; // Dejar el resto en el buffer
+              
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                  const rawObj = JSON.parse(line);
+                  // Escudo Zod
+                  const validation = FastInsightZodSchema.safeParse(rawObj);
+                  if (validation.success) {
+                    // Instanciación de Entidad de Dominio pura
+                    const domainEntity = new FastInsight(
+                      validation.data.category,
+                      validation.data.observation,
+                      validation.data.severityLevel
+                    );
+                    controller.enqueue(encoder.encode(JSON.stringify(domainEntity) + '\n'));
+                  } else {
+                    console.warn('[Zod Shield] Descartando alucinación de Fast AI (line):', validation.error);
+                  }
+                } catch (e) {
+                   console.error('[GroqFastAiAdapter] Parse error (line):', e);
+                }
+              }
             }
           }
+          
+          // Procesar el resto del buffer si es posible
+          if (buffer.trim()) {
+            try {
+              const rawObj = JSON.parse(buffer);
+              const validation = FastInsightZodSchema.safeParse(rawObj);
+              if (validation.success) {
+                const domainEntity = new FastInsight(
+                  validation.data.category,
+                  validation.data.observation,
+                  validation.data.severityLevel
+                );
+                controller.enqueue(encoder.encode(JSON.stringify(domainEntity) + '\n'));
+              } else {
+                console.warn('[Zod Shield] Descartando alucinación de Fast AI (buffer):', validation.error, buffer);
+              }
+            } catch (e) {
+              console.error('[GroqFastAiAdapter] Parse error (buffer):', e, buffer);
+            }
+          }
+          
+          console.log('[GroqFastAiAdapter] Stream end');
           controller.close();
-        } catch {
-          // Si el streaming falla a mitad de transmisión,
-          // cerramos el stream limpiamente sin tumbar el servidor.
+        } catch (e) {
+          console.error('[GroqFastAiAdapter] Stream catch error:', e);
           controller.close();
         }
       },
@@ -126,14 +188,14 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
 
   /**
    * Crea un ReadableStream con el mensaje de degradación elegante.
-   * Se devuelve cuando cualquier error impide la conexión con Groq.
+   * Valida con el propio Zod para asegurar contrato.
    */
   private createFallbackStream(): ReadableStream {
     const encoder = new TextEncoder();
 
     return new ReadableStream({
       start(controller) {
-        controller.enqueue(encoder.encode(FALLBACK_MESSAGE));
+        controller.enqueue(encoder.encode(FALLBACK_MESSAGE + '\n'));
         controller.close();
       },
     });
