@@ -35,6 +35,8 @@ function sanitizeErrorMessage(error: unknown): string {
 
 async function checkAiStatus() {
   const startTime = Date.now();
+  const primaryModel = (process.env.GEMINI_MODELS || 'gemini-1.5-flash').split(',')[0].trim();
+  
   try {
     const aiClient = new GeminiClient();
     await aiClient.generateText('ping');
@@ -42,13 +44,13 @@ async function checkAiStatus() {
     return {
       ok: true,
       msg: `Operativo (${latency} ms)`,
-      model: process.env.GEMINI_MODEL || 'gemini-flash-latest',
+      model: primaryModel,
     };
   } catch (error: unknown) {
     return {
       ok: false,
       msg: sanitizeErrorMessage(error),
-      model: process.env.GEMINI_MODEL || 'gemini-flash-latest',
+      model: primaryModel,
     };
   }
 }

@@ -8,7 +8,21 @@
     ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
     ansistrano_deploy_via: "rsync"
     ansistrano_keep_releases: 3
+    ansistrano_shared_files:
+      - .env.local
     # Llama al hook de Docker justo después de actualizar el enlace simbólico
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
+  pre_tasks:
+    - name: Asegurar existencia del directorio shared en el Nodo 11
+      ansible.builtin.file:
+        path: "{{ ansistrano_deploy_to }}/shared"
+        state: directory
+        mode: '0755'
+
+    - name: Transferir automáticamente .env.local a shared
+      ansible.builtin.copy:
+        src: "../src/.env.local"
+        dest: "{{ ansistrano_deploy_to }}/shared/.env.local"
+        mode: '0600'
   roles:
     - ansistrano.deploy
