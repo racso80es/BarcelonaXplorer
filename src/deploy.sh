@@ -7,7 +7,12 @@ set -euo pipefail
 # Destino: Nodo de Producción 10.0.10.11
 # ==============================================================================
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -d "${SCRIPT_DIR}/../ansible" ]]; then
+    PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+else
+    PROJECT_ROOT="${SCRIPT_DIR}"
+fi
 ANSIBLE_DIR="${PROJECT_ROOT}/ansible"
 INVENTORY="${ANSIBLE_DIR}/inventory.ini"
 PLAYBOOK="${ANSIBLE_DIR}/deploy.yml"
@@ -54,7 +59,20 @@ if [[ -d "${PROJECT_ROOT}/src" ]]; then
     echo -e "${GREEN}[OK] Compilación TypeScript validada sin errores.${NC}"
 fi
 
-# 5. Ejecución del pipeline Ansistrano
+# 5. Verificación de persistencia de credenciales de seguridad (/Admin) en .env.local
+echo -e "${YELLOW}>>> Verificando credenciales perimetrales en .env.local...${NC}"
+ENV_LOCAL="${PROJECT_ROOT}/src/.env.local"
+if [[ ! -f "${ENV_LOCAL}" ]]; then
+    echo -e "${RED}[ERROR] No se encuentra el archivo de configuración local en ${ENV_LOCAL}.${NC}"
+    exit 1
+fi
+if ! grep -q "^ADMIN_USER=" "${ENV_LOCAL}" || ! grep -q "^ADMIN_PASSWORD_HASH=" "${ENV_LOCAL}"; then
+    echo -e "${RED}[ERROR] ${ENV_LOCAL} debe definir ADMIN_USER y ADMIN_PASSWORD_HASH antes del despliegue al Nodo 11.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}[OK] Variables críticas (/Admin) validadas y listas para sincronización con el Nodo 11.${NC}"
+
+# 6. Ejecución del pipeline Ansistrano
 echo -e "${YELLOW}>>> Disparando Ansistrano hacia el Nodo 11...${NC}"
 ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@"
 
