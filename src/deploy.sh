@@ -70,7 +70,11 @@ if ! grep -q "^ADMIN_USER=" "${ENV_LOCAL}" || ! grep -q "^ADMIN_PASSWORD_HASH=" 
     echo -e "${RED}[ERROR] ${ENV_LOCAL} debe definir ADMIN_USER y ADMIN_PASSWORD_HASH antes del despliegue al Nodo 11.${NC}"
     exit 1
 fi
-echo -e "${GREEN}[OK] Variables críticas (/Admin) validadas y listas para sincronización con el Nodo 11.${NC}"
+if ! grep -q "^TELEMETRY_LLM_ENABLED=" "${ENV_LOCAL}" || ! grep -q "^CRON_SECRET=" "${ENV_LOCAL}"; then
+    echo -e "${RED}[ERROR] ${ENV_LOCAL} debe definir TELEMETRY_LLM_ENABLED y CRON_SECRET antes del despliegue al Nodo 11.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}[OK] Variables críticas (/Admin, Telemetría y Poda) validadas y listas para sincronización con el Nodo 11.${NC}"
 
 # 6. Ejecución del pipeline Ansistrano
 echo -e "${YELLOW}>>> Disparando Ansistrano hacia el Nodo 11...${NC}"

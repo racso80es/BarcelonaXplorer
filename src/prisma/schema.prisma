@@ -15,3 +15,34 @@ model SystemConfig {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+enum TelemetryLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+enum TelemetryContext {
+  CLIENT_UI
+  SERVER_API
+  LLM_ENGINE
+  SYSTEM
+  SECURITY_PERIMETER
+}
+
+model TelemetryLog {
+  id          String           @id @default(cuid())
+  createdAt   DateTime         @default(now())
+  level       TelemetryLevel
+  context     TelemetryContext
+  message     String           @db.VarChar(512)
+  payload     Json?            @db.Json
+  statusCode  Int?
+  durationMs  Int?
+  environment String           @default("production") @db.VarChar(32)
+
+  @@index([context, level, createdAt])
+  @@index([createdAt])
+  @@index([level])
+}

@@ -212,4 +212,70 @@ describe('Admin Security Middleware (middleware.ts)', () => {
       expect(response.status).toBe(200);
     });
   });
+
+  describe('Telemetría Perimetral (Centinela y Edge Runtime)', () => {
+    it('debe despachar telemetría asíncrona hacia /api/telemetry/log cuando se envían credenciales erróneas', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ status: 'accepted' }), { status: 202 }))
+      );
+
+      const request = new NextRequest('http://localhost:3000/Admin/System', {
+        headers: {
+          authorization: createBasicAuthHeader(TEST_USER, 'contraseña_incorrecta'),
+          'x-forwarded-for': '203.0.113.195',
+        },
+      });
+
+      const response = await middleware(request);
+      expect(response.status).toBe(401);
+
+      expect(fetchSpy).toHaveBeenCalled();
+      const call = fetchSpy.mock.calls.find(([url]) =>
+        String(url).includes('/api/telemetry/log')
+      );
+      expect(call).toBeDefined();
+
+      if (call) {
+        const body = JSON.parse(call[1]?.body as string);
+        expect(body.context).toBe('SECURITY_PERIMETER');
+        expect(body.level).toBe('WARN');
+        expect(body.payload.ip).toBe('203.0.113.195');
+      }
+
+      fetchSpy.mockRestore();
+    });
+
+    it('debe despachar telemetría de alerta (403) ante transmisión insegura en producción', async () => {
+      process.env.NODE_ENV = 'production';
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ status: 'accepted' }), { status: 202 }))
+      );
+
+      const request = new NextRequest('http://barcelonaxplorer.pro/Admin', {
+        headers: {
+          host: 'barcelonaxplorer.pro',
+          'x-forwarded-proto': 'http',
+          authorization: createBasicAuthHeader(TEST_USER, TEST_PASS),
+          'x-forwarded-for': '198.51.100.10',
+        },
+      });
+
+      const response = await middleware(request);
+      expect(response.status).toBe(403);
+
+      expect(fetchSpy).toHaveBeenCalled();
+      const call = fetchSpy.mock.calls.find(([url]) =>
+        String(url).includes('/api/telemetry/log')
+      );
+      expect(call).toBeDefined();
+
+      if (call) {
+        const body = JSON.parse(call[1]?.body as string);
+        expect(body.context).toBe('SECURITY_PERIMETER');
+        expect(body.statusCode).toBe(403);
+      }
+
+      fetchSpy.mockRestore();
+    });
+  });
 });

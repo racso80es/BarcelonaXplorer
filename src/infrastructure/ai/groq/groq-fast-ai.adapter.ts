@@ -5,6 +5,9 @@ import type {
 } from '@/application/ports/out/fast-interaction-ai.port';
 import { FastInsight } from '@/domain/entities/fast-insight.entity';
 import { FastInsightZodSchema } from '@/infrastructure/ai/schemas/fast-insight.schema';
+import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
+import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 
 /**
  * Mensaje genérico devuelto cuando la API de Groq falla.
@@ -38,8 +41,9 @@ const DEFAULT_MAX_TOKENS = 500;
 export class GroqFastAiAdapter implements FastInteractionAiPort {
   private readonly client: Groq;
   private readonly model: string;
+  private readonly telemetryRepo?: TelemetryRepositoryPort;
 
-  constructor(client?: Groq) {
+  constructor(client?: Groq, telemetryRepo?: TelemetryRepositoryPort) {
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
       throw new Error(
@@ -48,11 +52,13 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
     }
     this.model = process.env.GROQ_FAST_MODEL ?? 'qwen/qwen3.8-27b';
     this.client = client ?? new Groq({ apiKey });
+    this.telemetryRepo = telemetryRepo ?? new PrismaTelemetryRepository();
   }
 
   async generateImmediateContextStream(
     context: FastContextDto,
   ): Promise<ReadableStream> {
+    const startTime = Date.now();
     try {
       const baseSystemPrompt =
         process.env.GROQ_RADAR_SYSTEM_PROMPT || DEFAULT_SYSTEM_PROMPT;
@@ -80,8 +86,43 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
         max_tokens: maxTokens,
       });
 
+      const durationMs = Date.now() - startTime;
+      if (process.env.TELEMETRY_LLM_ENABLED === 'true' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'INFO',
+            'LLM_ENGINE',
+            `Stream Groq iniciado con éxito (${this.model})`,
+            {
+              model: this.model,
+              durationMs,
+              intentionSnippet: context.intention.slice(0, 150),
+            },
+            200,
+            durationMs
+          )
+        ).catch((e) => console.warn('[Telemetry Groq Fire-and-Forget Error]', e));
+      }
+
       return this.toReadableStream(stream);
-    } catch {
+    } catch (err) {
+      const durationMs = Date.now() - startTime;
+      if (process.env.TELEMETRY_LLM_ENABLED === 'true' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'WARN',
+            'LLM_ENGINE',
+            `Fallo al iniciar stream Groq (${this.model}): ${err instanceof Error ? err.message : 'Error desconocido'}`,
+            {
+              model: this.model,
+              durationMs,
+              intentionSnippet: context.intention.slice(0, 150),
+            },
+            500,
+            durationMs
+          )
+        ).catch((e) => console.warn('[Telemetry Groq Fire-and-Forget Error]', e));
+      }
       return this.createFallbackStream();
     }
   }

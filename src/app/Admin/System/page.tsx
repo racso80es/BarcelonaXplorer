@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, Globe, Activity } from 'lucide-react';
 import { AiTelemetryCard, AiTelemetryCardSkeleton } from './AiTelemetryCard';
 import { GroqTelemetryCard, GroqTelemetryCardSkeleton } from './GroqTelemetryCard';
+import {
+  TelemetryRecentLogsCard,
+  TelemetryRecentLogsCardSkeleton,
+} from './TelemetryRecentLogsCard';
 
 const prisma = new PrismaClient();
 export const dynamic = 'force-dynamic';
@@ -81,6 +85,11 @@ export default async function SystemAdmin() {
             <GroqTelemetryCard />
           </Suspense>
         </div>
+
+        {/* Sección de Telemetría Centralizada y Trazabilidad Polimórfica */}
+        <Suspense fallback={<TelemetryRecentLogsCardSkeleton />}>
+          <TelemetryRecentLogsCard />
+        </Suspense>
       </div>
     </div>
   );

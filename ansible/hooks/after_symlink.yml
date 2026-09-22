@@ -3,3 +3,31 @@
   shell: docker compose --env-file .env.local -p barcelonaxplorer down && docker compose --env-file .env.local -p barcelonaxplorer up -d --build --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
+
+- name: Esperar a que el motor MySQL esté saludable
+  shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -ubx_admin -pbx_secure_pass --silent
+  register: mysql_ping
+  until: mysql_ping.rc == 0
+  retries: 20
+  delay: 2
+
+- name: Sincronizar esquema de TelemetryLog en MySQL (Nodo 11)
+  shell: |
+    docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'
+    CREATE TABLE IF NOT EXISTS `TelemetryLog` (
+        `id` VARCHAR(191) NOT NULL,
+        `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        `level` ENUM('DEBUG', 'INFO', 'WARN', 'ERROR') NOT NULL,
+        `context` ENUM('CLIENT_UI', 'SERVER_API', 'LLM_ENGINE', 'SYSTEM', 'SECURITY_PERIMETER') NOT NULL,
+        `message` VARCHAR(512) NOT NULL,
+        `payload` JSON NULL,
+        `statusCode` INTEGER NULL,
+        `durationMs` INTEGER NULL,
+        `environment` VARCHAR(32) NOT NULL DEFAULT 'production',
+
+        INDEX `TelemetryLog_context_level_createdAt_idx`(`context`, `level`, `createdAt`),
+        INDEX `TelemetryLog_createdAt_idx`(`createdAt`),
+        INDEX `TelemetryLog_level_idx`(`level`),
+        PRIMARY KEY (`id`)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    EOF

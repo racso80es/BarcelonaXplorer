@@ -74,6 +74,43 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 /**
+ * Despacha telemetría perimetral al Route Handler /api/telemetry/log desde el Edge Runtime.
+ * No bloquea la respuesta al atacante/cliente ni depende del runtime de Node.js o Prisma.
+ */
+function dispatchPerimeterTelemetry(
+  request: NextRequest,
+  statusCode: number,
+  reason: string
+): void {
+  try {
+    const telemetryUrl = new URL('/api/telemetry/log', request.url);
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('cf-connecting-ip') ||
+      'unknown';
+
+    void fetch(telemetryUrl.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        level: statusCode >= 500 ? 'ERROR' : 'WARN',
+        context: 'SECURITY_PERIMETER',
+        message: `[Centinela] ${reason}`,
+        statusCode,
+        payload: {
+          path: request.nextUrl.pathname,
+          method: request.method,
+          ip,
+          userAgent: request.headers.get('user-agent'),
+        },
+      }),
+    }).catch(() => {});
+  } catch {
+    // Aislamiento perimetral silencioso
+  }
+}
+
+/**
  * Genera una respuesta HTTP 401 con la cabecera WWW-Authenticate para activar
  * el cuadro de diálogo nativo de Basic Auth en el cliente/navegador.
  */
@@ -120,6 +157,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   // 2. Cifrado en Tránsito: si ya transmitieron credenciales por HTTP inseguro, rechazar inmediatamente (403)
   if (!isSecure && authHeader) {
+    dispatchPerimeterTelemetry(
+      request,
+      403,
+      'Transmisión de credenciales insegura por HTTP en producción'
+    );
     const insecureResponse = new NextResponse(
       'Insecure transmission forbidden: HTTP Basic Auth requires an encrypted HTTPS connection.',
       {
@@ -154,6 +196,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     console.error(
       '[Security Alert] ADMIN_USER o ADMIN_PASSWORD_HASH no configuradas en el entorno.'
     );
+    dispatchPerimeterTelemetry(
+      request,
+      401,
+      'Fail-Closed: ADMIN_USER o ADMIN_PASSWORD_HASH no configuradas'
+    );
     return unauthorizedResponse();
   }
 
@@ -164,6 +211,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   const credentials = parseBasicAuth(authHeader);
   if (!credentials) {
+    dispatchPerimeterTelemetry(
+      request,
+      401,
+      'Cabecera Basic Auth malformada o inválida'
+    );
     return unauthorizedResponse();
   }
 
@@ -176,6 +228,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   );
 
   if (!isUserValid || !isPasswordValid) {
+    dispatchPerimeterTelemetry(
+      request,
+      401,
+      'Credenciales inválidas de acceso al nodo /Admin'
+    );
     return unauthorizedResponse();
   }
 
