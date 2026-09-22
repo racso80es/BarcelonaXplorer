@@ -119,7 +119,12 @@ export default function OrchestratorPage() {
         const slowRes = await fetch('/api/orchestrator/slow', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: userPrompt }),
+          body: JSON.stringify({
+            prompt: userPrompt,
+            context: {
+              localTime: new Date().toISOString(),
+            },
+          }),
         });
 
         const slowData = await slowRes.json();

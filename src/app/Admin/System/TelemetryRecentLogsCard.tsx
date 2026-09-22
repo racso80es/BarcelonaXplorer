@@ -24,6 +24,7 @@ export async function TelemetryRecentLogsCard() {
           message: true,
           statusCode: true,
           durationMs: true,
+          payload: true,
         },
       }),
       prisma.telemetryLog.count(),

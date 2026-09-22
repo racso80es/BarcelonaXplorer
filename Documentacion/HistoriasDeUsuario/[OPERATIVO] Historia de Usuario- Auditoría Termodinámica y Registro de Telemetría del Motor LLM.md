@@ -10,8 +10,8 @@
 ## 1. Descripción General
 
 **Como** Operador Técnico y Arquitecto del proyecto BarcelonaXplorer,  
-**Quiero** registrar el flujo de interacción completo (prompts de usuario, contexto sensorial inyectado y respuestas de los modelos) como eventos de telemetría desacoplados en el sistema bajo el contexto `LLM_ENGINE`, interceptando específicamente las claudicaciones de orquestación donde la respuesta es o contiene `"No se pudo forjar la ruta."`,  
-**Para** monitorizar esta fricción cognitiva catalogándola como advertencia (`WARN`) en la tabla táctica de [`/Admin/System`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/page.tsx), diagnosticar qué combinaciones de contexto y variables de entorno provocan el colapso del agente, auditar el rendimiento y latencia del motor LLM bajo los preceptos de la Aduana Universal, y garantizar que el dominio permanezca puro sin penalizar los tiempos de respuesta del usuario (fricción térmica cero).
+**Quiero** registrar el flujo de interacción completo como eventos de telemetría desacoplados en el sistema bajo el contexto `LLM_ENGINE` —incorporando formalmente tanto la **solicitud** (prompt íntegro y variables de contexto ambiental) como los **datos devueltos** (itinerario estructurado completo con waypoints o diagnóstico de claudicación)—, interceptando específicamente las claudicaciones de orquestación donde la respuesta es o contiene `"No se pudo forjar la ruta."`,  
+**Para** monitorizar esta fricción cognitiva catalogándola como advertencia (`WARN`) en la tabla táctica de [`/Admin/System`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/page.tsx), diagnosticar qué combinaciones de contexto y variables de entorno provocan el colapso del agente, inspeccionar interactivamente los itinerarios generados frente a las peticiones del turista, auditar el rendimiento y latencia del motor LLM bajo los preceptos de la Aduana Universal, y garantizar que el dominio permanezca puro sin penalizar los tiempos de respuesta del usuario (fricción térmica cero).
 
 ---
 
@@ -45,8 +45,8 @@ La captura de la entropía generada por los modelos de lenguaje (LLM) se gestion
 |        │          │                                                                              |
 |        │◄─────────┘ (Retorno o Excepción)                                                        |
 |        │                                                                                         |
-|        ├──► 2. Evaluación Sintáctica & Clasificación Termodinámica                              |
-|        │       ├── Éxito: level = 'DEBUG'                                                        |
+|        ├──► 2. Serialización Dual: [Solicitud] + [Datos Devueltos]                               |
+|        │       ├── Éxito: level = 'DEBUG' (Itinerario completo con Waypoints)                    |
 |        │       ├── Claudicación ("No se pudo forjar la ruta."): level = 'WARN'                   |
 |        │       └── Excepción Red / Cuota 5xx: level = 'ERROR'                                    |
 |        │                                                                                         |
@@ -58,7 +58,7 @@ La captura de la entropía generada por los modelos de lenguaje (LLM) se gestion
 |   ════════════════════════════════════════════════════════════════════════════════════════       |
 |   [ Inspección Operativa: Órgano Sensorial ]                                                     |
 |   - src/app/Admin/System/page.tsx ──► TelemetryTableClient                                       |
-|   - DataTable<TelemetryLogItem>: Filtros facetados [WARN] + [LLM_ENGINE]                         |
+|   - DataTable<TelemetryLogItem>: Inspección Forense modal (Solicitud + Datos Devueltos)          |
 +--------------------------------------------------------------------------------------------------+
 ```
 
@@ -76,23 +76,28 @@ El sistema categoriza el comportamiento del motor generativo en tres niveles de 
    - **`message`**: Extracto del prompt del usuario y el identificador único de la ruta generada (ej. `"[LLM SUCCESS] Ruta forjada id: bcn-1727012345 | Prompt: Tengo 4 horas en el Born..."`).
    - **`durationMs`**: Latencia real de inferencia y procesamiento en milisegundos.
    - **`statusCode`**: `200`.
-   - **`payload`**: Objeto estructurado con modelo utilizado, total de waypoints generados y metadatos de generación.
+   - **`payload`**: Objeto estructurado que incorpora:
+     - **Solicitud (`request`)**: Prompt íntegro, longitud del prompt (`promptLength`) y variables contextuales inyectadas (`environmentVariables`).
+     - **Datos Devueltos (`response`)**: Itinerario táctico estructurado completo (`id`, `summary`, `waypointsCount`, `waypoints` con títulos, descripciones, coordenadas geográficas, tramos horarios y recomendaciones).
+     - **Atributos Raíz**: Mantiene retrocompatibilidad analítica con `routeId`, `waypointsCount`, `prompt`, `model`, etc.
 
 2. **`WARN` (Fricción Cognitiva / Claudicación del Modelo):**  
    Nivel reservado **exclusivamente** para iteraciones donde el modelo claudica, no logra conciliar las restricciones operativas o la respuesta devuelta contiene la cadena canónica `"No se pudo forjar la ruta."`.  
    - **`message`**: Diagnóstico de fricción detallando el fallo y extracto del prompt que provocó el colapso (ej. `"[LLM WARN] Fricción cognitiva: No se pudo forjar la ruta. | Prompt: Quiero visitar 15 museos en 30 minutos a pie"`).
    - **`durationMs`**: Tiempo transcurrido hasta la claudicación del agente.
    - **`statusCode`**: `422` (Unprocessable Entity) o `200` con bandera de fallo lógico.
-   - **`payload`**: Prompt original íntegro del usuario junto con las variables externas (clima, tiempo, ubicación, restricciones logísticas) inyectadas en ese turno, permitiendo la disección forense de la anomalía.
+   - **`payload`**: Objeto estructurado con:
+     - **Solicitud (`request`)**: Prompt original íntegro junto con las variables ambientales (`environmentVariables`: clima, tiempo, ubicación, restricciones logísticas) inyectadas, cuya presencia es **estrictamente obligatoria** por compilador.
+     - **Datos Devueltos (`response`)**: Estructura formal de claudicación (`status: 'CLAUDICATION'`, `message: 'No se pudo forjar la ruta.'`, `rawOutput`).
 
 3. **`ERROR` (Fallo Periférico de Infraestructura):**  
    Registra caídas de red, cuotas agotadas (`RESOURCE_EXHAUSTED` / HTTP `429`), timeouts o errores `5xx` devueltos por la API externa de Google GenAI o Groq.  
-   - **`message`**: Detalle del error de infraestructura (ej. `"[LLM ERROR] Excepción de infraestructura Google GenAI: 429 Quota Exceeded"`).
+   - **`message`**: Detalle del error de infraestructura (ej. `"[LLM ERROR] Excepción de infraestructura: 429 Quota Exceeded"`).
    - **`statusCode`**: Código HTTP devuelto por el proveedor (`429`, `500`, `503`, etc.).
-   - **`payload`**: Stack trace sanitizado, modelo de fallback intentado y duración hasta el corte.
+   - **`payload`**: Incorpora `request` con el prompt intentado y `response` con el detalle del error técnico y stack trace sanitizado.
 
 ### 2.3. Estructura del Payload y Contrato Estricto (`TelemetryLogItem` & Unión Discriminada)
-Cada registro inyectado en la base de datos MySQL mediante la entidad [`TelemetryEntry`](file:///home/racso/Proyectos/BarcelonaXplorer/src/domain/entities/telemetry-entry.entity.ts) cumple de forma unívoca con los atributos consumidos por la interfaz [`TelemetryLogItem`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/TelemetryTableClient.tsx#L7-L15) del componente [`DataTable`](file:///home/racso/Proyectos/BarcelonaXplorer/src/components/ui/data-table/data-table.tsx):
+Cada registro inyectado en la base de datos MySQL mediante la entidad [`TelemetryEntry`](file:///home/racso/Proyectos/BarcelonaXplorer/src/domain/entities/telemetry-entry.entity.ts) cumple de forma unívoca con los atributos consumidos por la interfaz [`TelemetryLogItem`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/TelemetryTableClient.tsx) del componente [`DataTable`](file:///home/racso/Proyectos/BarcelonaXplorer/src/components/ui/data-table/data-table.tsx):
 
 ```typescript
 export interface TelemetryLogItem {
@@ -103,6 +108,7 @@ export interface TelemetryLogItem {
   message: string;
   statusCode: number | null;
   durationMs: number | null;
+  payload?: unknown;
 }
 ```
 
@@ -110,7 +116,7 @@ export interface TelemetryLogItem {
 Para el atributo polimórfico `payload` (`@db.Json` en MySQL), se implementa una **unión discriminada** en TypeScript gobernada por el nivel termodinámico (`level`). 
 
 > [!IMPORTANT]
-> **Axioma Forense de la Aduana Cognitiva:** Dado que el propósito primordial del nivel `WARN` es diseccionar con precisión quirúrgica por qué el modelo colapsó ante el prompt del usuario ("No se pudo forjar la ruta."), un valor `undefined` en el contexto ambiental anularía la auditoría. Por tanto, mediante *Type Narrowing*, el compilador **exige ineludiblemente** `environmentVariables` cuando `level === 'WARN'`.
+> **Axioma Forense de la Aduana Cognitiva:** Dado que el propósito primordial de la auditoría es contrastar la solicitud con los datos devueltos para diseccionar por qué el modelo colapsó ("No se pudo forjar la ruta."), un valor `undefined` en el contexto ambiental anularía el diagnóstico. Por tanto, mediante *Type Narrowing*, el compilador **exige ineludiblemente** `environmentVariables` cuando `level === 'WARN'`.
 
 ```typescript
 /** Contexto ambiental y logístico inyectado durante la orquestación */
@@ -122,30 +128,85 @@ export interface LlmEnvironmentContext {
   [key: string]: unknown;
 }
 
+/** Representación serializada de un Waypoint devuelto por el modelo */
+export interface LlmReturnedRouteWaypoint {
+  id: string;
+  title: string;
+  description: string;
+  coordinates?: { lat: number; lng: number };
+  timeSpan?: { start: string; end?: string };
+  recommendations?: string[];
+}
+
+/** Datos estructurados de la ruta devuelta por el motor LLM (Éxito) */
+export interface LlmReturnedRouteData {
+  id: string;
+  summary: string;
+  waypointsCount: number;
+  waypoints: LlmReturnedRouteWaypoint[];
+  [key: string]: unknown;
+}
+
+/** Datos devueltos ante claudicación cognitiva (WARN) */
+export interface LlmReturnedClaudicationData {
+  status: 'CLAUDICATION';
+  message: string;
+  rawOutput?: string;
+  [key: string]: unknown;
+}
+
+/** Datos devueltos ante error periférico de infraestructura (ERROR) */
+export interface LlmReturnedErrorData {
+  statusCode: number;
+  error: string;
+  stackTraceSnippet?: string;
+  [key: string]: unknown;
+}
+
 /** Base común compartida por todos los payloads del motor LLM */
-interface BaseLlmTelemetryPayload {
+export interface BaseLlmTelemetryPayload {
   model: string;
   prompt: string;
   promptLength: number;
+  request: {
+    prompt: string;
+    promptLength: number;
+    environmentVariables?: LlmEnvironmentContext;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
 }
 
-/** Payload para inferencias exitosas (DEBUG): context ambiental opcional */
+/** Payload para inferencias exitosas (DEBUG): Solicitud + Itinerario Completo Devuelto */
 export interface LlmSuccessTelemetryPayload extends BaseLlmTelemetryPayload {
   routeId: string;
   waypointsCount: number;
   environmentVariables?: LlmEnvironmentContext;
+  request: {
+    prompt: string;
+    promptLength: number;
+    environmentVariables?: LlmEnvironmentContext;
+    [key: string]: unknown;
+  };
+  response: LlmReturnedRouteData;
 }
 
 /** 
  * Payload forense para claudicaciones del modelo (WARN: "No se pudo forjar la ruta.")
  * INVARIANTE FORENSE ESTRICTO: environmentVariables es OBLIGATORIO a nivel de compilador.
- * Queda terminantemente prohibido 'undefined' o 'null'.
  */
 export interface LlmWarningTelemetryPayload extends BaseLlmTelemetryPayload {
   reason: 'NO_ROUTE_FORGED' | string;
   /** Obligatorio sin comodín opcional (?): garantiza la reproducibilidad de la anomalía */
   environmentVariables: LlmEnvironmentContext;
   rawResponse?: string;
+  request: {
+    prompt: string;
+    promptLength: number;
+    environmentVariables: LlmEnvironmentContext;
+    [key: string]: unknown;
+  };
+  response: LlmReturnedClaudicationData;
 }
 
 /** Payload para caídas de red, cuotas agotadas o errores de infraestructura (ERROR) */
@@ -154,6 +215,13 @@ export interface LlmErrorTelemetryPayload extends BaseLlmTelemetryPayload {
   statusCode: number;
   environmentVariables?: LlmEnvironmentContext;
   stackTraceSnippet?: string;
+  request: {
+    prompt: string;
+    promptLength: number;
+    environmentVariables?: LlmEnvironmentContext;
+    [key: string]: unknown;
+  };
+  response?: LlmReturnedErrorData;
 }
 
 /** Unión discriminada polimórfica para el payload del motor LLM */
@@ -220,7 +288,7 @@ sequenceDiagram
     UseCase->>AI: generateTacticalRoute(prompt)
     AI-->>UseCase: TacticalRoute (Válida con Waypoints)
     opt TELEMETRY_LLM_ENABLED === 'true'
-        UseCase-)Repo: Fire-and-Forget log(DEBUG, LLM_ENGINE, durationMs, routeId)
+        UseCase-)Repo: Fire-and-Forget log(DEBUG, LLM_ENGINE, durationMs, payload: [solicitud + datos devueltos])
         Repo-)MySQL: INSERT INTO TelemetryLog (Async)
     end
     UseCase-->>RouteH: TacticalRoute
@@ -238,7 +306,7 @@ sequenceDiagram
     AI-->>UseCase: "No se pudo forjar la ruta." (Respuesta no estructurada / colapso)
     note over UseCase: Aduana intercepta cadena sintáctica
     opt TELEMETRY_LLM_ENABLED === 'true'
-        UseCase-)Repo: Fire-and-Forget log(WARN, LLM_ENGINE, durationMs, prompt + variables)
+        UseCase-)Repo: Fire-and-Forget log(WARN, LLM_ENGINE, durationMs, payload: [solicitud + claudicación])
         Repo-)MySQL: INSERT INTO TelemetryLog (Async)
     end
     UseCase-->>RouteH: Fallback controlado / 422
@@ -252,7 +320,7 @@ sequenceDiagram
     UseCase->>AI: generateTacticalRoute(prompt)
     AI-->>UseCase: Throw Error (429 Too Many Requests / 503 Service Unavailable)
     opt TELEMETRY_LLM_ENABLED === 'true'
-        UseCase-)Repo: Fire-and-Forget log(ERROR, LLM_ENGINE, statusCode: 429/500)
+        UseCase-)Repo: Fire-and-Forget log(ERROR, LLM_ENGINE, statusCode: 429/500, payload: [solicitud + error])
         Repo-)MySQL: INSERT INTO TelemetryLog (Async)
     end
     UseCase-->>RouteH: Throw Domain/Infrastructure Exception
@@ -264,10 +332,11 @@ sequenceDiagram
     note right of Admin: Escenario 4: Disección Táctica en /Admin/System
     Admin->>UI: Accede a /Admin/System
     UI->>MySQL: SELECT * FROM TelemetryLog ORDER BY createdAt DESC
-    MySQL-->>UI: logs: TelemetryLogItem[]
-    Admin->>UI: Filtra por level: WARN + context: LLM_ENGINE
-    UI-->>Admin: DataTable renderiza exclusivamente registros de colapso LLM
-    Admin->>UI: Inspecciona celda de mensaje con variables contextuales
+    MySQL-->>UI: logs: TelemetryLogItem[] (incluyendo payload JSON)
+    Admin->>UI: Filtra por level: WARN/DEBUG + context: LLM_ENGINE
+    UI-->>Admin: DataTable renderiza registros del motor
+    Admin->>UI: Clic en fila o botón "Ver" (Inspección Forense)
+    UI-->>Admin: Modal táctico despliega Solicitud (Prompt + Variables) y Datos Devueltos (Waypoints / Claudicación)
     end
 ```
 
@@ -285,11 +354,12 @@ sequenceDiagram
    - Se clasifica como **`DEBUG`**.
    - Se mide la latencia exacta (`durationMs = Date.now() - startTime`).
    - Se prepara el mensaje con el ID de la ruta y un extracto del prompt.
+   - Se ensambla el payload con los dos hemisferios: **`request`** (prompt íntegro, variables de entorno) y **`response`** (itinerario estructurado completo, lista de waypoints con coordenadas, horarios y recomendaciones).
 2. Si el modelo devuelve una cadena o respuesta que contenga exactamente `"No se pudo forjar la ruta."` (o si falla el parser estructurado indicando inviabilidad):
    - La Aduana intercepta la anomalía cognitiva y la clasifica estrictamente como **`WARN`**.
-   - Se capturan en el `payload` el prompt original y las variables contextuales (clima, hora, coordenadas) para diagnosticar por qué colapsó la síntesis.
+   - Se ensambla el payload con **`request`** (prompt original y `environmentVariables` obligatorias) y **`response`** (`status: 'CLAUDICATION'`, `message`, `rawOutput`).
 3. Si el adaptador arroja una excepción no recuperable (timeout, error HTTP 429, caída de red):
-   - Se clasifica como **`ERROR`**, registrando el `statusCode` real devuelto por la API externa.
+   - Se clasifica como **`ERROR`**, registrando el `statusCode` real devuelto por la API externa, junto a la solicitud y el stack trace sanitizado.
 
 ### Fase 4: Despacho Asíncrono Fire-and-Forget
 1. Si `TELEMETRY_LLM_ENABLED === 'true'`, el Caso de Uso despacha el chispazo de telemetría:
@@ -302,8 +372,8 @@ sequenceDiagram
 
 ### Fase 5: Disección Táctica en `/Admin/System`
 1. En el nodo administrativo `/Admin/System`, el componente [`TelemetryTableClient`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/TelemetryTableClient.tsx) carga la bitácora mediante [`DataTable<TelemetryLogItem>`](file:///home/racso/Proyectos/BarcelonaXplorer/src/components/ui/data-table/data-table.tsx).
-2. El operador selecciona el selector facetado `Nivel: WARN` y `Contexto: LLM_ENGINE`.
-3. La tabla filtra instantáneamente los colapsos del agente, mostrando en celdas truncadas con tooltip accesible la combinación de variables que provocaron la incapacidad de forjar la ruta, sin desbordar el DOM del navegador.
+2. El operador selecciona el selector facetado `Nivel: WARN` o `DEBUG` y `Contexto: LLM_ENGINE`.
+3. Al hacer clic sobre cualquier fila o presionar el botón de inspección (`Ver`), se abre un modal forense que desglosa en paneles independientes la **Solicitud Inyectada** (Prompt + Variables de Contexto Ambiental) y los **Datos Devueltos** (Itinerario Táctico Completo con Waypoints o Diagnóstico de Claudicación), además de ofrecer la copia rápida del JSON persistido.
 
 ---
 
@@ -348,6 +418,9 @@ sequenceDiagram
   - `durationMs` registrando la latencia real de la llamada.
   - `statusCode = 200`
   - `message` conteniendo el identificador de la ruta y un extracto del prompt.
+  - `payload` conteniendo formalmente:
+    - **`request`**: `{ prompt, promptLength, environmentVariables }` con los datos de la solicitud y contexto sensorial inyectado.
+    - **`response`**: `{ id, summary, waypointsCount, waypoints }` con los datos devueltos íntegros y estructurados (cada waypoint con título, descripción, coordenadas geográficas, horarios y recomendaciones).
 - **Y** el cliente HTTP recibe la respuesta sin demora adicional por la escritura en base de datos.
 
 ### Escenario 2: Captura de Fricción Cognitiva "No se pudo forjar la ruta" (WARN)
@@ -358,7 +431,9 @@ sequenceDiagram
   - `context = 'LLM_ENGINE'`
   - `durationMs` con el tiempo transcurrido hasta la resolución.
   - `message` reflejando la advertencia de fricción cognitiva.
-  - `payload` de tipo `LlmWarningTelemetryPayload`, conteniendo obligatoriamente `environmentVariables` con las variables contextuales (clima, hora, coordenadas y restricciones) junto al prompt original del usuario.
+  - `payload` de tipo `LlmWarningTelemetryPayload`, conteniendo obligatoriamente:
+    - **`request`**: `{ prompt, promptLength, environmentVariables }` con las variables contextuales (clima, hora, coordenadas y restricciones) junto al prompt original del usuario.
+    - **`response`**: `{ status: 'CLAUDICATION', message: 'No se pudo forjar la ruta.', rawOutput }`.
 - **Y** la interfaz de usuario en [`/orchestrator`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/orchestrator/page.tsx) renderiza el aviso de imposibilidad de forma limpia y estilada.
 
 ### Escenario 3: Resiliencia ante Fallos de Red Periféricos o Cuota Excedida (ERROR)
@@ -374,10 +449,13 @@ sequenceDiagram
 ### Escenario 4: Aislamiento Analítico en el Órgano Sensorial (`/Admin/System`)
 - **Dado** el panel de administración operando sobre el componente táctico [`DataTable<TelemetryLogItem>`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/TelemetryTableClient.tsx).
 - **Cuando** el operador técnico accede a la ruta [`/Admin/System`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/page.tsx) y selecciona simultáneamente en la barra de herramientas:
-  - Filtro de Nivel: `WARN`
+  - Filtro de Nivel: `WARN` o `DEBUG`
   - Filtro de Contexto: `LLM_ENGINE`
-- **Entonces** la tabla visualiza de forma instantánea y exclusiva los registros de claudicación del agente.
-- **Y** la celda truncada de diagnóstico permite inspeccionar el mensaje completo y las variables contextuales sin colapsar ni ralentizar el DOM del navegador.
+- **Entonces** la tabla visualiza de forma instantánea los registros correspondientes del motor generativo.
+- **Y** al hacer clic en cualquier fila o pulsar el botón `Ver` de la columna de detalle, emerge un modal táctico que desglosa en tiempo real:
+  - El panel de la **Solicitud Inyectada** (Prompt del usuario y variables de entorno/logística).
+  - El panel de **Datos Devueltos** (Itinerario estructurado con lista de Waypoints o Diagnóstico de Claudicación).
+  - El visor del Payload JSON completo con botón de copiado al portapapeles.
 
 ### Escenario 5: Fricción Térmica Cero en el Hilo Principal (Fire-and-Forget)
 - **Dado** una llamada a la API de orquestación donde la base de datos MySQL experimenta un pico de concurrencia o bloqueo de I/O.

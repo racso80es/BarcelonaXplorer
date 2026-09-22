@@ -16,7 +16,12 @@ export const TacticalWaypointZodSchema = z.object({
   description: z.string(),
   coordinates: GeoCoordinatesZodSchema.optional(),
   timeSpan: TimeSpanZodSchema.optional(),
-  recommendations: z.array(z.string()).optional(),
+  recommendations: z
+    .union([
+      z.array(z.string()),
+      z.string().transform((val) => (val.trim() ? [val.trim()] : [])),
+    ])
+    .optional(),
 });
 
 export const TacticalRouteZodSchema = z.object({
