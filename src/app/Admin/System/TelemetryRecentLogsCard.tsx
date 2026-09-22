@@ -41,33 +41,33 @@ export async function TelemetryRecentLogsCard() {
   const isLlmTelemetryActive = process.env.TELEMETRY_LLM_ENABLED === 'true';
 
   return (
-    <Card className="bg-zinc-900 border-zinc-800 text-zinc-100">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-800 gap-4">
+    <Card className="bg-surface-container border-layout-divider text-content-primary shadow-sm">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-layout-divider gap-4">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-emerald-400" />
+          <CardTitle className="text-lg font-bold flex items-center gap-2 text-content-primary">
+            <Terminal className="w-5 h-5 text-emerald-600" />
             <span>Órgano Sensorial: Bitácora de Telemetría (MySQL)</span>
           </CardTitle>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-content-meta">
             Trazabilidad polimórfica en tiempo real desde el Nodo 11
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
-            <Cpu className="w-3.5 h-3.5 text-blue-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-800 border border-sky-200">
+            <Cpu className="w-3.5 h-3.5 text-sky-600" />
             IA Telemetry: {isLlmTelemetryActive ? 'ACTIVA' : 'INACTIVA'}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
-            <Trash2 className="w-3.5 h-3.5 text-amber-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+            <Trash2 className="w-3.5 h-3.5 text-amber-600" />
             Poda: 7d/30d
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 text-emerald-400 border border-zinc-700">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-800 border border-layout-divider">
             Total: {totalCount}
           </span>
           {errorCount > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-950/80 text-red-400 border border-red-800/50">
-              <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-red-700 border border-red-200">
+              <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
               Errores: {errorCount}
             </span>
           )}
@@ -83,10 +83,10 @@ export async function TelemetryRecentLogsCard() {
 
 export function TelemetryRecentLogsCardSkeleton() {
   return (
-    <Card className="bg-zinc-900 border-zinc-800 text-zinc-100 animate-pulse">
-      <CardHeader className="h-16 border-b border-zinc-800" />
+    <Card className="bg-surface-container border-layout-divider shadow-sm animate-pulse">
+      <CardHeader className="h-16 border-b border-layout-divider" />
       <CardContent className="h-48 pt-4 flex items-center justify-center">
-        <span className="text-xs text-zinc-600 font-mono">
+        <span className="text-xs text-zinc-400 font-mono">
           Escaneando bóveda sensorial de MySQL...
         </span>
       </CardContent>

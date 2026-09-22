@@ -203,7 +203,7 @@ export function DataTable<T>({
 
   return (
     <div
-      className={`bg-zinc-900/90 border border-zinc-800 rounded-lg overflow-hidden shadow-xl ${
+      className={`bg-surface-container border border-layout-divider rounded-lg overflow-hidden shadow-sm ${
         className || ''
       }`}
     >
@@ -235,7 +235,7 @@ export function DataTable<T>({
               rowsCount={Math.min(5, currentPageSize || 5)}
             />
           ) : paginatedData.length === 0 ? (
-            <tbody className="divide-y divide-zinc-800/80">
+            <tbody className="divide-y divide-layout-divider">
               <DataTableEmpty
                 colSpan={normalizedColumns.length}
                 emptyMessage={emptyMessage}
@@ -244,7 +244,7 @@ export function DataTable<T>({
               />
             </tbody>
           ) : (
-            <tbody className="divide-y divide-zinc-800/80">
+            <tbody className="divide-y divide-layout-divider">
               {paginatedData.map((item, rowIndex) => {
                 const itemRecord = item as Record<string, unknown>;
                 const rowKey =

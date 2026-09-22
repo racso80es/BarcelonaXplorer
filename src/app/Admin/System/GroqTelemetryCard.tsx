@@ -90,12 +90,12 @@ export async function GroqTelemetryCard() {
   const status = await checkGroqStatus();
 
   return (
-    <Card className="bg-zinc-900 border-zinc-800">
+    <Card className="bg-surface-container border-layout-divider shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-zinc-400">
+        <CardTitle className="text-sm font-medium text-content-meta">
           Motor Rápido ({status.model})
         </CardTitle>
-        <Zap className="h-4 w-4 text-zinc-500" />
+        <Zap className="h-4 w-4 text-zinc-400" />
       </CardHeader>
       <CardContent>
         <div className="flex items-start mt-2">
@@ -106,7 +106,7 @@ export async function GroqTelemetryCard() {
           />
           <span
             className={`font-mono text-sm flex-1 break-words ${
-              status.ok ? 'text-emerald-400' : 'text-red-400'
+              status.ok ? 'text-emerald-700 font-medium' : 'text-red-700 font-medium'
             }`}
           >
             {status.msg}
@@ -119,17 +119,17 @@ export async function GroqTelemetryCard() {
 
 export function GroqTelemetryCardSkeleton() {
   return (
-    <Card className="bg-zinc-900 border-zinc-800">
+    <Card className="bg-surface-container border-layout-divider shadow-sm animate-pulse">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-zinc-400">
+        <CardTitle className="text-sm font-medium text-content-meta">
           Motor Rápido (Evaluando...)
         </CardTitle>
-        <Zap className="h-4 w-4 text-zinc-500 animate-pulse" />
+        <Zap className="h-4 w-4 text-zinc-400 animate-pulse" />
       </CardHeader>
       <CardContent>
         <div className="flex items-center mt-2">
           <div className="w-2.5 h-2.5 rounded-full mr-3 bg-amber-500 animate-ping" />
-          <span className="font-mono text-sm text-zinc-400">
+          <span className="font-mono text-sm text-zinc-500">
             Sondeando motor Groq...
           </span>
         </div>

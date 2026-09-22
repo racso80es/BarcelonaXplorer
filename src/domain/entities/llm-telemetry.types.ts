@@ -161,7 +161,7 @@ export type LlmTelemetryEvent =
       level: 'WARN';
       context: 'LLM_ENGINE';
       message: string;
-      statusCode: 422 | 200;
+      statusCode: 422; // Determinismo semántico estricto
       durationMs: number;
       payload: LlmWarningTelemetryPayload; // Exige environmentVariables a nivel estático
     }

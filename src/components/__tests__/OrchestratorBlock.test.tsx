@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { OrchestratorBlock } from '@/components/OrchestratorBlock';
 
 describe('OrchestratorBlock Component', () => {
-  it('renders user message correctly with solid background', () => {
+  it('renders user message correctly with tactical light background', () => {
     const { container } = render(
       <OrchestratorBlock 
         role="user" 
@@ -16,13 +16,13 @@ describe('OrchestratorBlock Component', () => {
       />
     );
     expect(screen.getByText('Mensaje de usuario')).toBeDefined();
-    // Verifica que tiene fondo sólido y opaco
-    expect(container.innerHTML).toContain('bg-zinc-900 border border-zinc-800');
+    // Verifica que tiene tokens semánticos tácticos claros
+    expect(container.innerHTML).toContain('bg-surface-container border-layout-divider');
     // Verifica que no tenga el ring luminoso de la IA
     expect(container.innerHTML).not.toContain('animate-pulse');
   });
 
-  it('renders AI message with glassmorphism and animations while processing', () => {
+  it('renders AI message with tactical AI background and animations while processing', () => {
     const { container } = render(
       <OrchestratorBlock 
         role="ai" 
@@ -34,9 +34,8 @@ describe('OrchestratorBlock Component', () => {
     expect(screen.getByText('Calculando ruta...')).toBeDefined();
     expect(screen.getByText(/ORQUESTANDO RUTA/i)).toBeDefined();
     
-    // Glassmorphism para IA
-    expect(container.innerHTML).toContain('bg-zinc-900/40');
-    expect(container.innerHTML).toContain('backdrop-blur-md');
+    // Tokens semánticos tácticos para IA
+    expect(container.innerHTML).toContain('bg-surface-ai');
     
     // Anillo animado de carga (Fase 2)
     expect(container.innerHTML).toContain('animate-pulse');

@@ -34,7 +34,7 @@ export function DataTablePagination({
   const canNext = currentPage < totalPages;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-zinc-950/60 border-t border-zinc-800 text-xs font-mono text-zinc-400 select-none">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-surface-subtle/40 border-t border-layout-divider text-xs font-mono text-content-meta select-none">
       {/* Selector de densidad y rango */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
@@ -43,7 +43,7 @@ export function DataTablePagination({
             aria-label="Seleccionar filas por página"
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded px-2 py-1 focus:outline-none focus:border-emerald-500/80 cursor-pointer"
+            className="bg-surface-container border border-layout-divider text-content-primary rounded px-2 py-1 focus:outline-none focus:border-emerald-500/80 cursor-pointer shadow-xs"
           >
             {pageSizeOptions.map((option) => (
               <option key={option} value={option}>
@@ -53,20 +53,20 @@ export function DataTablePagination({
           </select>
         </div>
 
-        <span className="hidden sm:inline-block text-zinc-500">|</span>
+        <span className="hidden sm:inline-block text-zinc-300">|</span>
 
         <span>
-          Mostrando <strong className="text-zinc-200">{startItem}</strong> -{' '}
-          <strong className="text-zinc-200">{endItem}</strong> de{' '}
-          <strong className="text-zinc-200">{totalItems}</strong>
+          Mostrando <strong className="text-content-primary">{startItem}</strong> -{' '}
+          <strong className="text-content-primary">{endItem}</strong> de{' '}
+          <strong className="text-content-primary">{totalItems}</strong>
         </span>
       </div>
 
       {/* Controles de navegación de página */}
       <div className="flex items-center gap-2">
         <span>
-          Página <strong className="text-emerald-400">{currentPage}</strong> de{' '}
-          <strong className="text-zinc-200">{Math.max(1, totalPages)}</strong>
+          Página <strong className="text-emerald-700 font-semibold">{currentPage}</strong> de{' '}
+          <strong className="text-content-primary">{Math.max(1, totalPages)}</strong>
         </span>
 
         <div className="flex items-center gap-1 ml-2">
@@ -75,10 +75,10 @@ export function DataTablePagination({
             onClick={() => onPageChange(1)}
             disabled={!canPrev}
             aria-label="Primera página"
-            className={`p-1.5 rounded border border-zinc-800 bg-zinc-900 transition-colors ${
+            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canPrev
-                ? 'text-zinc-300 hover:text-white hover:bg-zinc-800 cursor-pointer'
-                : 'text-zinc-600 opacity-40 cursor-not-allowed'
+                ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
+                : 'text-zinc-300 opacity-40 cursor-not-allowed'
             }`}
           >
             <ChevronsLeft className="w-3.5 h-3.5" />
@@ -89,10 +89,10 @@ export function DataTablePagination({
             onClick={() => onPageChange(currentPage - 1)}
             disabled={!canPrev}
             aria-label="Página anterior"
-            className={`p-1.5 rounded border border-zinc-800 bg-zinc-900 transition-colors ${
+            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canPrev
-                ? 'text-zinc-300 hover:text-white hover:bg-zinc-800 cursor-pointer'
-                : 'text-zinc-600 opacity-40 cursor-not-allowed'
+                ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
+                : 'text-zinc-300 opacity-40 cursor-not-allowed'
             }`}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -103,10 +103,10 @@ export function DataTablePagination({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={!canNext}
             aria-label="Página siguiente"
-            className={`p-1.5 rounded border border-zinc-800 bg-zinc-900 transition-colors ${
+            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canNext
-                ? 'text-zinc-300 hover:text-white hover:bg-zinc-800 cursor-pointer'
-                : 'text-zinc-600 opacity-40 cursor-not-allowed'
+                ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
+                : 'text-zinc-300 opacity-40 cursor-not-allowed'
             }`}
           >
             <ChevronRight className="w-3.5 h-3.5" />
@@ -117,10 +117,10 @@ export function DataTablePagination({
             onClick={() => onPageChange(totalPages)}
             disabled={!canNext}
             aria-label="Última página"
-            className={`p-1.5 rounded border border-zinc-800 bg-zinc-900 transition-colors ${
+            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canNext
-                ? 'text-zinc-300 hover:text-white hover:bg-zinc-800 cursor-pointer'
-                : 'text-zinc-600 opacity-40 cursor-not-allowed'
+                ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
+                : 'text-zinc-300 opacity-40 cursor-not-allowed'
             }`}
           >
             <ChevronsRight className="w-3.5 h-3.5" />

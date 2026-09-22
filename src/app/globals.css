@@ -45,7 +45,17 @@
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-surface-canvas: #fafafa;
+  --color-surface-container: #ffffff;
+  --color-surface-ai: #f0fdf4;
+  --color-surface-subtle: #f4f4f5;
+  --color-content-primary: #18181b;
+  --color-content-secondary: #3f3f46;
+  --color-content-meta: #71717a;
+  --color-content-accent: #047857;
+  --color-layout-divider: #e4e4e7;
+  --color-layout-divider-strong: #d4d4d8;
+  --color-focus-tactical: rgba(16, 185, 129, 0.3);
   --animate-fade-in-up: fade-in-up 0.4s ease-out forwards;
   @keyframes fade-in-up {
     0% { opacity: 0; transform: translateY(10px); }

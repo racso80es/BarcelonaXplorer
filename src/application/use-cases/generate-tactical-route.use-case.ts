@@ -195,13 +195,16 @@ export class GenerateTacticalRouteUseCase {
       return;
     }
 
+    // Sanitización síncrona en memoria antes de despachar hacia el repositorio
+    const sanitizedPayload = TelemetryEntry.sanitizePayload(event.payload);
+
     void this.telemetryRepo
       .log(
         new TelemetryEntry(
           event.level,
           event.context,
           event.message,
-          event.payload,
+          sanitizedPayload,
           event.statusCode,
           event.durationMs,
         ),

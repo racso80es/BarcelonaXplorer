@@ -31,7 +31,7 @@ describe('TacticalSpark Component', () => {
         urgency="high" 
       />
     );
-    // Verificamos que se renderice el color de urgencia alta (red-950)
-    expect(container.innerHTML).toContain('bg-red-950/40');
+    // Verificamos que se renderice el color de urgencia alta claro (bg-red-50)
+    expect(container.innerHTML).toContain('bg-red-50');
   });
 });

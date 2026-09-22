@@ -85,7 +85,7 @@ El sistema categoriza el comportamiento del motor generativo en tres niveles de 
    Nivel reservado **exclusivamente** para iteraciones donde el modelo claudica, no logra conciliar las restricciones operativas o la respuesta devuelta contiene la cadena canónica `"No se pudo forjar la ruta."`.  
    - **`message`**: Diagnóstico de fricción detallando el fallo y extracto del prompt que provocó el colapso (ej. `"[LLM WARN] Fricción cognitiva: No se pudo forjar la ruta. | Prompt: Quiero visitar 15 museos en 30 minutos a pie"`).
    - **`durationMs`**: Tiempo transcurrido hasta la claudicación del agente.
-   - **`statusCode`**: `422` (Unprocessable Entity) o `200` con bandera de fallo lógico.
+   - **`statusCode`**: `422` (Unprocessable Entity estrictamente determinista). Queda fijado unívocamente en 422 para mantener la pureza semántica de la API: si el modelo claudica de forma controlada ("No se pudo forjar la ruta."), la capa HTTP emite un `422`, permitiendo al frontend bifurcar su estado visual (desplegar advertencia táctica) evaluando directamente el código de estado HTTP sin necesidad de escanear internamente el cuerpo de una ambigua respuesta `200 OK`.
    - **`payload`**: Objeto estructurado con:
      - **Solicitud (`request`)**: Prompt original íntegro junto con las variables ambientales (`environmentVariables`: clima, tiempo, ubicación, restricciones logísticas) inyectadas, cuya presencia es **estrictamente obligatoria** por compilador.
      - **Datos Devueltos (`response`)**: Estructura formal de claudicación (`status: 'CLAUDICATION'`, `message: 'No se pudo forjar la ruta.'`, `rawOutput`).
@@ -244,7 +244,7 @@ export type LlmTelemetryEvent =
       level: 'WARN';
       context: 'LLM_ENGINE';
       message: string;
-      statusCode: 422 | 200;
+      statusCode: 422; // Determinismo semántico estricto (Unprocessable Entity)
       durationMs: number;
       payload: LlmWarningTelemetryPayload; // Exige environmentVariables a nivel estático
     }
@@ -306,12 +306,12 @@ sequenceDiagram
     AI-->>UseCase: "No se pudo forjar la ruta." (Respuesta no estructurada / colapso)
     note over UseCase: Aduana intercepta cadena sintáctica
     opt TELEMETRY_LLM_ENABLED === 'true'
-        UseCase-)Repo: Fire-and-Forget log(WARN, LLM_ENGINE, durationMs, payload: [solicitud + claudicación])
+        UseCase-)Repo: Fire-and-Forget log(WARN, LLM_ENGINE, statusCode: 422, durationMs, payload: [solicitud + claudicación])
         Repo-)MySQL: INSERT INTO TelemetryLog (Async)
     end
-    UseCase-->>RouteH: Fallback controlado / 422
-    RouteH-->>UI: 200 OK { response: "No se pudo forjar la ruta." }
-    UI-->>Usuario: Despliega aviso "No se pudo forjar la ruta."
+    UseCase-->>RouteH: Fallback de Claudicación / 422 Unprocessable Entity
+    RouteH-->>UI: 422 Unprocessable Entity { error: "No se pudo forjar la ruta." }
+    UI-->>Usuario: Bifurca estado visual por HTTP 422 ("No se pudo forjar la ruta.")
     end
 
     %% Escenario 3: Caída Periférica
@@ -392,9 +392,10 @@ sequenceDiagram
 - Toda escritura a MySQL opera mediante una promesa asíncrona desacoplada (`void ... .catch(...)`).
 - Si MySQL no responde o se encuentra saturado, el fallo se captura internamente sin propagar excepciones al cliente.
 
-### 4.4. Sanitización y Privacidad de Prompts
-- Antes de persistir el prompt del usuario en `TelemetryEntry.payload`, se deben omitir o redactar datos confidenciales y credenciales mediante [`TelemetryEntry.sanitizePayload()`](file:///home/racso/Proyectos/BarcelonaXplorer/src/domain/entities/telemetry-entry.entity.ts#L50-L80).
-- Queda estrictamente prohibido registrar claves API (`GEMINI_API_KEY`, tokens) en los campos de mensaje o payload.
+### 4.4. Sanitización y Privacidad de Prompts (Secuencia Síncrona en Caso de Uso)
+- **Secuencia de Sanitización Inmediata en Memoria:** La neutralización y purga de información confidencial mediante [`TelemetryEntry.sanitizePayload()`](file:///home/racso/Proyectos/BarcelonaXplorer/src/domain/entities/telemetry-entry.entity.ts#L50-L80) debe ejecutarse **estrictamente de forma síncrona en la memoria del Caso de Uso (`GenerateTacticalRouteUseCase`) ANTES** de ensamblar la entidad o despachar la promesa asíncrona hacia el puerto `TelemetryRepositoryPort`.
+- **Principio de Mínima Exposición:** Se prohíbe delegar la sanitización al adaptador final de persistencia (ej. `PrismaTelemetryRepository` o driver MySQL). El payload en crudo con posibles credenciales o datos sensibles accidentales debe ser sanitizado en el primer perímetro de la capa de aplicación, impidiendo que la cadena original viaje desprotegida a través de los puertos, contratos e interfaces del sistema.
+- **Tolerancia Cero a Fugas de Secretos:** Queda estrictamente prohibido persistir claves API (`GEMINI_API_KEY`, `GROQ_API_KEY`, tokens Bearer) o datos personales identificables (PII) en los campos de mensaje, contexto o payload.
 
 ### 4.5. Tolerancia Cero a `any`
 - Todo el flujo de datos, desde el orquestador hasta la tabla táctica de administración, debe implementar tipado estricto mediante TypeScript y Zod. Se prohíbe el uso del comodín `any`.
@@ -430,11 +431,12 @@ sequenceDiagram
   - `level = 'WARN'`
   - `context = 'LLM_ENGINE'`
   - `durationMs` con el tiempo transcurrido hasta la resolución.
+  - `statusCode = 422` (Unprocessable Entity estrictamente determinista).
   - `message` reflejando la advertencia de fricción cognitiva.
-  - `payload` de tipo `LlmWarningTelemetryPayload`, conteniendo obligatoriamente:
+  - `payload` de tipo `LlmWarningTelemetryPayload`, sanitizado síncronamente en memoria antes del despacho asíncrono y conteniendo obligatoriamente:
     - **`request`**: `{ prompt, promptLength, environmentVariables }` con las variables contextuales (clima, hora, coordenadas y restricciones) junto al prompt original del usuario.
     - **`response`**: `{ status: 'CLAUDICATION', message: 'No se pudo forjar la ruta.', rawOutput }`.
-- **Y** la interfaz de usuario en [`/orchestrator`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/orchestrator/page.tsx) renderiza el aviso de imposibilidad de forma limpia y estilada.
+- **Y** la ruta HTTP `/api/orchestrator/slow` responde con status code `422 Unprocessable Entity`, permitiendo al frontend en [`/orchestrator`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/orchestrator/page.tsx) bifurcar su visualización de inmediato sin evaluar cadenas dentro de un 200 ambiguo.
 
 ### Escenario 3: Resiliencia ante Fallos de Red Periféricos o Cuota Excedida (ERROR)
 - **Dado** un fallo de red externo, error HTTP 429 (`RESOURCE_EXHAUSTED`) o error 5xx emitido por el proveedor Google GenAI.

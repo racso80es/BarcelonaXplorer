@@ -16,7 +16,7 @@ export function DataTableHeader<T>({
   onSortToggle,
 }: DataTableHeaderProps<T>) {
   return (
-    <thead className="bg-zinc-950/80 border-b border-zinc-800">
+    <thead className="bg-surface-subtle border-b border-layout-divider">
       <tr>
         {columns.map((column, index) => {
           const key = column.key as string;
@@ -54,9 +54,9 @@ export function DataTableHeader<T>({
                   onSortToggle(column.key);
                 }
               }}
-              className={`px-4 py-3 text-xs font-mono text-zinc-400 uppercase tracking-wider select-none text-left transition-colors ${
+              className={`px-4 py-3 text-xs font-mono text-zinc-700 uppercase tracking-wider select-none text-left transition-colors ${
                 isSortable
-                  ? 'cursor-pointer hover:text-zinc-200 hover:bg-zinc-900/60 focus:outline-none focus:bg-zinc-900/80 focus:text-emerald-400'
+                  ? 'cursor-pointer hover:text-zinc-900 hover:bg-zinc-200/50 focus:outline-none focus:bg-zinc-200/60 focus:text-emerald-700'
                   : ''
               } ${column.headerClassName || ''}`}
             >
@@ -65,11 +65,11 @@ export function DataTableHeader<T>({
                 {isSortable && (
                   <span className="shrink-0 flex items-center">
                     {isCurrentSort && sortState.direction === 'asc' ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-emerald-400" />
+                      <ChevronUp className="w-3.5 h-3.5 text-emerald-600" />
                     ) : isCurrentSort && sortState.direction === 'desc' ? (
-                      <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
+                      <ChevronDown className="w-3.5 h-3.5 text-emerald-600" />
                     ) : (
-                      <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-600 hover:text-zinc-400 transition-colors opacity-60" />
+                      <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-600 transition-colors opacity-70" />
                     )}
                   </span>
                 )}

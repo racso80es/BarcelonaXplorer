@@ -33,6 +33,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (result === 'No se pudo forjar la ruta.') {
+      return new Response(
+        JSON.stringify({ response: result, error: 'No se pudo forjar la ruta.' }),
+        {
+          status: 422,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
     return new Response(JSON.stringify({ response: result }), {
       headers: {
         'Content-Type': 'application/json',

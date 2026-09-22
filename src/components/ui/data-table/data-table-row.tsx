@@ -20,8 +20,8 @@ export function DataTableRow<T>({
   return (
     <tr
       onClick={() => onRowClick?.(item)}
-      className={`border-b border-zinc-800/60 transition-colors hover:bg-zinc-800/30 ${
-        onRowClick ? 'cursor-pointer hover:bg-zinc-800/50' : ''
+      className={`border-b border-layout-divider transition-colors hover:bg-zinc-50 ${
+        onRowClick ? 'cursor-pointer hover:bg-zinc-100/70' : ''
       }`}
     >
       {columns.map((column, colIndex) => (

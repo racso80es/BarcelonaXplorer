@@ -13,7 +13,7 @@ interface DataTableCellProps<T> {
 export function DataTableCell<T>({ item, column, rowIndex }: DataTableCellProps<T>) {
   if (column.cell) {
     return (
-      <td className={`px-4 py-3 text-xs font-mono text-zinc-300 align-middle ${column.className || ''}`}>
+      <td className={`px-4 py-3 text-xs font-mono text-content-primary align-middle ${column.className || ''}`}>
         {column.cell(item, rowIndex)}
       </td>
     );
@@ -23,7 +23,7 @@ export function DataTableCell<T>({ item, column, rowIndex }: DataTableCellProps<
 
   let renderedContent: React.ReactNode;
   if (rawValue === null || rawValue === undefined) {
-    renderedContent = <span className="text-zinc-600">—</span>;
+    renderedContent = <span className="text-zinc-400">—</span>;
   } else if (rawValue instanceof Date) {
     renderedContent = rawValue.toLocaleString('es-ES', { hour12: false });
   } else if (typeof rawValue === 'boolean') {
@@ -33,7 +33,7 @@ export function DataTableCell<T>({ item, column, rowIndex }: DataTableCellProps<
   }
 
   return (
-    <td className={`px-4 py-3 text-xs font-mono text-zinc-300 align-middle ${column.className || ''}`}>
+    <td className={`px-4 py-3 text-xs font-mono text-content-primary align-middle ${column.className || ''}`}>
       {renderedContent}
     </td>
   );

@@ -1,41 +1,46 @@
 import React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-export interface TacticalSparkProps {
+export const tacticalSparkVariants = cva(
+  'inline-flex items-center px-3 py-1.5 rounded-full border shadow-xs backdrop-blur-sm text-xs font-mono transition-colors duration-200',
+  {
+    variants: {
+      urgency: {
+        low: 'bg-zinc-100 border-layout-divider-strong text-zinc-700',
+        medium: 'bg-amber-50 border-amber-300 text-amber-800',
+        high: 'bg-red-50 border-red-300 text-red-800',
+      },
+    },
+    defaultVariants: {
+      urgency: 'low',
+    },
+  }
+);
+
+export interface TacticalSparkProps extends VariantProps<typeof tacticalSparkVariants> {
   id: string;
   type: 'weather' | 'security' | 'logistics' | 'affiliation';
   insight: string;
   icon: React.ElementType;
   urgency: 'low' | 'medium' | 'high';
+  className?: string;
 }
 
 export function TacticalSpark({
   insight,
   icon: Icon,
-  urgency,
+  urgency = 'low',
+  className,
 }: TacticalSparkProps) {
-  
-  // Codificación por Urgencia (Colores)
-  const urgencyClasses = {
-    low: 'bg-zinc-900 border-zinc-700 text-zinc-400',
-    medium: 'bg-amber-950/40 border-amber-800 text-amber-500',
-    high: 'bg-red-950/40 border-red-800 text-red-400',
-  };
-
   return (
-    <div className="relative w-full max-w-3xl ml-16 mb-3 animate-fade-in-up">
-      {/* Vínculo visual sutil hacia el bloque principal (opcional, para enfatizar la rama) */}
-      <div className="absolute -left-6 top-1/2 w-4 h-px bg-zinc-800 -translate-y-1/2" />
-      
-      <div
-        className={cn(
-          'inline-flex items-center px-3 py-1.5 rounded-full border shadow-sm backdrop-blur-sm',
-          'text-xs font-mono transition-colors duration-200',
-          urgencyClasses[urgency]
-        )}
-      >
+    <div className="relative w-full max-w-3xl ml-4 sm:ml-16 mb-2 sm:mb-3 animate-fade-in-up">
+      {/* Vínculo visual sutil hacia el bloque principal adaptado al sustrato claro */}
+      <div className="hidden sm:block absolute -left-6 top-1/2 w-4 h-px bg-zinc-300 -translate-y-1/2" />
+
+      <div className={cn(tacticalSparkVariants({ urgency }), className)}>
         <Icon className="w-3.5 h-3.5 mr-2 shrink-0" />
-        <span className="leading-tight">{insight}</span>
+        <span className="leading-tight font-medium">{insight}</span>
       </div>
     </div>
   );
