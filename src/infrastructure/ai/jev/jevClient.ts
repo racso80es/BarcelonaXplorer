@@ -3,6 +3,8 @@ import {
   JevDecisionProbeResult,
   JevNoulEvaluation,
 } from '@/application/ports/out/ITypedDecisionEngine';
+import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 import { getJevConfig, JevConfig } from './config';
 import {
   JevModelsResponseSchema,
@@ -18,11 +20,15 @@ import {
  * - Validación Zod en la frontera de datos.
  * - Tolerancia cero a tipos any.
  * - Resiliencia perimetral Fail-Soft ante cortes de red o caídas del servicio.
+ * - Registro de inferencias en telemetría bajo LLM_ENGINE con nivel INFO.
  */
 export class JevClient implements ITypedDecisionEngine {
   private readonly config: JevConfig;
 
-  constructor(customConfig?: Partial<JevConfig>) {
+  constructor(
+    customConfig?: Partial<JevConfig>,
+    private readonly telemetryRepo?: TelemetryRepositoryPort,
+  ) {
     const baseConfig = getJevConfig();
     this.config = {
       ...baseConfig,
@@ -141,34 +147,85 @@ export class JevClient implements ITypedDecisionEngine {
       },
     };
 
-    const response = await fetch(`${this.config.baseUrl}/v1/systemone`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-      body: JSON.stringify(payload),
-    });
+    const startTime = Date.now();
 
-    if (!response.ok) {
-      throw new Error(`Jev AI /v1/systemone error: HTTP ${response.status}`);
+    try {
+      const response = await fetch(`${this.config.baseUrl}/v1/systemone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Jev AI /v1/systemone error: HTTP ${response.status}`);
+      }
+
+      const rawJson: unknown = await response.json();
+      const parsed = JevSystemOneResponseSchema.parse(rawJson);
+      const rawAnswer = parsed.answers['eval_question'];
+      const parsedNoul = JevNoulAnswerSchema.safeParse(rawAnswer);
+
+      if (!parsedNoul.success) {
+        throw new Error('Respuesta malformada de Jev AI para pregunta noul');
+      }
+
+      const durationMs = Date.now() - startTime;
+      const probability = parsedNoul.data.noul;
+      const isAffirmative = probability >= threshold;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'INFO',
+            'LLM_ENGINE',
+            `[Jev AI System One] Inferencia evaluada | Modelo: ${this.config.defaultModel}`,
+            {
+              model: this.config.defaultModel,
+              state,
+              instruction,
+              threshold,
+              probability,
+              isAffirmative,
+              durationMs,
+            },
+            200,
+            durationMs,
+          ),
+        ).catch((e) => console.warn('[Telemetry Jev Fire-and-Forget Error]', e));
+      }
+
+      return {
+        probability,
+        isAffirmative,
+      };
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'ERROR',
+            'LLM_ENGINE',
+            `[Jev AI System One] Fallo en inferencia: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+            {
+              model: this.config.defaultModel,
+              state,
+              instruction,
+              error: err instanceof Error ? err.message : String(err),
+              durationMs,
+            },
+            500,
+            durationMs,
+          ),
+        ).catch((e) => console.warn('[Telemetry Jev Fire-and-Forget Error]', e));
+      }
+
+      throw err;
     }
-
-    const rawJson: unknown = await response.json();
-    const parsed = JevSystemOneResponseSchema.parse(rawJson);
-    const rawAnswer = parsed.answers['eval_question'];
-    const parsedNoul = JevNoulAnswerSchema.safeParse(rawAnswer);
-
-    if (!parsedNoul.success) {
-      throw new Error('Respuesta malformada de Jev AI para pregunta noul');
-    }
-
-    const probability = parsedNoul.data.noul;
-    return {
-      probability,
-      isAffirmative: probability >= threshold,
-    };
   }
 }

@@ -4,6 +4,7 @@ import { TacticalRoute, TacticalWaypoint, GeoCoordinates, TimeSpan } from '@/dom
 import { TacticalRouteZodSchema } from '@/infrastructure/ai/schemas/tactical-route.schema';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 
 /**
  * Adaptador de Infraestructura: Cliente de Google Gemini AI.
@@ -11,25 +12,43 @@ import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repos
  * Cumple con el Principio de No Auto-Auditoría:
  * Se enfoca exclusivamente en la interacción con el proveedor externo de IA,
  * la validación del Escudo Zod y la instanciación de Entidades Puras de Dominio.
- * La telemetría y clasificación termodinámica recaen en la capa de aplicación.
+ * La telemetría y clasificación termodinámica recaen en la capa de aplicación,
+ * mientras que para llamadas directas como generateText se registra telemetría INFO bajo LLM_ENGINE.
  */
 export class GeminiClient implements AiGeneratorPort {
   private ai: GoogleGenAI;
   private models: string[];
+  private readonly telemetryRepo?: TelemetryRepositoryPort;
 
-  constructor(_telemetryRepo?: TelemetryRepositoryPort) {
+  constructor(
+    clientOrTelemetry?: GoogleGenAI | TelemetryRepositoryPort,
+    telemetryRepo?: TelemetryRepositoryPort,
+  ) {
+    if (clientOrTelemetry && 'log' in clientOrTelemetry) {
+      this.telemetryRepo = clientOrTelemetry;
+    } else {
+      this.telemetryRepo = telemetryRepo;
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const hasInjectedClient = Boolean(clientOrTelemetry && 'models' in clientOrTelemetry);
+
+    if (!apiKey && !hasInjectedClient) {
       throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
     }
+
     const modelsStr = process.env.GEMINI_MODELS || 'gemini-1.5-flash';
     this.models = modelsStr.split(',').map((m) => m.trim()).filter(Boolean);
-    
+
     if (this.models.length === 0) {
       this.models = ['gemini-1.5-flash'];
     }
 
-    this.ai = new GoogleGenAI({ apiKey });
+    if (hasInjectedClient) {
+      this.ai = clientOrTelemetry as GoogleGenAI;
+    } else {
+      this.ai = new GoogleGenAI({ apiKey: apiKey! });
+    }
   }
 
   async generateTacticalRoute(prompt: string): Promise<TacticalRoute> {
@@ -88,13 +107,53 @@ export class GeminiClient implements AiGeneratorPort {
 
   async generateText(prompt: string): Promise<string> {
     for (const model of this.models) {
+      const startTime = Date.now();
       try {
         const response = await this.ai.models.generateContent({
           model: model,
           contents: prompt,
         });
+
+        const durationMs = Date.now() - startTime;
+        if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+          void this.telemetryRepo.log(
+            new TelemetryEntry(
+              'INFO',
+              'LLM_ENGINE',
+              `[Gemini generateText] Inferencia completada con éxito (${model})`,
+              {
+                model,
+                prompt: prompt.slice(0, 100),
+                responseLength: response.text?.length ?? 0,
+                durationMs,
+              },
+              200,
+              durationMs,
+            ),
+          ).catch((e) => console.warn('[Telemetry Gemini Fire-and-Forget Error]', e));
+        }
+
         return response.text ?? '';
       } catch (error) {
+        const durationMs = Date.now() - startTime;
+        if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+          void this.telemetryRepo.log(
+            new TelemetryEntry(
+              'WARN',
+              'LLM_ENGINE',
+              `[Gemini generateText] Falló el modelo ${model}: ${error instanceof Error ? error.message : String(error)}`,
+              {
+                model,
+                prompt: prompt.slice(0, 100),
+                error: error instanceof Error ? error.message : String(error),
+                durationMs,
+              },
+              500,
+              durationMs,
+            ),
+          ).catch((e) => console.warn('[Telemetry Gemini Fire-and-Forget Error]', e));
+        }
+
         console.warn(`[GeminiClient generateText] Falló el modelo ${model}:`, error);
       }
     }

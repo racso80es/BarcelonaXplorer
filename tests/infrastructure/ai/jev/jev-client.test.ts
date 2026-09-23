@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { JevClient } from '@/infrastructure/ai/jev/jevClient';
+import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 
 describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () => {
   const originalEnv = process.env;
@@ -253,4 +255,101 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
     expect(result.probability).toBe(0.35);
     expect(result.isAffirmative).toBe(false);
   });
+
+  it('TC-JEV-14: evaluateNoul registra INFO en telemetría LLM_ENGINE ante inferencia exitosa', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          model: 'jev-latest',
+          answers: {
+            eval_question: {
+              type: 'noul',
+              noul: 0.92,
+            },
+          },
+        }),
+      }),
+    );
+
+    const mockTelemetryRepo: TelemetryRepositoryPort = {
+      log: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const client = new JevClient(undefined, mockTelemetryRepo);
+    const result = await client.evaluateNoul('Sagrada Família', '¿Es Barcelona?', 0.5);
+
+    expect(result.isAffirmative).toBe(true);
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+
+    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    expect(logged.level).toBe('INFO');
+    expect(logged.context).toBe('LLM_ENGINE');
+    expect(logged.statusCode).toBe(200);
+    expect(logged.message).toContain('[Jev AI System One] Inferencia evaluada');
+    expect(logged.payload).toMatchObject({
+      model: 'jev-latest',
+      state: 'Sagrada Família',
+      instruction: '¿Es Barcelona?',
+      probability: 0.92,
+      isAffirmative: true,
+    });
+  });
+
+  it('TC-JEV-15: evaluateNoul registra ERROR en telemetría LLM_ENGINE ante fallo de inferencia', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      }),
+    );
+
+    const mockTelemetryRepo: TelemetryRepositoryPort = {
+      log: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const client = new JevClient(undefined, mockTelemetryRepo);
+    await expect(client.evaluateNoul('Park Güell', '¿Es Barcelona?')).rejects.toThrow();
+
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    expect(logged.level).toBe('ERROR');
+    expect(logged.context).toBe('LLM_ENGINE');
+    expect(logged.statusCode).toBe(500);
+    expect(logged.message).toContain('[Jev AI System One] Fallo en inferencia');
+  });
+
+  it('TC-JEV-16: evaluateNoul omite telemetría si TELEMETRY_LLM_ENABLED es false', async () => {
+    process.env.TELEMETRY_LLM_ENABLED = 'false';
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          model: 'jev-latest',
+          answers: {
+            eval_question: {
+              type: 'noul',
+              noul: 0.88,
+            },
+          },
+        }),
+      }),
+    );
+
+    const mockTelemetryRepo: TelemetryRepositoryPort = {
+      log: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const client = new JevClient(undefined, mockTelemetryRepo);
+    await client.evaluateNoul('Born', '¿Es Barcelona?');
+
+    expect(mockTelemetryRepo.log).not.toHaveBeenCalled();
+  });
 });
+

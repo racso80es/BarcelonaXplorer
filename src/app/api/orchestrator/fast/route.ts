@@ -4,8 +4,9 @@ import { GroqFastAiAdapter } from '@/infrastructure/ai/groq/groq-fast-ai.adapter
 import { ValidateGeographicScopeUseCase } from '@/application/use-cases/validate-geographic-scope.use-case';
 import { HeuristicGeographicDecisionEngine } from '@/infrastructure/ai/rules/heuristic-geographic-decision-engine';
 import { GroqGeographicBounceGenerator } from '@/infrastructure/ai/groq/groq-geographic-bounce-generator';
+import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,10 +19,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const telemetryRepo = new PrismaTelemetryRepository();
+
     // 1. Aduana Universal: Triaje Geográfico Perimetral (HU-PERIM-GEO-001)
     const decisionEngine = new HeuristicGeographicDecisionEngine();
-    const bounceGenerator = new GroqGeographicBounceGenerator();
-    const geoUseCase = new ValidateGeographicScopeUseCase(decisionEngine, bounceGenerator);
+    const bounceGenerator = new GroqGeographicBounceGenerator(undefined, telemetryRepo);
+    const geoUseCase = new ValidateGeographicScopeUseCase(
+      decisionEngine,
+      bounceGenerator,
+      telemetryRepo,
+    );
 
     const geoOutcome = await geoUseCase.execute({ prompt });
 
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Inferencia Rápida: Contexto Enriquecido con Barcelona
-    const adapter = new GroqFastAiAdapter();
+    const adapter = new GroqFastAiAdapter(undefined, telemetryRepo);
     const useCase = new GenerateFastRadarUseCase(adapter);
 
     const stream = await useCase.execute({

@@ -93,9 +93,9 @@ export class GenerateTacticalRouteUseCase {
         })),
       };
 
-      // Éxito Termodinámico (DEBUG): Se persisten la solicitud y los datos devueltos completos
+      // Éxito Termodinámico (INFO): Se persisten la solicitud y los datos devueltos completos
       this.emitTelemetry({
-        level: 'DEBUG',
+        level: 'INFO',
         context: 'LLM_ENGINE',
         message: `[LLM SUCCESS] Ruta forjada id: ${route.id} | Prompt: ${prompt.slice(0, 160)}`,
         statusCode: 200,
@@ -191,7 +191,7 @@ export class GenerateTacticalRouteUseCase {
    * con aislamiento Fail-Safe ante posibles caídas de MySQL.
    */
   private emitTelemetry(event: LlmTelemetryEvent): void {
-    if (process.env.TELEMETRY_LLM_ENABLED !== 'true' || !this.telemetryRepo) {
+    if (process.env.TELEMETRY_LLM_ENABLED === 'false' || !this.telemetryRepo) {
       return;
     }
 

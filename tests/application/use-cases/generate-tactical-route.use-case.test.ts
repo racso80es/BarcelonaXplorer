@@ -33,7 +33,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     vi.restoreAllMocks();
   });
 
-  it('Escenario 1: Registro Exitoso de Orquestación LLM (DEBUG)', async () => {
+  it('Escenario 1: Registro Exitoso de Orquestación LLM (INFO)', async () => {
     const mockRoute = new TacticalRoute('route-101', 'Ruta modernista por el Eixample', [
       new TacticalWaypoint('wp-1', 'Casa Batlló', 'Obra cumbre de Gaudí'),
       new TacticalWaypoint('wp-2', 'La Pedrera', 'Cantera de formas ondulantes'),
@@ -62,7 +62,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
     const loggedEntry = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
-    expect(loggedEntry.level).toBe('DEBUG');
+    expect(loggedEntry.level).toBe('INFO');
     expect(loggedEntry.context).toBe('LLM_ENGINE');
     expect(loggedEntry.statusCode).toBe(200);
     expect(loggedEntry.message).toContain('[LLM SUCCESS] Ruta forjada id: route-101');

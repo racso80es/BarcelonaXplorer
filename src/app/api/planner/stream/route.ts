@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GroqFastAiAdapter } from '@/infrastructure/ai/groq/groq-fast-ai.adapter';
 import { GenerateFastRadarUseCase } from '@/application/use-cases/generate-fast-radar.use-case';
+import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
 import type { FastContextDto } from '@/application/ports/out/fast-interaction-ai.port';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,8 @@ const requestSchema = z.object({
  * aquí, en el borde más externo del sistema.
  */
 function composeUseCase(): GenerateFastRadarUseCase {
-  const aiPort = new GroqFastAiAdapter();
+  const telemetryRepo = new PrismaTelemetryRepository();
+  const aiPort = new GroqFastAiAdapter(undefined, telemetryRepo);
   return new GenerateFastRadarUseCase(aiPort);
 }
 

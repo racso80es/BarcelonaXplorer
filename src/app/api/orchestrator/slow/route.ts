@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Aduana Universal: Triaje y Anclaje Geográfico (HU-PERIM-GEO-001)
     const decisionEngine = new HeuristicGeographicDecisionEngine();
-    const bounceGenerator = new GroqGeographicBounceGenerator();
+    const bounceGenerator = new GroqGeographicBounceGenerator(undefined, telemetryRepo);
     const geoUseCase = new ValidateGeographicScopeUseCase(
       decisionEngine,
       bounceGenerator,
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Orquestador Pesado: Se inyecta el prompt enriquecido (Inyección Silenciosa / Fricción Cero)
-    const aiClient = new GeminiClient();
+    const aiClient = new GeminiClient(telemetryRepo);
     const routeUseCase = new GenerateTacticalRouteUseCase(aiClient, telemetryRepo);
 
     const result = await routeUseCase.execute({

@@ -1,5 +1,7 @@
 import Groq from 'groq-sdk';
 import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
+import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 import {
   GEOGRAPHIC_REBOUND_SYSTEM_PROMPT,
   buildGeographicReboundUserPrompt,
@@ -8,13 +10,17 @@ import {
 /**
  * Adaptador de Infraestructura para la generación de Rebotes Tácticos con Groq (SLM Ligero).
  *
- * Cuenta con degradación determinista elegante si la API de Groq no responde.
+ * Cuenta con degradación determinista elegante si la API de Groq no responde,
+ * registrando telemetría bajo el contexto LLM_ENGINE con nivel INFO en caso de éxito.
  */
 export class GroqGeographicBounceGenerator implements GeographicBounceGeneratorPort {
   private readonly client?: Groq;
   private readonly model: string;
 
-  constructor(client?: Groq) {
+  constructor(
+    client?: Groq,
+    private readonly telemetryRepo?: TelemetryRepositoryPort,
+  ) {
     const apiKey = process.env.GROQ_API_KEY;
     if (apiKey) {
       this.client = client ?? new Groq({ apiKey });
@@ -29,6 +35,8 @@ export class GroqGeographicBounceGenerator implements GeographicBounceGeneratorP
       return fallbackMessage;
     }
 
+    const startTime = Date.now();
+
     try {
       const completion = await this.client.chat.completions.create({
         model: this.model,
@@ -40,10 +48,54 @@ export class GroqGeographicBounceGenerator implements GeographicBounceGeneratorP
         max_tokens: 60,
       });
 
+      const durationMs = Date.now() - startTime;
       const message = completion.choices[0]?.message?.content?.trim();
-      return message && message.length > 0 ? message : fallbackMessage;
-    } catch {
+      const finalMessage = message && message.length > 0 ? message : fallbackMessage;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'INFO',
+            'LLM_ENGINE',
+            `[Groq LLM Bounce] Generado mensaje de rebote para entidad '${rejectedEntity}'`,
+            {
+              model: this.model,
+              rejectedEntity,
+              prompt,
+              bounceMessage: finalMessage,
+              durationMs,
+            },
+            200,
+            durationMs,
+          ),
+        ).catch((e) => console.warn('[Telemetry Groq Bounce Fire-and-Forget Error]', e));
+      }
+
+      return finalMessage;
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'WARN',
+            'LLM_ENGINE',
+            `[Groq LLM Bounce] Fallo al generar mensaje: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+            {
+              model: this.model,
+              rejectedEntity,
+              prompt,
+              error: err instanceof Error ? err.message : String(err),
+              durationMs,
+            },
+            500,
+            durationMs,
+          ),
+        ).catch((e) => console.warn('[Telemetry Groq Bounce Fire-and-Forget Error]', e));
+      }
+
       return fallbackMessage;
     }
   }
 }
+

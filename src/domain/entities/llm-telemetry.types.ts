@@ -150,7 +150,7 @@ export type LlmTelemetryPayload =
  */
 export type LlmTelemetryEvent =
   | {
-      level: 'DEBUG';
+      level: 'INFO';
       context: 'LLM_ENGINE';
       message: string;
       statusCode: 200;

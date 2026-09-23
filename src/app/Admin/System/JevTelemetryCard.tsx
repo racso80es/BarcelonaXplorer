@@ -13,9 +13,10 @@ export interface JevTelemetryCardProps {
 }
 
 function createDefaultUseCase(): AuditJevHealthUseCasePort {
+  const telemetryRepo = new PrismaTelemetryRepository();
   return new AuditJevHealthUseCase(
-    new JevClient(),
-    new PrismaTelemetryRepository(),
+    new JevClient(undefined, telemetryRepo),
+    telemetryRepo,
   );
 }
 

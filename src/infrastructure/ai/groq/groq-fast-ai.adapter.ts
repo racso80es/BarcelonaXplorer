@@ -87,7 +87,7 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
       });
 
       const durationMs = Date.now() - startTime;
-      if (process.env.TELEMETRY_LLM_ENABLED === 'true' && this.telemetryRepo) {
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
         void this.telemetryRepo.log(
           new TelemetryEntry(
             'INFO',
@@ -107,7 +107,7 @@ export class GroqFastAiAdapter implements FastInteractionAiPort {
       return this.toReadableStream(stream);
     } catch (err) {
       const durationMs = Date.now() - startTime;
-      if (process.env.TELEMETRY_LLM_ENABLED === 'true' && this.telemetryRepo) {
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
         void this.telemetryRepo.log(
           new TelemetryEntry(
             'WARN',
