@@ -13,22 +13,32 @@ export const TriageStatusSchema = z.enum([
 export type TriageStatus = z.infer<typeof TriageStatusSchema>;
 
 /**
+ * Coordenadas GPS del explorador para anclaje perimetral.
+ */
+export const UserGpsLocationSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+
+export type UserGpsLocation = z.infer<typeof UserGpsLocationSchema>;
+
+/**
  * DTO de entrada para la evaluación de triaje (Laudo 2: Gobernanza del Estado).
- * Queda estrictamente prohibido recibir el estado acumulado desde el cliente.
- * El DTO de entrada solo contiene prompt, sessionId y opcionalmente matrixId.
+ * Acepta prompt, sessionId, opcionalmente matrixId y coordenadas GPS del dispositivo.
  */
 export const TriageInputSchema = z.object({
   sessionId: z.string().min(1, 'sessionId es requerido'),
   prompt: z.string().min(1, 'El prompt no puede estar vacío'),
   matrixId: z.string().default('default'),
+  userLocation: UserGpsLocationSchema.optional(),
 });
 
 export type TriageInputDto = z.infer<typeof TriageInputSchema>;
 
 /**
  * DTO de salida estructurada del resultado de la Aduana (Laudo 1: Endpoint Único).
- * Cuando el umbral de la matriz se satisface (DISPATCH_READY), incluye internamente
- * la ruta táctica forjada por el orquestador pesado (Gemini).
+ * Incluye la ruta táctica forjada si se satisface el umbral (DISPATCH_READY)
+ * y los distritos canónicos de Barcelona identificados.
  */
 export const TriageOutcomeDtoSchema = z.object({
   status: TriageStatusSchema,
@@ -41,6 +51,7 @@ export const TriageOutcomeDtoSchema = z.object({
   repromptMessage: z.string().optional(),
   missingVariable: z.string().optional(),
   rejectedEntity: z.string().optional(),
+  detectedDistricts: z.array(z.string()).optional(),
   payload: DefaultDensityPayloadSchema.optional(),
   route: z.unknown().optional(),
   durationMs: z.number(),

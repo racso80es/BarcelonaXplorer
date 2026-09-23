@@ -1,9 +1,11 @@
 import { TriageOutcomeDto, TriageStatus } from '../schemas/triage.schema';
 import { DefaultDensityPayload } from '../schemas/matrix';
+import { GeographicScope } from './geographic-scope.vo';
 
 /**
  * Value Object inmutable que modela y encapsula el resultado de la Aduana Universal (HU-CORE-TRIAGE-002).
- * Gobernado por los Laudos 1 (Endpoint Único con despacho interno de ruta) y 2 (Gobernanza del Estado).
+ * Gobernado por los Laudos 1 (Endpoint Único) y 2 (Gobernanza del Estado),
+ * e integrando el anclaje perimetral de Barcelona (HU-PERIM-GEO-001).
  */
 export class TriageOutcome {
   private constructor(
@@ -19,8 +21,13 @@ export class TriageOutcome {
     public readonly rejectedEntity?: string,
     public readonly payload?: DefaultDensityPayload,
     public readonly route?: unknown,
+    public readonly geographicScope?: GeographicScope,
+    public readonly detectedDistricts?: readonly string[],
     public readonly durationMs: number = 0,
   ) {
+    if (this.detectedDistricts) {
+      Object.freeze(this.detectedDistricts);
+    }
     Object.freeze(this);
   }
 
@@ -33,6 +40,7 @@ export class TriageOutcome {
     matrixId: string;
     bounceMessage: string;
     rejectedEntity?: string;
+    geographicScope?: GeographicScope;
     durationMs: number;
   }): TriageOutcome {
     return new TriageOutcome(
@@ -48,6 +56,8 @@ export class TriageOutcome {
       params.rejectedEntity,
       undefined,
       undefined,
+      params.geographicScope,
+      undefined,
       params.durationMs,
     );
   }
@@ -60,6 +70,8 @@ export class TriageOutcome {
     missingVariable: string;
     repromptMessage: string;
     partialPayload?: DefaultDensityPayload;
+    geographicScope?: GeographicScope;
+    detectedDistricts?: readonly string[];
     durationMs: number;
   }): TriageOutcome {
     return new TriageOutcome(
@@ -75,6 +87,8 @@ export class TriageOutcome {
       undefined,
       params.partialPayload,
       undefined,
+      params.geographicScope,
+      params.detectedDistricts,
       params.durationMs,
     );
   }
@@ -86,6 +100,8 @@ export class TriageOutcome {
     survivalThreshold: number;
     payload: DefaultDensityPayload;
     route?: unknown;
+    geographicScope?: GeographicScope;
+    detectedDistricts?: readonly string[];
     durationMs: number;
   }): TriageOutcome {
     return new TriageOutcome(
@@ -101,6 +117,8 @@ export class TriageOutcome {
       undefined,
       params.payload,
       params.route,
+      params.geographicScope,
+      params.detectedDistricts,
       params.durationMs,
     );
   }
@@ -117,6 +135,9 @@ export class TriageOutcome {
       repromptMessage: this.repromptMessage,
       missingVariable: this.missingVariable,
       rejectedEntity: this.rejectedEntity,
+      detectedDistricts: this.detectedDistricts
+        ? Array.from(this.detectedDistricts)
+        : undefined,
       payload: this.payload,
       route: this.route,
       durationMs: this.durationMs,

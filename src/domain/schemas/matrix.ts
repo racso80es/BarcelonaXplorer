@@ -19,6 +19,7 @@ export const DefaultDensityPayloadSchema = z.object({
   group_size: z.number().int().positive().optional(),
   vibe: z.string().optional(),
   constraints: z.array(z.string()).optional().default([]),
+  districts: z.array(z.string()).optional().default([]),
 });
 
 export type DefaultDensityPayload = z.infer<typeof DefaultDensityPayloadSchema>;

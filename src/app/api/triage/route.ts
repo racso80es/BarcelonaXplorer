@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       randomUUID();
 
     const matrixId = body?.matrixId || 'default';
+    const userLocation = body?.userLocation;
 
     const telemetryRepo = new PrismaTelemetryRepository();
     const decisionEngine = new JevClient(undefined, telemetryRepo);
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
       sessionId,
       prompt,
       matrixId,
+      userLocation,
     });
 
     const dto = outcome.toDto();

@@ -54,6 +54,13 @@ La evaluación de completitud se rige por el Catálogo de Matrices de Densidad t
   - Si $\sum \text{pesos} \ge 60\%$: Matriz saturada. Despacho interno a Gemini y limpieza del estado temporal en la sesión.
   - Si $\sum \text{pesos} < 60\%$: Persistencia en el backend del progreso parcial y formulación de repregunta atómica orientada a la variable con mayor peso faltante.
 
+> ### Laudo 3: Anclaje Perimetral y Localización en Barcelona (Integración HU-PERIM-GEO-001)
+> Se decreta el anclaje perimetral irrestricto de la Aduana Universal al término municipal de Barcelona y su infraestructura de acceso:
+> 1. **10 Distritos Canónicos**: Se reconocen y extraen automáticamente los 10 distritos oficiales: *Ciutat Vella, Eixample, Sants-Montjuïc, Les Corts, Sarrià-Sant Gervasi, Gràcia, Horta-Guinardó, Nou Barris, Sant Andreu, Sant Martí*. Estos distritos enriquecen la matriz de densidad (`districts`) y el prompt despachado al orquestador pesado.
+> 2. **Nodos Periurbanos Autorizados (Micro-Logística de Última Milla)**: Se toleran exclusivamente nodos de acceso y transporte periférico (*Aeropuerto Josep Tarradellas Barcelona-El Prat, Port de Barcelona - Terminales de Cruceros, Estació d’El Prat*). Cualquier otra entidad turística externa activa rebote inmediato.
+> 3. **Bounding Box GPS**: Se valida la geolocalización del dispositivo dentro del cuadrante $[41.317, 41.468]\text{N}, [2.052, 2.235]\text{E}$. Si el GPS está fuera del perímetro, solo se admite la petición si el prompt explicita una intención de viaje/planificación hacia Barcelona. De lo contrario, se emite un rebote táctico inmediato sin consumo de cuota de LLM.
+> 4. **Enriquecimiento Espacial del Despacho**: La petición enviada a Gemini inyecta de forma inmutable la geolocalización detectada: `[Geo: Barcelona | Distritos: <distritos> | GPS: <lat,lng>]`.
+
 ---
 
 ## 3. Componentes Arquitectónicos, Diagramas y Contratos de Código
@@ -135,13 +142,39 @@ src/
 
 #### DTO de Entrada Estricto (`src/domain/schemas/triage.schema.ts`)
 ```typescript
+export const UserGpsLocationSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+
 export const TriageInputSchema = z.object({
   sessionId: z.string().min(1, 'sessionId es requerido'),
   prompt: z.string().min(1, 'El prompt no puede estar vacío'),
   matrixId: z.string().default('default'),
+  userLocation: UserGpsLocationSchema.optional(),
 });
 
 export type TriageInputDto = z.infer<typeof TriageInputSchema>;
+```
+
+#### DTO de Salida Estructurado (`src/domain/schemas/triage.schema.ts`)
+```typescript
+export const TriageOutcomeDtoSchema = z.object({
+  status: TriageStatusSchema,
+  sessionId: z.string(),
+  matrixId: z.string(),
+  score: z.number().min(0).max(100),
+  survivalThreshold: z.number().min(0).max(100),
+  isThresholdSatisfied: z.boolean(),
+  bounceMessage: z.string().optional(),
+  repromptMessage: z.string().optional(),
+  missingVariable: z.string().optional(),
+  rejectedEntity: z.string().optional(),
+  detectedDistricts: z.array(z.string()).optional(),
+  payload: DefaultDensityPayloadSchema.optional(),
+  route: z.unknown().optional(),
+  durationMs: z.number(),
+});
 ```
 
 #### Puerto de Persistencia de Estado (`src/application/ports/out/density-matrix-repository.port.ts`)
@@ -172,6 +205,10 @@ export interface DensityMatrixRepositoryPort {
 | **Caso de Uso** | `TC-TRIAGE-09` | Error de red o timeout en Jev AI. | Aplica política Fail-Soft `Assume-Barcelona-Default`. | `outcome.status !== 'ERROR'`, no propaga excepción 500. |
 | **E2E Live** | `TC-TRIAGE-10` | Ejecución real contra API de Jev AI y Groq. | Evalúa Noul/Choice y genera repregunta en vivo. | Status esperado y tiempo de respuesta $< 1500$ ms. |
 | **UI** | `TC-TRIAGE-11` | Interacción en `OrchestratorPage` contra `/api/triage`. | Transición fluida de fases con chispa y ruta final. | Desmantelamiento de endpoints viejos verificado. |
+| **Localización** | `TC-TRIAGE-12` | Prompt menciona distrito canónico ("Gràcia"). | Extrae distrito canónico, enriquece matriz y prompt Gemini. | `outcome.detectedDistricts` contiene `'Gràcia'`. |
+| **Localización** | `TC-TRIAGE-13` | Nodo logístico periurbano ("Aeropuerto de El Prat"). | Reconoce micro-logística permitida, no emite rebote. | En scope con `outcome.detectedDistricts` correcto. |
+| **Localización** | `TC-TRIAGE-14` | GPS dentro del Bounding Box de Barcelona. | Valida coordenadas e inyecta en el prompt de despacho. | Prompt incluye `| GPS: 41.3851,2.1734`. |
+| **Localización** | `TC-TRIAGE-15` | GPS fuera de Bounding Box con prompt genérico vs explícito. | Rebote si es genérico; admisión si planifica viaje a Barcelona. | Rebote con `'Ubicación GPS fuera de perímetro'` si genérico. |
 
 ---
 
@@ -210,6 +247,26 @@ Y el sistema purga la memoria temporal de la matriz en la sesión
 Y la petición HTTP retorna un código 200 con status DISPATCH_READY y el objeto route completo en la misma llamada.
 ```
 
+### Escenario 4: Anclaje de Distritos Canónicos y Excepciones Periurbanas (Laudo 3)
+```gherkin
+Dado un prompt perimetral como "Ruta de 3 horas por Gràcia buscando tapas para 2 personas"
+O un prompt de tránsito como "Llegando al Aeropuerto de El Prat con 2 horas libres"
+Cuando la Aduana Universal evalúa la petición
+Entonces el motor reconoce el distrito canónico de Barcelona o la excepción periurbana de transporte
+Y el sistema inyecta la localización en el vector districts de la matriz de densidad
+Y el prompt despachado a Gemini se enriquece inmutablemente con "[Geo: Barcelona | Distritos: ...]"
+Y la petición no es rebotada.
+```
+
+### Escenario 5: Validación GPS de Bounding Box y Planificación Remota (Laudo 3)
+```gherkin
+Dado un explorador con coordenadas GPS fuera del Bounding Box de Barcelona ([41.317, 41.468], [2.052, 2.235])
+Cuando envía una consulta genérica sin mención a Barcelona ("Quiero un café cerca")
+Entonces la Aduana Universal emite un rebote táctico con entidad rechazada "Ubicación GPS fuera de perímetro"
+Pero si el explorador envía una consulta explícita hacia Barcelona ("Viajo a Barcelona mañana, ruta de 4h")
+Entonces la Aduana admite la consulta como planificación remota legítima y despacha al orquestador.
+```
+
 ---
 
 ## 6. Plan de Implementación Técnica (WBS) y Definición de Hecho (DoD)
@@ -219,17 +276,18 @@ Y la petición HTTP retorna un código 200 con status DISPATCH_READY y el objeto
 | ID | Capa | Tarea Técnica | Fichero Objetivo | Estatus |
 | :--- | :--- | :--- | :--- | :--- |
 | **T-TRIAGE-01** | Dominio | Esquemas Zod para la Matriz de Densidad Polimórfica y Catálogo | `src/domain/schemas/matrix.ts` | Completado |
-| **T-TRIAGE-02** | Dominio | DTOs de entrada y salida estrictos (Laudos 1 y 2) | `src/domain/schemas/triage.schema.ts` | Completado |
-| **T-TRIAGE-03** | Dominio | Value Object inmutable `TriageOutcome` con soporte de ruta | `src/domain/value-objects/triage-outcome.vo.ts` | Completado |
+| **T-TRIAGE-02** | Dominio | DTOs de entrada y salida estrictos (Laudos 1, 2 y 3) | `src/domain/schemas/triage.schema.ts` | Completado |
+| **T-TRIAGE-03** | Dominio | Value Object inmutable `TriageOutcome` con soporte de ruta y geolocalización | `src/domain/value-objects/triage-outcome.vo.ts` | Completado |
 | **T-TRIAGE-04** | Puertos | Extender `ITypedDecisionEngine` con firma `evaluateChoice` | `src/application/ports/out/ITypedDecisionEngine.ts` | Completado |
 | **T-TRIAGE-05** | Puertos | Puerto de persistencia de estado de matriz `DensityMatrixRepositoryPort` | `src/application/ports/out/density-matrix-repository.port.ts` | Completado |
 | **T-TRIAGE-06** | Puertos | Puerto de salida `IConversationalSLMPort` y puerto driver | `src/application/ports/out/conversational-slm.port.ts` | Completado |
 | **T-TRIAGE-07** | Infraestructura | Implementar `evaluateChoice` en `JevClient` con Zod y telemetría | `src/infrastructure/ai/jev/jevClient.ts` | Completado |
 | **T-TRIAGE-08** | Infraestructura | Repositorio `InMemoryDensityMatrixRepository` para gobernar estado multivuelta | `src/infrastructure/repositories/in-memory-density-matrix.repository.ts` | Completado |
 | **T-TRIAGE-09** | Infraestructura | Adaptador `GroqConversationalSlmAdapter` y prompts | `src/infrastructure/ai/groq/groq-conversational-slm.adapter.ts` | Completado |
-| **T-TRIAGE-10** | Aplicación | Orquestador `TriageInputUseCase` con Laudo 1 y Laudo 2 | `src/application/use-cases/triage-input.use-case.ts` | Completado |
+| **T-TRIAGE-10** | Aplicación | Orquestador `TriageInputUseCase` con Laudo 1, 2 y 3 (Anclaje Barcelona) | `src/application/use-cases/triage-input.use-case.ts` | Completado |
 | **T-TRIAGE-11** | BFF / API | Endpoint Único `/api/triage/route.ts` y desmantelamiento de rutas viejas | `src/app/api/triage/route.ts` | Completado |
 | **T-TRIAGE-12** | Pruebas | Suite Vitest completa (Dominio, Infra, Caso de Uso, E2E y UI) | `tests/...` | Completado |
+| **T-TRIAGE-13** | Dominio/App | Anclaje perimetral geográfico de Barcelona, distritos canónicos y GPS Bounding Box | `src/application/use-cases/triage-input.use-case.ts` | Completado |
 
 ### Definición de Hecho (Definition of Done)
 - [x] **DoD-1**: `npx tsc --noEmit` compila con código de salida 0, sin advertencias ni ocurrencias del tipo `any`.
@@ -239,3 +297,4 @@ Y la petición HTTP retorna un código 200 con status DISPATCH_READY y el objeto
 - [x] **DoD-5**: Laudo 1 cumplido: `/api/triage` consolidado como punto único frontal, orquestador pesado integrado internamente y `/api/orchestrator/fast|slow` desmantelados.
 - [x] **DoD-6**: Laudo 2 cumplido: `accumulatedPayload` erradicado del frontend; estado multivuelta gobernado soberanamente en backend mediante `DensityMatrixRepositoryPort` y `bx_session_id`.
 - [x] **DoD-7**: La especificación de HU-CORE-TRIAGE-002 cumple formalmente la Certificación S+ Grade y queda guardada en el repositorio.
+- [x] **DoD-8**: Laudo 3 cumplido: Anclaje geográfico estricto a Barcelona (10 distritos canónicos, excepciones periurbanas de transporte, Bounding Box GPS y enriquecimiento espacial de la matriz y despacho) verificado con pruebas automatizadas dedicadas.

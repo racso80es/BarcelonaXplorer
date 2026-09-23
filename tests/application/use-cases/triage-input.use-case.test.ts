@@ -212,4 +212,132 @@ describe('TriageInputUseCase (HU-CORE-TRIAGE-002: Orquestación del Triaje Entr�
     expect(mockRouteUseCase.execute).toHaveBeenCalledTimes(1);
     expect(outcome.route).toBeDefined();
   });
+
+  describe('Anclaje Perimetral Barcelona y Localización (HU-PERIM-GEO-001 & HU-CORE-TRIAGE-002)', () => {
+    it('Detecta distritos canónicos de Barcelona e inyecta en matriz y prompt enriquecido', async () => {
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'test-district-session',
+        prompt: 'Ruta de 3 horas por Gràcia buscando tapas para 2 personas',
+        matrixId: 'default',
+      });
+
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(outcome.detectedDistricts).toContain('Gràcia');
+      expect(outcome.payload?.districts).toContain('Gràcia');
+      expect(mockRouteUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('[Geo: Barcelona | Distritos: Gràcia]'),
+        }),
+      );
+    });
+
+    it('Tolera nodos logísticos periurbanos autorizados (Aeropuerto de El Prat)', async () => {
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'test-periurban-session',
+        prompt: 'Llego al Aeropuerto de El Prat y tengo 2 horas libres solo',
+        matrixId: 'default',
+      });
+
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(outcome.detectedDistricts).toContain('Aeropuerto de El Prat');
+      expect(mockRouteUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('Aeropuerto de El Prat'),
+        }),
+      );
+    });
+
+    it('Valida GPS dentro del Bounding Box de Barcelona e inyecta coordenadas en prompt', async () => {
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'test-gps-in-session',
+        prompt: 'Ruta de 2 horas para 1 persona buscando café',
+        matrixId: 'default',
+        userLocation: {
+          lat: 41.3851, // Plaça Catalunya (dentro de Bounding Box)
+          lng: 2.1734,
+        },
+      });
+
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(mockRouteUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('| GPS: 41.3851,2.1734'),
+        }),
+      );
+    });
+
+    it('Rebota petición con GPS fuera de Bounding Box si el prompt es genérico', async () => {
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'test-gps-out-session',
+        prompt: 'Quiero un café cerca en 1 hora',
+        matrixId: 'default',
+        userLocation: {
+          lat: 40.4168, // Madrid (fuera de Bounding Box)
+          lng: -3.7038,
+        },
+      });
+
+      expect(outcome.status).toBe('REBOUND_OUT_OF_SCOPE');
+      expect(outcome.rejectedEntity).toBe('Ubicación GPS fuera de perímetro');
+      expect(mockConversationalSlm.generateBounceMessage).toHaveBeenCalledWith(
+        'Ubicación GPS fuera de perímetro',
+        expect.any(String),
+      );
+    });
+
+    it('Permite planificación remota si GPS está fuera pero el prompt menciona Barcelona explícitamente', async () => {
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'test-gps-remote-session',
+        prompt: 'Viajo a Barcelona el fin de semana, ruta de 4 horas para 2 personas',
+        matrixId: 'default',
+        userLocation: {
+          lat: 40.4168, // Madrid
+          lng: -3.7038,
+        },
+      });
+
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(mockRouteUseCase.execute).toHaveBeenCalled();
+    });
+  });
 });

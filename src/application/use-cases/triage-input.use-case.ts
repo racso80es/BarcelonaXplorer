@@ -3,6 +3,8 @@ import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngi
 import { IConversationalSLMPort } from '@/application/ports/out/conversational-slm.port';
 import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
 import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
+import { HeuristicGeographicDecisionEngine } from '@/infrastructure/ai/rules/heuristic-geographic-decision-engine';
 import { GenerateTacticalRouteUseCase } from './generate-tactical-route.use-case';
 import {
   TriageInputDto,
@@ -13,6 +15,7 @@ import {
   DefaultDensityPayload,
 } from '@/domain/schemas/matrix';
 import { TriageOutcome } from '@/domain/value-objects/triage-outcome.vo';
+import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
 import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 
 /**
@@ -23,31 +26,17 @@ import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
  *   despacha internamente la ejecución hacia GenerateTacticalRouteUseCase (Gemini).
  * - Laudo 2 (Gobernanza del Estado Multivuelta): El estado acumulado se recupera
  *   y persiste soberanamente en el backend vía DensityMatrixRepositoryPort ligado a bx_session_id.
+ * - Anclaje Perimetral Barcelona (HU-PERIM-GEO-001): Validación de Bounding Box GPS,
+ *   reconocimiento de los 10 distritos canónicos y excepciones logísticas periurbanas.
  */
 export class TriageInputUseCase implements ITriageInputUseCasePort {
-  private static readonly FORBIDDEN_GEO_PATTERNS = [
-    'madrid',
-    'valencia',
-    'sevilla',
-    'bilbao',
-    'zaragoza',
-    'málaga',
-    'malaga',
-    'girona',
-    'tarragona',
-    'lleida',
-    'sitges',
-    'paris',
-    'roma',
-    'londres',
-  ];
-
   constructor(
     private readonly decisionEngine: ITypedDecisionEngine,
     private readonly conversationalSlm: IConversationalSLMPort,
     private readonly matrixRepo: DensityMatrixRepositoryPort,
     private readonly routeUseCase?: GenerateTacticalRouteUseCase,
     private readonly telemetryRepo?: TelemetryRepositoryPort,
+    private readonly geoEngine: GeographicDecisionEnginePort = new HeuristicGeographicDecisionEngine(),
   ) {}
 
   async execute(rawInput: TriageInputDto): Promise<TriageOutcome> {
@@ -68,38 +57,95 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       accumulated: priorPayload,
     });
 
-    // 3. Evaluación Perimetral (System One - Scope Barcelona)
-    const isExplicitlyForeign = this.detectForbiddenEntity(trimmedPrompt);
-
+    // 3. Evaluación Perimetral y Anclaje Geográfico de Barcelona (HU-PERIM-GEO-001)
     let isBarcelonaScope = true;
-    let rejectedEntity = isExplicitlyForeign ?? undefined;
+    let rejectedEntity: string | undefined = undefined;
+    const detectedDistricts: string[] = [];
 
-    if (isExplicitlyForeign) {
-      isBarcelonaScope = false;
-    } else {
-      try {
-        const scopeEval = await this.decisionEngine.evaluateNoul(
-          stateContext,
-          '¿La intención o consulta del usuario pertenece o se desarrolla dentro de la ciudad de Barcelona?',
-          0.5,
-        );
-        isBarcelonaScope = scopeEval.isAffirmative;
-        if (!isBarcelonaScope) {
-          rejectedEntity = 'Ubicación foránea';
+    // 3.1 Verificación de coordenadas GPS (si se proporcionan)
+    if (input.userLocation) {
+      const { lat, lng } = input.userLocation;
+      const isGpsWithinBox =
+        lat >= GeographicScope.BOUNDING_BOX.minLat &&
+        lat <= GeographicScope.BOUNDING_BOX.maxLat &&
+        lng >= GeographicScope.BOUNDING_BOX.minLng &&
+        lng <= GeographicScope.BOUNDING_BOX.maxLng;
+
+      if (!isGpsWithinBox) {
+        // Si el GPS está fuera del Bounding Box de Barcelona, comprobar si el prompt
+        // ancla explícitamente a Barcelona (planificación remota, p.ej. preparar viaje desde casa)
+        const normalizedPrompt = trimmedPrompt.toLowerCase();
+        const hasExplicitBarcelonaTarget =
+          normalizedPrompt.includes('barcelona') ||
+          GeographicScope.CANONICAL_DISTRICTS.some((d) =>
+            normalizedPrompt.includes(d.toLowerCase()),
+          ) ||
+          GeographicScope.PERIURBAN_EXCEPTIONS.some((h) =>
+            normalizedPrompt.includes(h.toLowerCase()),
+          );
+
+        if (!hasExplicitBarcelonaTarget) {
+          isBarcelonaScope = false;
+          rejectedEntity = 'Ubicación GPS fuera de perímetro';
         }
-      } catch (err: unknown) {
-        // Política Fail-Soft (Assume-Barcelona-Default) ante degradación de Jev AI
-        this.emitTelemetry({
-          level: 'WARN',
-          context: 'SECURITY_PERIMETER',
-          message: `[Aduana Jev Fall-Soft] Fallo en motor de triaje. Activada política Assume-Barcelona-Default: ${err instanceof Error ? err.message : 'Error desconocido'}`,
-          statusCode: 500,
-          durationMs: Date.now() - startTime,
-          payload: { prompt: trimmedPrompt, sessionId: input.sessionId },
-        });
-        isBarcelonaScope = true;
       }
     }
+
+    // 3.2 Evaluación semántica/heurística del texto si no fue rechazado por GPS
+    if (isBarcelonaScope) {
+      const geoResult = await this.geoEngine.evaluateScope(trimmedPrompt);
+
+      if (!geoResult.is_barcelona_scope) {
+        isBarcelonaScope = false;
+        rejectedEntity = geoResult.out_of_scope_entity ?? 'Ubicación foránea';
+      } else {
+        // Registrar distritos o excepciones periurbanas identificadas
+        for (const district of geoResult.detected_districts) {
+          if (!detectedDistricts.includes(district)) {
+            detectedDistricts.push(district);
+          }
+        }
+
+        // Si no se identificó explícitamente Barcelona ni ningún distrito ni excepción logística,
+        // validar con Jev AI la intención de Barcelona
+        const normalizedPrompt = trimmedPrompt.toLowerCase();
+        const hasExplicitScope =
+          normalizedPrompt.includes('barcelona') ||
+          detectedDistricts.length > 0;
+
+        if (!hasExplicitScope) {
+          try {
+            const scopeEval = await this.decisionEngine.evaluateNoul(
+              stateContext,
+              '¿La intención o consulta del usuario pertenece o se desarrolla dentro de la ciudad de Barcelona?',
+              0.5,
+            );
+            isBarcelonaScope = scopeEval.isAffirmative;
+            if (!isBarcelonaScope) {
+              rejectedEntity = 'Ubicación foránea';
+            }
+          } catch (err: unknown) {
+            // Política Fail-Soft (Assume-Barcelona-Default) ante degradación de Jev AI
+            this.emitTelemetry({
+              level: 'WARN',
+              context: 'SECURITY_PERIMETER',
+              message: `[Aduana Jev Fall-Soft] Fallo en motor de triaje. Activada política Assume-Barcelona-Default: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+              statusCode: 500,
+              durationMs: Date.now() - startTime,
+              payload: { prompt: trimmedPrompt, sessionId: input.sessionId },
+            });
+            isBarcelonaScope = true;
+          }
+        }
+      }
+    }
+
+    // Creación del Value Object GeographicScope
+    const geographicScope = !isBarcelonaScope
+      ? GeographicScope.createOutOfScope(rejectedEntity ?? 'Ubicación foránea')
+      : detectedDistricts.length > 0 || trimmedPrompt.toLowerCase().includes('barcelona')
+      ? GeographicScope.createExplicitInScope(detectedDistricts)
+      : GeographicScope.createImplicitBarcelona();
 
     // FLUJO 1: REBOTE GEOGRÁFICO (< 200 ms)
     if (!isBarcelonaScope) {
@@ -129,6 +175,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         matrixId,
         bounceMessage,
         rejectedEntity: entityToBounce,
+        geographicScope,
         durationMs,
       });
     }
@@ -138,6 +185,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       trimmedPrompt,
       stateContext,
       priorPayload,
+      detectedDistricts,
     );
 
     // 5. Evaluación del Peaje Termodinámico (Reglas de Matriz HU 6)
@@ -169,6 +217,8 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         missingVariable: missingVar,
         repromptMessage,
         partialPayload: mergedPayload,
+        geographicScope,
+        detectedDistricts,
         durationMs,
       });
     }
@@ -177,7 +227,12 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     // Laudo 1: Despacho interno unificado hacia el orquestador pesado (Gemini)
     let forgedRoute: unknown = undefined;
     if (this.routeUseCase) {
-      const enrichedPrompt = `[Geo: Barcelona] ${trimmedPrompt} | Contexto de Matriz: ${JSON.stringify(mergedPayload)}`;
+      const districtsLabel =
+        detectedDistricts.length > 0 ? detectedDistricts.join(', ') : 'Global';
+      const gpsLabel = input.userLocation
+        ? ` | GPS: ${input.userLocation.lat},${input.userLocation.lng}`
+        : '';
+      const enrichedPrompt = `[Geo: Barcelona | Distritos: ${districtsLabel}${gpsLabel}] ${trimmedPrompt} | Contexto de Matriz: ${JSON.stringify(mergedPayload)}`;
       forgedRoute = await this.routeUseCase.execute({
         prompt: enrichedPrompt,
         environment: {
@@ -197,29 +252,26 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       survivalThreshold: density.survivalThreshold,
       payload: mergedPayload,
       route: forgedRoute,
+      geographicScope,
+      detectedDistricts,
       durationMs,
     });
-  }
-
-  private detectForbiddenEntity(prompt: string): string | null {
-    const normalized = prompt.toLowerCase();
-    for (const pattern of TriageInputUseCase.FORBIDDEN_GEO_PATTERNS) {
-      const regex = new RegExp(`\\b${pattern}\\b`, 'i');
-      if (regex.test(normalized)) {
-        return pattern.charAt(0).toUpperCase() + pattern.slice(1);
-      }
-    }
-    return null;
   }
 
   private async extractMatrixVariables(
     prompt: string,
     stateContext: string,
     priorPayload: Partial<DefaultDensityPayload>,
+    detectedDistricts: readonly string[] = [],
   ): Promise<DefaultDensityPayload> {
+    const combinedDistricts = Array.from(
+      new Set([...(priorPayload.districts ?? []), ...detectedDistricts]),
+    );
+
     const payload: DefaultDensityPayload = {
       constraints: [],
       ...priorPayload,
+      districts: combinedDistricts,
     };
 
     // 1. time_window (Vector Crítico de 60%)
@@ -296,3 +348,4 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     });
   }
 }
+
