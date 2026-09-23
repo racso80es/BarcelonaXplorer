@@ -21,8 +21,8 @@ describe('TriageInputUseCase (HU-CORE-TRIAGE-002: Orquestación del Triaje Entr�
     mockDecisionEngine = {
       evaluateHealth: vi.fn(),
       evaluateNoul: vi.fn().mockImplementation(async (_state, instruction) => {
-        if (instruction.includes('Barcelona')) {
-          return { probability: 0.95, isAffirmative: true };
+        if (instruction.includes('fuera')) {
+          return { probability: 0.05, isAffirmative: false };
         }
         if (instruction.includes('tiempo') || instruction.includes('horas')) {
           return { probability: 0.1, isAffirmative: false };
@@ -338,6 +338,31 @@ describe('TriageInputUseCase (HU-CORE-TRIAGE-002: Orquestación del Triaje Entr�
 
       expect(outcome.status).toBe('DISPATCH_READY');
       expect(mockRouteUseCase.execute).toHaveBeenCalled();
+    });
+
+    it('TC-TRIAGE-16: Fricción Cero - Prompt implícito en Barcelona sin mención geográfica ("Dos parejas disponen del dia...") satura matriz y despacha a Gemini', async () => {
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'test-zero-friction-session',
+        prompt: 'Dos parejas disponen del dia para disfrutar al máximo. Deportes, buena comida, espectáculos musicales y salas de fiesta',
+        matrixId: 'default',
+      });
+
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(outcome.isThresholdSatisfied).toBe(true);
+      expect(outcome.score).toBeGreaterThanOrEqual(60);
+      expect(outcome.payload?.group_size).toBe(4);
+      expect(outcome.payload?.time_window).toBeDefined();
+      expect(outcome.payload?.vibe).toBeDefined();
+      expect(outcome.geographicScope?.targetCity).toBe('Barcelona');
+      expect(mockRouteUseCase.execute).toHaveBeenCalledTimes(1);
     });
   });
 });

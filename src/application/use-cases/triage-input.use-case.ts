@@ -106,23 +106,25 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
           }
         }
 
-        // Si no se identificó explícitamente Barcelona ni ningún distrito ni excepción logística,
-        // validar con Jev AI la intención de Barcelona
+        // Fricción Cero (HU-PERIM-GEO-001): Si el prompt no menciona una entidad foránea,
+        // se asume Barcelona por defecto (Implicit Barcelona).
+        // Solo invocamos a Jev AI si no hay anclaje explícito para descartar desvíos foráneos sutiles.
         const normalizedPrompt = trimmedPrompt.toLowerCase();
-        const hasExplicitScope =
+        const hasExplicitAnchor =
           normalizedPrompt.includes('barcelona') ||
           detectedDistricts.length > 0;
 
-        if (!hasExplicitScope) {
+        if (!hasExplicitAnchor) {
           try {
-            const scopeEval = await this.decisionEngine.evaluateNoul(
+            const foreignEval = await this.decisionEngine.evaluateNoul(
               stateContext,
-              '¿La intención o consulta del usuario pertenece o se desarrolla dentro de la ciudad de Barcelona?',
-              0.5,
+              '¿El usuario solicita explícitamente viajar o realizar actividades fuera del municipio de Barcelona (en otra ciudad, región o país)?',
+              0.6,
             );
-            isBarcelonaScope = scopeEval.isAffirmative;
-            if (!isBarcelonaScope) {
-              rejectedEntity = 'Ubicación foránea';
+            // Solo si Jev AI afirma positivamente (> 0.6) que es un destino fuera de Barcelona, se activa el rebote
+            if (foreignEval.isAffirmative) {
+              isBarcelonaScope = false;
+              rejectedEntity = 'Destino foráneo';
             }
           } catch (err: unknown) {
             // Política Fail-Soft (Assume-Barcelona-Default) ante degradación de Jev AI
@@ -277,7 +279,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     // 1. time_window (Vector Crítico de 60%)
     if (!payload.time_window) {
       const hasExplicitTime =
-        /\b(\d+\s*(horas?|h|días?)|todo el \w+|por la (mañana|tarde|noche)|fin de semana|sábado|domingo|hoy|mañana)\b/i.test(
+        /\b(\d+\s*(horas?|h|d[ií]as?)|todo el \w+|por la (ma[ñn]ana|tarde|noche)|fin de semana|s[aá]bado|domingo|hoy|ma[ñn]ana|(el|del|durante el)\s*d[ií]a|durante el d[ií]a)\b/i.test(
           prompt,
         );
 
@@ -304,17 +306,23 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       const match = prompt.match(/\b(\d+)\s*(personas?|amigos?|pax)\b/i);
       if (match && match[1]) {
         payload.group_size = parseInt(match[1], 10);
-      } else if (/\b(en pareja|con mi pareja|dos personas|con un amigo)\b/i.test(prompt)) {
+      } else if (/\b(dos parejas)\b/i.test(prompt)) {
+        payload.group_size = 4;
+      } else if (/\b(tres parejas)\b/i.test(prompt)) {
+        payload.group_size = 6;
+      } else if (/\b(en pareja|con mi pareja|dos personas|con un amigo|una pareja)\b/i.test(prompt)) {
         payload.group_size = 2;
       } else if (/\b(solo|sola|por mi cuenta)\b/i.test(prompt)) {
         payload.group_size = 1;
+      } else if (/\b(familia)\b/i.test(prompt)) {
+        payload.group_size = 4;
       }
     }
 
     // 3. vibe (15%)
     if (!payload.vibe) {
       const vibeMatch = prompt.match(
-        /\b(modernis\w+|gótico|gotico|tapas|gastronom\w+|fiesta|nocturn\w+|cultural|relax|playa)\b/i,
+        /\b(modernis\w+|g[oó]tico|tapas|gastronom\w+|comida|restauran\w+|fiesta|nocturn\w+|cultural|relax|playa|deport\w+|m[uú]sic\w+|espect[aá]cul\w+|ocio|arte|museo\w*)\b/i,
       );
       if (vibeMatch) {
         payload.vibe = vibeMatch[0];

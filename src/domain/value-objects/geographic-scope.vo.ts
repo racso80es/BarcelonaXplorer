@@ -47,6 +47,43 @@ export class GeographicScope {
     maxLng: 2.235,
   } as const;
 
+  /** Mapeo de barrios emblemáticos y cuadrantes históricos a distritos canónicos oficiales */
+  public static readonly CANONICAL_NEIGHBORHOODS: Record<string, CanonicalDistrict> = {
+    'barceloneta': 'Ciutat Vella',
+    'la barceloneta': 'Ciutat Vella',
+    'born': 'Ciutat Vella',
+    'el born': 'Ciutat Vella',
+    'la ribera': 'Ciutat Vella',
+    'raval': 'Ciutat Vella',
+    'el raval': 'Ciutat Vella',
+    'gòtic': 'Ciutat Vella',
+    'gotic': 'Ciutat Vella',
+    'gótico': 'Ciutat Vella',
+    'gotico': 'Ciutat Vella',
+    'barri gòtic': 'Ciutat Vella',
+    'barrio gótico': 'Ciutat Vella',
+    'sagrada família': 'Eixample',
+    'sagrada familia': 'Eixample',
+    'sant antoni': 'Eixample',
+    'poblenou': 'Sant Martí',
+    'el poblenou': 'Sant Martí',
+    'vila olímpica': 'Sant Martí',
+    'villa olímpica': 'Sant Martí',
+    'poble-sec': 'Sants-Montjuïc',
+    'poble sec': 'Sants-Montjuïc',
+    'poblesec': 'Sants-Montjuïc',
+    'montjuïc': 'Sants-Montjuïc',
+    'montjuic': 'Sants-Montjuïc',
+    'pedralbes': 'Les Corts',
+    'sarrià': 'Sarrià-Sant Gervasi',
+    'sarria': 'Sarrià-Sant Gervasi',
+    'tibidabo': 'Sarrià-Sant Gervasi',
+    'parc güell': 'Gràcia',
+    'park güell': 'Gràcia',
+    'parque güell': 'Gràcia',
+    'vila de gràcia': 'Gràcia',
+  } as const;
+
   private constructor(
     public readonly isWithinScope: boolean,
     public readonly targetCity: string,

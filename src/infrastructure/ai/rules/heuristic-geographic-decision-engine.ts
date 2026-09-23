@@ -70,11 +70,18 @@ export class HeuristicGeographicDecisionEngine implements GeographicDecisionEngi
       }
     }
 
-    // 3. Extracción de distritos canónicos de Barcelona
+    // 3. Extracción de distritos canónicos y barrios emblemáticos de Barcelona
     const detectedDistricts: string[] = [];
     for (const district of GeographicScope.CANONICAL_DISTRICTS) {
       if (normalizedPrompt.includes(district.toLowerCase())) {
         detectedDistricts.push(district);
+      }
+    }
+    for (const [neighborhood, district] of Object.entries(GeographicScope.CANONICAL_NEIGHBORHOODS)) {
+      if (normalizedPrompt.includes(neighborhood.toLowerCase())) {
+        if (!detectedDistricts.includes(district)) {
+          detectedDistricts.push(district);
+        }
       }
     }
 
