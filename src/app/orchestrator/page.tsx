@@ -66,99 +66,112 @@ export default function OrchestratorPage() {
       const userPrompt = currentTurn.userPrompt;
 
       try {
-        // 1. Streaming Vía Rápida (NDJSON - FastInsight Domain DTO)
-        const fastRes = await fetch('/api/orchestrator/fast', {
+        // Laudo 1: Endpoint Único /api/triage (Aduana Universal + Despacho Interno)
+        const triageRes = await fetch('/api/triage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: userPrompt }),
         });
 
-        if (fastRes.body) {
-          const reader = fastRes.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
+        const triageData = await triageRes.json().catch(() => ({}));
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        // Chispa táctica de diagnóstico de aduana
+        const triageSpark: Omit<TacticalSparkProps, 'icon'> = {
+          id: `${turnId}-ts-${Date.now()}`,
+          type: triageData.status === 'DISPATCH_READY' ? 'logistics' : 'weather',
+          insight:
+            triageData.status === 'DISPATCH_READY'
+              ? 'Matriz saturada (>= 60%). Itinerario forjado internamente.'
+              : triageData.status === 'INCOMPLETE_REPROMPT'
+                ? `Matriz incompleta (${triageData.score}%). Variable crítica: ${triageData.missingVariable}`
+                : 'Petición fuera de perímetro geográfico.',
+          urgency: triageData.status === 'REBOUND_OUT_OF_SCOPE' ? 'high' : 'medium',
+        };
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              try {
-                const fastInsight = JSON.parse(line);
-                
-                // Mapeo de Frontera: Capa Dominio (FastInsight) -> Capa Presentación (TacticalSparkProps)
-                const mappedType = fastInsight.category === 'environmental' ? 'weather' : 
-                                   fastInsight.category === 'security' ? 'security' : 'logistics';
-                
-                const mappedUrgency = fastInsight.severityLevel === 3 ? 'high' : 
-                                      fastInsight.severityLevel === 2 ? 'medium' : 'low';
-
-                const newSpark: Omit<TacticalSparkProps, 'icon'> = {
-                  id: `${turnId}-ts-${Date.now()}-${Math.random()}`,
-                  type: mappedType,
-                  insight: fastInsight.observation || 'Insight decodificado',
-                  urgency: mappedUrgency
-                };
-                
-                if (isSubscribed) {
-                  setTurns(prev => prev.map(t => t.id === turnId ? { ...t, sparks: [...t.sparks, newSpark] } : t));
-                }
-              } catch (e) {
-                console.warn('Error parsing JSON line:', line);
-              }
-            }
-          }
+        if (isSubscribed) {
+          setTurns((prev) =>
+            prev.map((t) =>
+              t.id === turnId ? { ...t, sparks: [...t.sparks, triageSpark] } : t,
+            ),
+          );
         }
 
-        // 2. Resolución Vía Lenta (TacticalRoute Domain Entity)
-        const slowRes = await fetch('/api/orchestrator/slow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            context: {
-              localTime: new Date().toISOString(),
-            },
-          }),
-        });
-
-        // Manejo determinista de HTTP 422 (Claudicación controlada)
-        if (slowRes.status === 422) {
-          const claudicationData = await slowRes.json().catch(() => ({}));
-          const claudicationMsg = claudicationData.error || claudicationData.response || 'No se pudo forjar la ruta.';
+        // Manejo determinista de estados
+        if (triageRes.status === 422 || triageData.status === 'REBOUND_OUT_OF_SCOPE') {
+          const bounceMsg =
+            triageData.bounceMessage ||
+            triageData.error ||
+            'Destino fuera del perímetro de Barcelona.';
           if (isSubscribed) {
-            setTurns(prev => prev.map(t => t.id === turnId ? { 
-              ...t, 
-              status: 'completed',
-              aiResponse: claudicationMsg
-            } : t));
+            setTurns((prev) =>
+              prev.map((t) =>
+                t.id === turnId
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: bounceMsg,
+                    }
+                  : t,
+              ),
+            );
           }
           return;
         }
 
-        const slowData = await slowRes.json();
-        
-        if (isSubscribed) {
-          setTurns(prev => prev.map(t => t.id === turnId ? { 
-            ...t, 
-            status: 'completed',
-            aiResponse: slowData.response
-          } : t));
+        if (triageData.status === 'INCOMPLETE_REPROMPT') {
+          const repromptMsg =
+            triageData.repromptMessage ||
+            '¿Podrías especificar los horarios o tiempo disponible?';
+          if (isSubscribed) {
+            setTurns((prev) =>
+              prev.map((t) =>
+                t.id === turnId
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: repromptMsg,
+                    }
+                  : t,
+              ),
+            );
+          }
+          return;
         }
 
+        // DISPATCH_READY: Ruta táctica completa
+        const routeData =
+          triageData.route ||
+          triageData.payload ||
+          'Ruta táctica forjada con éxito.';
+
+        if (isSubscribed) {
+          setTurns((prev) =>
+            prev.map((t) =>
+              t.id === turnId
+                ? {
+                    ...t,
+                    status: 'completed',
+                    aiResponse: routeData,
+                  }
+                : t,
+            ),
+          );
+        }
       } catch (error) {
         console.error('Orchestration Error:', error);
         if (isSubscribed) {
-          setTurns(prev => prev.map(t => t.id === turnId ? { 
-            ...t, 
-            status: 'completed',
-            aiResponse: 'Error de comunicación táctica. Proceda con precaución manual.'
-          } : t));
+          setTurns((prev) =>
+            prev.map((t) =>
+              t.id === turnId
+                ? {
+                    ...t,
+                    status: 'completed',
+                    aiResponse:
+                      'Error de comunicación táctica. Proceda con precaución manual.',
+                  }
+                : t,
+            ),
+          );
         }
       }
     };

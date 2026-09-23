@@ -1,5 +1,6 @@
 import {
   ITypedDecisionEngine,
+  JevChoiceEvaluation,
   JevDecisionProbeResult,
   JevNoulEvaluation,
 } from '@/application/ports/out/ITypedDecisionEngine';
@@ -7,6 +8,7 @@ import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repos
 import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 import { getJevConfig, JevConfig } from './config';
 import {
+  JevChoiceAnswerSchema,
   JevModelsResponseSchema,
   JevNoulAnswerSchema,
   JevSystemOneResponseSchema,
@@ -216,6 +218,112 @@ export class JevClient implements ITypedDecisionEngine {
               model: this.config.defaultModel,
               state,
               instruction,
+              error: err instanceof Error ? err.message : String(err),
+              durationMs,
+            },
+            500,
+            durationMs,
+          ),
+        ).catch((e) => console.warn('[Telemetry Jev Fire-and-Forget Error]', e));
+      }
+
+      throw err;
+    }
+  }
+
+  async evaluateChoice<T extends string>(
+    state: string,
+    instruction: string,
+    choices: readonly T[],
+  ): Promise<JevChoiceEvaluation<T>> {
+    if (!this.config.apiKey) {
+      throw new Error('JEV_API_KEY no configurada');
+    }
+
+    const payload = {
+      model: this.config.defaultModel,
+      state,
+      questions: {
+        eval_question: {
+          type: 'choice',
+          instructions: instruction,
+          choices: Array.from(choices),
+        },
+      },
+    };
+
+    const startTime = Date.now();
+
+    try {
+      const response = await fetch(`${this.config.baseUrl}/v1/systemone`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Jev AI /v1/systemone error: HTTP ${response.status}`);
+      }
+
+      const rawJson: unknown = await response.json();
+      const parsed = JevSystemOneResponseSchema.parse(rawJson);
+      const rawAnswer = parsed.answers['eval_question'];
+      const parsedChoice = JevChoiceAnswerSchema.safeParse(rawAnswer);
+
+      if (!parsedChoice.success) {
+        throw new Error('Respuesta malformada de Jev AI para pregunta choice');
+      }
+
+      const durationMs = Date.now() - startTime;
+      const selectedChoice = parsedChoice.data.choice as T;
+      const confidence = parsedChoice.data.confidence;
+      const probabilities = parsedChoice.data.probabilities as Record<T, number>;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'INFO',
+            'LLM_ENGINE',
+            `[Jev AI System One Choice] Inferencia evaluada | Modelo: ${this.config.defaultModel}`,
+            {
+              model: this.config.defaultModel,
+              state,
+              instruction,
+              choices: Array.from(choices),
+              selectedChoice,
+              confidence,
+              durationMs,
+            },
+            200,
+            durationMs,
+          ),
+        ).catch((e) => console.warn('[Telemetry Jev Fire-and-Forget Error]', e));
+      }
+
+      return {
+        selectedChoice,
+        confidence,
+        probabilities,
+      };
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'ERROR',
+            'LLM_ENGINE',
+            `[Jev AI System One Choice] Fallo en inferencia: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+            {
+              model: this.config.defaultModel,
+              state,
+              instruction,
+              choices: Array.from(choices),
               error: err instanceof Error ? err.message : String(err),
               durationMs,
             },

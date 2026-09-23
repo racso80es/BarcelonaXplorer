@@ -51,4 +51,17 @@ export interface ITypedDecisionEngine {
     instruction: string,
     threshold?: number,
   ): Promise<JevNoulEvaluation>;
+
+  /**
+   * Evalúa una selección categórica sobre un estado o texto entre una lista tipada de opciones.
+   *
+   * @param state Contenido o contexto a evaluar.
+   * @param instruction Pregunta o directriz de categorización.
+   * @param choices Opciones disponibles para la selección.
+   */
+  evaluateChoice<T extends string>(
+    state: string,
+    instruction: string,
+    choices: readonly T[],
+  ): Promise<JevChoiceEvaluation<T>>;
 }

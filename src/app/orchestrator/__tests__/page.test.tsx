@@ -2,45 +2,37 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import OrchestratorPage from '@/app/orchestrator/page';
 
-describe('OrchestratorPage Choreography', () => {
+describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)', () => {
   beforeEach(() => {
     // Interceptar scrollIntoView y scrollTo que no están implementados en jsdom
     window.HTMLElement.prototype.scrollIntoView = vi.fn();
     window.HTMLElement.prototype.scrollTo = vi.fn();
 
     global.fetch = vi.fn(async (url) => {
-      if (url === '/api/orchestrator/fast') {
-        const stream = new ReadableStream({
-          start(controller) {
-            const encoder = new TextEncoder();
-            controller.enqueue(encoder.encode(JSON.stringify({ category: 'environmental', observation: 'Lluvia detectada mock', severityLevel: 3 }) + '\n'));
-            setTimeout(() => {
-              controller.enqueue(encoder.encode(JSON.stringify({ category: 'security', observation: 'Aviso de seguridad mock', severityLevel: 2 }) + '\n'));
-              controller.close();
-            }, 100);
-          }
-        });
-        return { body: stream } as any;
-      }
-      
-      if (url === '/api/orchestrator/slow') {
+      if (url === '/api/triage') {
         return {
-          json: async () => ({ 
-            response: {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            status: 'DISPATCH_READY',
+            score: 100,
+            survivalThreshold: 60,
+            isThresholdSatisfied: true,
+            route: {
               id: 'route-mock',
               summary: 'Ruta Táctica Consolidada mock',
               waypoints: [
-                { id: 'wp1', title: 'Inicio Seguro', description: 'Comienza aquí', recommendations: [] }
-              ]
-            }
-          })
+                { id: 'wp1', title: 'Inicio Seguro', description: 'Comienza aquí', recommendations: [] },
+              ],
+            },
+          }),
         } as any;
       }
-      
+
       return {} as any;
     });
   });
@@ -55,7 +47,7 @@ describe('OrchestratorPage Choreography', () => {
     expect(screen.getByText(/SISTEMA EN ESPERA/i)).toBeDefined();
   });
 
-  it('transitions from Fase 0 to Fase 3 using real timers', async () => {
+  it('transitions from Fase 0 to Fase 3 using unified /api/triage', async () => {
     render(<OrchestratorPage />);
     const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
     const button = screen.getByRole('button');
@@ -66,10 +58,10 @@ describe('OrchestratorPage Choreography', () => {
     // Debe mostrar Asimilando (Fase 2)
     expect(await screen.findByText(/Asimilando entropía/i, {}, { timeout: 1000 })).toBeDefined();
 
-    // Debe mostrar la primera chispa
-    expect(await screen.findByText(/Lluvia detectada/i, {}, { timeout: 2000 })).toBeDefined();
+    // Debe mostrar la chispa táctica de diagnóstico de aduana
+    expect(await screen.findByText(/Matriz saturada/i, {}, { timeout: 2000 })).toBeDefined();
 
     // Debe mostrar la resolución final (Fase 3)
     expect(await screen.findByText(/Ruta Táctica Consolidada/i, {}, { timeout: 4500 })).toBeDefined();
-  }, 10000); // Dar suficiente timeout al test
+  }, 10000);
 });
