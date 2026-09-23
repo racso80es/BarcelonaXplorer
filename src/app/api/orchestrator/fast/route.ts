@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { GenerateFastRadarUseCase } from '@/application/use-cases/generate-fast-radar.use-case';
 import { GroqFastAiAdapter } from '@/infrastructure/ai/groq/groq-fast-ai.adapter';
+import { ValidateGeographicScopeUseCase } from '@/application/use-cases/validate-geographic-scope.use-case';
+import { HeuristicGeographicDecisionEngine } from '@/infrastructure/ai/rules/heuristic-geographic-decision-engine';
+import { GroqGeographicBounceGenerator } from '@/infrastructure/ai/groq/groq-geographic-bounce-generator';
 
 export const runtime = 'edge';
 
@@ -15,11 +18,33 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // 1. Aduana Universal: Triaje Geográfico Perimetral (HU-PERIM-GEO-001)
+    const decisionEngine = new HeuristicGeographicDecisionEngine();
+    const bounceGenerator = new GroqGeographicBounceGenerator();
+    const geoUseCase = new ValidateGeographicScopeUseCase(decisionEngine, bounceGenerator);
+
+    const geoOutcome = await geoUseCase.execute({ prompt });
+
+    if (geoOutcome.status === 'REJECTED_OUT_OF_SCOPE') {
+      return new Response(
+        JSON.stringify({
+          status: 'REJECTED_OUT_OF_SCOPE',
+          error: geoOutcome.bounceMessage,
+          rejectedEntity: geoOutcome.rejectedEntity,
+        }),
+        {
+          status: 422,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    // 2. Inferencia Rápida: Contexto Enriquecido con Barcelona
     const adapter = new GroqFastAiAdapter();
     const useCase = new GenerateFastRadarUseCase(adapter);
 
     const stream = await useCase.execute({
-      intention: prompt,
+      intention: geoOutcome.enrichedPrompt,
       localTime: new Date().toISOString(),
     });
 
@@ -30,7 +55,7 @@ export async function POST(req: NextRequest) {
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fast API Error:', error);
     return new Response(JSON.stringify({ error: 'Failed to process fast radar' }), {
       status: 500,

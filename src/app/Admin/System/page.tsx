@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, Globe, Activity } from 'lucide-react';
 import { AiTelemetryCard, AiTelemetryCardSkeleton } from './AiTelemetryCard';
 import { GroqTelemetryCard, GroqTelemetryCardSkeleton } from './GroqTelemetryCard';
+import { JevTelemetryCard, JevTelemetryCardSkeleton } from './JevTelemetryCard';
 import {
   TelemetryRecentLogsCard,
   TelemetryRecentLogsCardSkeleton,
@@ -17,8 +18,9 @@ export default async function SystemAdmin() {
   try {
     await prisma.$queryRaw`SELECT 1`;
     dbStatus = { ok: true, msg: 'Conexión S+ Grade Establecida' };
-  } catch (error: any) {
-    dbStatus = { ok: false, msg: `Fallo: ${error.message || 'Desconocido'}` };
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Desconocido';
+    dbStatus = { ok: false, msg: `Fallo: ${errMessage}` };
   }
 
   let netStatus = { ok: false, msg: 'Desconectada' };
@@ -31,7 +33,7 @@ export default async function SystemAdmin() {
 
   return (
     <div className="min-h-screen bg-surface-canvas text-content-primary p-4 sm:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+      <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
         <div className="flex items-center space-x-3 border-b border-layout-divider pb-4">
           <Activity className="text-emerald-600 w-7 h-7 sm:w-8 sm:h-8" />
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-content-primary">
@@ -39,7 +41,7 @@ export default async function SystemAdmin() {
           </h1>
         </div>
         
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {/* Tarjeta MySQL */}
           <Card className="bg-surface-container border-layout-divider shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -84,6 +86,11 @@ export default async function SystemAdmin() {
           {/* Tarjeta Motor Rápido Groq */}
           <Suspense fallback={<GroqTelemetryCardSkeleton />}>
             <GroqTelemetryCard />
+          </Suspense>
+
+          {/* Tarjeta Motor Decisión Jev AI (System One) */}
+          <Suspense fallback={<JevTelemetryCardSkeleton />}>
+            <JevTelemetryCard />
           </Suspense>
         </div>
 
