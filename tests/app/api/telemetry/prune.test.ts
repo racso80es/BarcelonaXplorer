@@ -19,9 +19,10 @@ describe('Route Handler: POST /api/telemetry/prune', () => {
 
   afterEach(() => {
     process.env = ORIGINAL_ENV;
+    vi.unstubAllEnvs();
   });
 
-  it('debe rechazar con 401 Unauthorized si falta el token o no coincide con CRON_SECRET', async () => {
+  it('debe rechazar con 401 Unauthorized si falta el token o no coincide con CRON_SECRET en tiempo constante', async () => {
     const request = new NextRequest('http://localhost:3000/api/telemetry/prune', {
       method: 'POST',
       headers: {
@@ -31,6 +32,8 @@ describe('Route Handler: POST /api/telemetry/prune', () => {
 
     const response = await POST(request);
     expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.error).toContain('Token de mantenimiento inválido o ausente');
   });
 
   it('debe responder 200 OK y ejecutar la poda ontológica si el Bearer token es válido', async () => {
@@ -67,5 +70,19 @@ describe('Route Handler: POST /api/telemetry/prune', () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.success).toBe(true);
+  });
+
+  it('debe rechazar bajo política Fail-Closed si NODE_ENV es production y CRON_SECRET no está configurada', async () => {
+    process.env = { ...ORIGINAL_ENV, NODE_ENV: 'production' };
+    delete process.env.CRON_SECRET;
+
+    const request = new NextRequest('http://localhost:3000/api/telemetry/prune', {
+      method: 'POST',
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.error).toContain('Seguridad Fail-Closed: CRON_SECRET no está configurada en producción');
   });
 });

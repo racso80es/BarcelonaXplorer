@@ -8,16 +8,20 @@ import {
   TelegramGetMeResponseSchema,
   TelegramGetWebhookInfoResponseSchema,
 } from '@/domain/schemas/telegram-webhook.schema';
+import { constantTimeEqualSync } from '@/infrastructure/security/crypto.utils';
 
-function constantTimeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
+/**
+ * Expresión regular que detecta y redacta tokens de la Telegram Bot API en URLs o cadenas de error.
+ * Formato URL estándar: https://api.telegram.org/bot<TOKEN>/<METODO>
+ */
+const TELEGRAM_TOKEN_URL_REGEX = /\/bot[^\/\s?]+/gi;
+
+function redactSensitiveData(message: string, botToken?: string): string {
+  let redacted = message.replace(TELEGRAM_TOKEN_URL_REGEX, '/bot[REDACTED_TOKEN]');
+  if (botToken && botToken.trim().length > 0) {
+    redacted = redacted.replaceAll(botToken, '[REDACTED_TOKEN]');
   }
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return mismatch === 0;
+  return redacted;
 }
 
 /**
@@ -37,19 +41,44 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
   private readonly probeTimeoutMs: number;
   /** Timeout para operaciones de envío (sendMessage) en ms */
   private readonly sendTimeoutMs: number;
+  private readonly enabled: boolean;
 
-  constructor(botToken?: string, webhookSecret?: string, options?: { probeTimeoutMs?: number; sendTimeoutMs?: number }) {
+  constructor(
+    botToken?: string,
+    webhookSecret?: string,
+    options?: { probeTimeoutMs?: number; sendTimeoutMs?: number; enabled?: boolean }
+  ) {
     this.botToken = botToken || process.env.TELEGRAM_BOT_TOKEN;
     this.webhookSecret = webhookSecret || process.env.TELEGRAM_WEBHOOK_SECRET;
     this.probeTimeoutMs = options?.probeTimeoutMs ?? 8000;
     this.sendTimeoutMs = options?.sendTimeoutMs ?? 10000;
+
+    if (options?.enabled !== undefined) {
+      this.enabled = options.enabled;
+    } else if (botToken) {
+      // Inyección explícita de token (ej. pruebas unitarias con token mock)
+      this.enabled = true;
+    } else if (process.env.TELEGRAM_ENABLED !== undefined) {
+      this.enabled = process.env.TELEGRAM_ENABLED === 'true';
+    } else {
+      const env = process.env.APP_ENV || process.env.NODE_ENV || 'development';
+      this.enabled = env === 'production';
+    }
+  }
+
+  private redact(message: string): string {
+    return redactSensitiveData(message, this.botToken);
+  }
+
+  isGatewayEnabled(): boolean {
+    return this.enabled;
   }
 
   verifySecretHeader(headerSecret: string | null): boolean {
     if (!this.webhookSecret || !headerSecret) {
       return false;
     }
-    return constantTimeEqual(headerSecret.trim(), this.webhookSecret.trim());
+    return constantTimeEqualSync(headerSecret.trim(), this.webhookSecret.trim());
   }
 
   async sendMessage(
@@ -57,6 +86,10 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
     text: string,
     buttons?: TelegramButton[][]
   ): Promise<void> {
+    if (!this.enabled) {
+      return;
+    }
+
     if (!this.botToken) {
       console.warn(
         `[TelegramBotApiGateway] Mensaje no enviado (TELEGRAM_BOT_TOKEN no configurado): chatId=${chatId}`
@@ -93,13 +126,13 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
         console.warn(
-          `[TelegramBotApiGateway] Error en respuesta de Telegram API (${response.status}): ${errorText}`
+          `[TelegramBotApiGateway] Error en respuesta de Telegram API (${response.status}): ${this.redact(errorText)}`
         );
       }
     } catch (error) {
       console.warn(
         `[TelegramBotApiGateway] Fallo de conexión o timeout hacia Telegram API:`,
-        error instanceof Error ? error.message : error
+        this.redact(error instanceof Error ? error.message : String(error))
       );
     } finally {
       clearTimeout(timeoutId);
@@ -111,6 +144,10 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
    * Retorna null si el token no está configurado, es inválido o la petición falla.
    */
   async getMe(): Promise<TelegramBotInfo | null> {
+    if (!this.enabled) {
+      return null;
+    }
+
     if (!this.botToken) {
       console.warn('[TelegramBotApiGateway] getMe abortado: TELEGRAM_BOT_TOKEN no configurado');
       return null;
@@ -146,7 +183,7 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
     } catch (error) {
       console.warn(
         '[TelegramBotApiGateway] getMe fallo de conexión o timeout:',
-        error instanceof Error ? error.message : error
+        this.redact(error instanceof Error ? error.message : String(error))
       );
       return null;
     } finally {
@@ -159,6 +196,10 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
    * Retorna null si no es posible consultar el webhook o la petición falla.
    */
   async getWebhookInfo(): Promise<TelegramWebhookInfo | null> {
+    if (!this.enabled) {
+      return null;
+    }
+
     if (!this.botToken) {
       console.warn('[TelegramBotApiGateway] getWebhookInfo abortado: TELEGRAM_BOT_TOKEN no configurado');
       return null;
@@ -196,7 +237,7 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
     } catch (error) {
       console.warn(
         '[TelegramBotApiGateway] getWebhookInfo fallo de conexión o timeout:',
-        error instanceof Error ? error.message : error
+        this.redact(error instanceof Error ? error.message : String(error))
       );
       return null;
     } finally {

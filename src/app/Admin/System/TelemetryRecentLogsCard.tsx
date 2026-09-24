@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/infrastructure/persistence/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Terminal, Trash2, Cpu } from 'lucide-react';
 import { TelemetryTableClient, TelemetryLogItem } from './TelemetryTableClient';
-
-const prisma = new PrismaClient();
 
 export async function TelemetryRecentLogsCard() {
   let logs: TelemetryLogItem[] = [];

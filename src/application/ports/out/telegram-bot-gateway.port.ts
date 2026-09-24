@@ -43,5 +43,10 @@ export interface TelegramBotGatewayPort {
    * Retorna null si no es posible consultar el webhook o la petición falla.
    */
   getWebhookInfo(): Promise<TelegramWebhookInfo | null>;
+
+  /**
+   * Verifica si el gateway de Telegram está habilitado operativamente en el entorno actual.
+   */
+  isGatewayEnabled(): boolean;
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
 import { PruneTelemetryUseCase } from '@/application/use-cases/prune-telemetry.use-case';
+import { constantTimeEqual } from '@/infrastructure/security/crypto.utils';
 
 export const runtime = 'nodejs';
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const providedSecret = bearerToken || cronSecretHeader;
 
-    if (!providedSecret || providedSecret !== expectedSecret) {
+    if (!providedSecret || !(await constantTimeEqual(providedSecret, expectedSecret))) {
       return NextResponse.json(
         { error: 'No autorizado: Token de mantenimiento inválido o ausente.' },
         { status: 401 },

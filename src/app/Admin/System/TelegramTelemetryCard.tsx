@@ -33,16 +33,20 @@ export async function TelegramTelemetryCard({ useCase }: TelegramTelemetryCardPr
   const dotColor =
     status.state === 'ok'
       ? 'bg-emerald-500'
-      : status.state === 'warn'
-        ? 'bg-amber-500'
-        : 'bg-red-500';
+      : status.state === 'disabled'
+        ? 'bg-sky-400'
+        : status.state === 'warn'
+          ? 'bg-amber-500'
+          : 'bg-red-500';
 
   const textColor =
     status.state === 'ok'
       ? 'text-emerald-700 font-medium'
-      : status.state === 'warn'
-        ? 'text-amber-700 font-medium'
-        : 'text-red-700 font-medium';
+      : status.state === 'disabled'
+        ? 'text-sky-700 font-medium'
+        : status.state === 'warn'
+          ? 'text-amber-700 font-medium'
+          : 'text-red-700 font-medium';
 
   return (
     <Card className="bg-surface-container border-layout-divider shadow-sm">
@@ -60,9 +64,11 @@ export async function TelegramTelemetryCard({ useCase }: TelegramTelemetryCardPr
           </span>
         </div>
         <p className="text-xs text-content-subtle font-mono mt-2 truncate">
-          {status.botUsername
-            ? `Pendientes: ${status.pendingUpdates}`
-            : 'Canal B2C Inactivo'}
+          {status.state === 'disabled'
+            ? 'Modo Simulado / Standby'
+            : status.botUsername
+              ? `Pendientes: ${status.pendingUpdates}`
+              : 'Canal B2C Inactivo'}
         </p>
       </CardContent>
     </Card>

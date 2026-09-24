@@ -4,7 +4,7 @@
  * y persistencia defensiva de telemetría.
  */
 
-export type TelegramBotHealthState = 'ok' | 'warn' | 'error';
+export type TelegramBotHealthState = 'ok' | 'warn' | 'error' | 'disabled';
 
 export interface AuditTelegramBotHealthResult {
   readonly state: TelegramBotHealthState;

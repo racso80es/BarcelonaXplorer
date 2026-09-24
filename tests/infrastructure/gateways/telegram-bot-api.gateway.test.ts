@@ -14,6 +14,7 @@ describe('TelegramBotApiGateway', () => {
     global.fetch = originalFetch;
     process.env.TELEGRAM_BOT_TOKEN = originalEnvToken;
     process.env.TELEGRAM_WEBHOOK_SECRET = originalEnvSecret;
+    vi.restoreAllMocks();
   });
 
   describe('verifySecretHeader', () => {
@@ -35,14 +36,69 @@ describe('TelegramBotApiGateway', () => {
     });
   });
 
+  describe('sendMessage', () => {
+    const sensitiveToken = '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11';
+
+    it('debe enviar mensaje exitosamente vía POST a Telegram', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => '{"ok":true}',
+      });
+
+      const gateway = new TelegramBotApiGateway(sensitiveToken);
+      await gateway.sendMessage('12345', 'Hola Barcelona');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.telegram.org/bot${sensitiveToken}/sendMessage`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    });
+
+    it('debe redactar el botToken en advertencias si fetch falla arrojando la URL con el token', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      global.fetch = vi.fn().mockRejectedValue(
+        new Error(`fetch failed: connect ECONNREFUSED https://api.telegram.org/bot${sensitiveToken}/sendMessage`)
+      );
+
+      const gateway = new TelegramBotApiGateway(sensitiveToken);
+      await gateway.sendMessage('12345', 'Mensaje con fallo');
+
+      expect(consoleWarnSpy).toHaveBeenCalled();
+      const loggedMessage = consoleWarnSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(loggedMessage).not.toContain(sensitiveToken);
+      expect(loggedMessage).toContain('[REDACTED_TOKEN]');
+    });
+
+    it('debe redactar el botToken en el mensaje de error si la API retorna respuesta de error con el token', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: async () => `Unauthorized: token ${sensitiveToken} revoked`,
+      });
+
+      const gateway = new TelegramBotApiGateway(sensitiveToken);
+      await gateway.sendMessage('12345', 'Mensaje no autorizado');
+
+      expect(consoleWarnSpy).toHaveBeenCalled();
+      const loggedMessage = consoleWarnSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(loggedMessage).not.toContain(sensitiveToken);
+      expect(loggedMessage).toContain('[REDACTED_TOKEN]');
+    });
+  });
+
   describe('getMe', () => {
+    const sensitiveToken = '987654:XYZ-SECRET_TOKEN_456';
+
     it('debe retornar null de forma inmediata si TELEGRAM_BOT_TOKEN no está definido', async () => {
       delete process.env.TELEGRAM_BOT_TOKEN;
       const gateway = new TelegramBotApiGateway(undefined);
       const result = await gateway.getMe();
       expect(result).toBeNull();
     });
-
 
     it('debe consultar api.telegram.org y retornar datos del bot parseados', async () => {
       global.fetch = vi.fn().mockResolvedValue({
@@ -85,12 +141,20 @@ describe('TelegramBotApiGateway', () => {
       expect(result).toBeNull();
     });
 
-    it('debe capturar excepciones de red o timeout y retornar null (Fail-Safe)', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network connection timeout'));
+    it('debe capturar excepciones de red o timeout, redactar tokens en consola y retornar null (Fail-Safe)', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      global.fetch = vi.fn().mockRejectedValue(
+        new Error(`Network timeout on https://api.telegram.org/bot${sensitiveToken}/getMe`)
+      );
 
-      const gateway = new TelegramBotApiGateway('valid-token');
+      const gateway = new TelegramBotApiGateway(sensitiveToken);
       const result = await gateway.getMe();
       expect(result).toBeNull();
+
+      expect(consoleWarnSpy).toHaveBeenCalled();
+      const loggedMessage = consoleWarnSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(loggedMessage).not.toContain(sensitiveToken);
+      expect(loggedMessage).toContain('[REDACTED_TOKEN]');
     });
 
     it('debe retornar null si la respuesta no cumple el esquema Zod esperado', async () => {
@@ -111,6 +175,8 @@ describe('TelegramBotApiGateway', () => {
   });
 
   describe('getWebhookInfo', () => {
+    const sensitiveToken = '555555:WEBHOOK-TOKEN-SECRET';
+
     it('debe retornar null de forma inmediata si TELEGRAM_BOT_TOKEN no está definido', async () => {
       delete process.env.TELEGRAM_BOT_TOKEN;
       const gateway = new TelegramBotApiGateway(undefined);
@@ -167,12 +233,20 @@ describe('TelegramBotApiGateway', () => {
       expect(result?.pendingUpdateCount).toBe(5);
     });
 
-    it('debe retornar null ante fallo HTTP o rechazo de red', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('AbortError'));
+    it('debe retornar null ante fallo HTTP o rechazo de red redactando el token', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      global.fetch = vi.fn().mockRejectedValue(
+        new Error(`fetch failed: https://api.telegram.org/bot${sensitiveToken}/getWebhookInfo`)
+      );
 
-      const gateway = new TelegramBotApiGateway('valid-token');
+      const gateway = new TelegramBotApiGateway(sensitiveToken);
       const result = await gateway.getWebhookInfo();
       expect(result).toBeNull();
+
+      expect(consoleWarnSpy).toHaveBeenCalled();
+      const loggedMessage = consoleWarnSpy.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(loggedMessage).not.toContain(sensitiveToken);
+      expect(loggedMessage).toContain('[REDACTED_TOKEN]');
     });
   });
 });

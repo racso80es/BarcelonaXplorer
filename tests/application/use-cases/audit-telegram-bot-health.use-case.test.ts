@@ -14,12 +14,28 @@ describe('AuditTelegramBotHealthUseCase', () => {
       verifySecretHeader: vi.fn(),
       getMe: vi.fn(),
       getWebhookInfo: vi.fn(),
+      isGatewayEnabled: vi.fn().mockReturnValue(true),
     };
     mockTelemetryRepo = {
       log: vi.fn().mockResolvedValue(undefined),
       getRecentLogs: vi.fn(),
       prune: vi.fn(),
     };
+  });
+
+  it('Escenario 0: Bypass Táctico en Local/Pruebas cuando el gateway está deshabilitado', async () => {
+    vi.mocked(mockGateway.isGatewayEnabled).mockReturnValue(false);
+
+    const useCase = new AuditTelegramBotHealthUseCase(mockGateway, mockTelemetryRepo);
+    const result = await useCase.execute();
+
+    expect(result.state).toBe('disabled');
+    expect(result.isHealthy).toBe(true);
+    expect(result.msg).toBe('Desactivado en Local / Pruebas');
+    expect(result.latencyMs).toBe(0);
+    expect(mockGateway.getMe).not.toHaveBeenCalled();
+    expect(mockGateway.getWebhookInfo).not.toHaveBeenCalled();
+    expect(mockTelemetryRepo.log).not.toHaveBeenCalled();
   });
 
   it('Escenario 1: Resonancia Táctica S+ Grade (Verde) cuando bot y webhook están alineados y limpios', async () => {

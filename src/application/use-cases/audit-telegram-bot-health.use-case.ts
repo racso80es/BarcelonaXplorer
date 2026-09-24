@@ -37,6 +37,20 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
   }
 
   async execute(): Promise<AuditTelegramBotHealthResult> {
+    if (!this.telegramBotGateway.isGatewayEnabled()) {
+      return {
+        state: 'disabled',
+        msg: 'Desactivado en Local / Pruebas',
+        botUsername: undefined,
+        webhookUrl: undefined,
+        isWebhookAligned: false,
+        pendingUpdates: 0,
+        lastErrorMessage: undefined,
+        latencyMs: 0,
+        isHealthy: true,
+      };
+    }
+
     const startTime = Date.now();
 
     // Sonda dual concurrente para minimizar la latencia agregada

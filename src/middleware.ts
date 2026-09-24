@@ -89,6 +89,10 @@ function dispatchPerimeterTelemetry(
       request.headers.get('cf-connecting-ip') ||
       'unknown';
 
+    const currentEnv =
+      process.env.APP_ENV ||
+      (process.env.NODE_ENV === 'production' ? 'production' : 'development');
+
     void fetch(telemetryUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -97,6 +101,7 @@ function dispatchPerimeterTelemetry(
         context: 'SECURITY_PERIMETER',
         message: `[Centinela] ${reason}`,
         statusCode,
+        environment: currentEnv,
         payload: {
           path: request.nextUrl.pathname,
           method: request.method,

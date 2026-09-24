@@ -86,6 +86,27 @@ describe('TelegramTelemetryCard UI (Principio DIP - Capa de Presentación)', () 
     expect(screen.getByText('Canal B2C Inactivo')).toBeDefined();
   });
 
+  it('debe renderizar el semáforo sky/azul cuando el estado es disabled (entorno local o pruebas)', async () => {
+    const mockUseCase: AuditTelegramBotHealthUseCasePort = {
+      execute: vi.fn().mockResolvedValue({
+        state: 'disabled',
+        msg: 'Desactivado en Local / Pruebas',
+        botUsername: undefined,
+        webhookUrl: undefined,
+        isWebhookAligned: false,
+        pendingUpdates: 0,
+        latencyMs: 0,
+        isHealthy: true,
+      }),
+    };
+
+    const card = await TelegramTelemetryCard({ useCase: mockUseCase });
+    render(card);
+
+    expect(screen.getByText('Desactivado en Local / Pruebas')).toBeDefined();
+    expect(screen.getByText('Modo Simulado / Standby')).toBeDefined();
+  });
+
   it('debe instanciar y ejecutar el caso de uso por defecto si no se inyecta prop', async () => {
     vi.mocked(AuditTelegramBotHealthUseCase).mockImplementation(function () {
       return {

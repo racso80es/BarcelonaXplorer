@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AesGcmAnchorTokenEncryptor } from '@/infrastructure/security/aes-gcm-anchor-token.encryptor';
+import { DomainException } from '@/domain/exceptions/domain.exception';
 
 /**
  * Route Handler para generar el Deep Link de anclaje a Telegram de forma segura.
@@ -27,6 +28,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       token,
     });
   } catch (error) {
+    if (error instanceof DomainException) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Error generating anchor link' },
       { status: 500 }
