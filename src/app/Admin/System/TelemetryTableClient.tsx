@@ -15,6 +15,8 @@ import {
   AlertCircle,
   FileText,
   Navigation,
+  Hash,
+  Terminal,
 } from 'lucide-react';
 
 export interface TelemetryLogItem {
@@ -35,12 +37,23 @@ interface TelemetryTableClientProps {
 export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
   const [selectedLog, setSelectedLog] = useState<TelemetryLogItem | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [copiedStack, setCopiedStack] = useState(false);
 
-  const handleCopyJson = (payload: unknown) => {
-    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyText = (text: string, type: 'json' | 'id' | 'stack') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'json') {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else if (type === 'id') {
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    } else if (type === 'stack') {
+      setCopiedStack(true);
+      setTimeout(() => setCopiedStack(false), 2000);
+    }
   };
+
 
   const columns: ColumnDef<TelemetryLogItem>[] = useMemo(() => [
     {
@@ -202,6 +215,80 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
   const requestInfo = (payloadData?.request ?? payloadData) as Record<string, unknown> | null;
   const responseInfo = payloadData?.response as Record<string, unknown> | null;
 
+  // Formato completo de fecha y hora
+  const fullDateFormatted = useMemo(() => {
+    if (!selectedLog) return '';
+    const d = new Date(selectedLog.createdAt);
+    if (isNaN(d.getTime())) return String(selectedLog.createdAt);
+    const datePart = d.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timePart = d.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    return `${datePart} ${timePart}`;
+  }, [selectedLog]);
+
+  // Extracción defensiva del Stack Trace
+  const stackTrace = useMemo(() => {
+    if (!selectedLog?.payload || typeof selectedLog.payload !== 'object') return null;
+    const p = selectedLog.payload as Record<string, unknown>;
+    if (typeof p.stack === 'string' && p.stack.trim().length > 0) return p.stack.trim();
+    if (typeof p.stackTrace === 'string' && p.stackTrace.trim().length > 0) return p.stackTrace.trim();
+    if (typeof p.trace === 'string' && p.trace.trim().length > 0) return p.trace.trim();
+    if (
+      p.error &&
+      typeof p.error === 'object' &&
+      typeof (p.error as Record<string, unknown>).stack === 'string'
+    ) {
+      return ((p.error as Record<string, unknown>).stack as string).trim();
+    }
+    if (typeof p.error === 'string' && p.error.includes('\n    at ')) {
+      return p.error.trim();
+    }
+    if (responseInfo && typeof responseInfo.stack === 'string' && responseInfo.stack.trim().length > 0) {
+      return responseInfo.stack.trim();
+    }
+    return null;
+  }, [selectedLog, responseInfo]);
+
+  // Extracción de detalles técnicos estructurados del payload
+  const technicalDetails = useMemo(() => {
+    if (!payloadData) return null;
+    const items: Array<{ label: string; value: string }> = [];
+
+    if (payloadData.error && typeof payloadData.error !== 'object') {
+      items.push({ label: 'Error Técnico', value: String(payloadData.error) });
+    }
+    if (payloadData.reason) {
+      items.push({ label: 'Causa Raíz / Motivo', value: String(payloadData.reason) });
+    }
+    if (payloadData.lastErrorMessage) {
+      items.push({ label: 'Último Error de Webhook', value: String(payloadData.lastErrorMessage) });
+    }
+    if (payloadData.actualWebhookUrl || payloadData.webhookActualUrl) {
+      items.push({
+        label: 'URL Webhook Detectada',
+        value: String(payloadData.actualWebhookUrl || payloadData.webhookActualUrl),
+      });
+    }
+    if (payloadData.expectedWebhookUrl) {
+      items.push({ label: 'URL Webhook Esperada', value: String(payloadData.expectedWebhookUrl) });
+    }
+    if (payloadData.pendingUpdates !== undefined) {
+      items.push({ label: 'Updates Pendientes', value: String(payloadData.pendingUpdates) });
+    }
+    if (payloadData.latencyMs !== undefined) {
+      items.push({ label: 'Latencia de Sonda', value: `${payloadData.latencyMs}ms` });
+    }
+
+    return items.length > 0 ? items : null;
+  }, [payloadData]);
+
   return (
     <>
       <DataTable<TelemetryLogItem>
@@ -216,7 +303,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
         emptyMessage="Bóveda sensorial despejada. No se detectan anomalías para los criterios indicados."
       />
 
-      {/* Modal de Auditoría Forense: Solicitud y Datos Devueltos en Tema Claro */}
+      {/* Modal de Auditoría Forense: Solicitud y Datos Devueltos */}
       {selectedLog && (
         <div
           role="dialog"
@@ -230,7 +317,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
           >
             {/* Cabecera del Modal */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-layout-divider bg-surface-subtle">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <span
                   className={`px-2.5 py-0.5 rounded text-xs font-bold border ${
                     selectedLog.level === 'ERROR'
@@ -268,51 +355,120 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
               </button>
             </div>
 
+            {/* Barra de Metadatos Tácticos (ID + Fecha y Hora) */}
+            <div className="px-6 py-2.5 bg-zinc-50 border-b border-layout-divider flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-zinc-600">
+              <div className="flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="text-zinc-500 font-semibold">ID:</span>
+                <span className="text-zinc-800 select-all font-mono font-medium">{selectedLog.id}</span>
+                <button
+                  onClick={() => handleCopyText(selectedLog.id, 'id')}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-zinc-200/70 text-zinc-600 hover:text-zinc-900 transition-colors border border-layout-divider text-[10px] ml-1"
+                  title="Copiar ID"
+                >
+                  {copiedId ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span className="text-emerald-700 font-semibold">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-zinc-400" />
+                      <span>Copiar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-zinc-700">
+                <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                <span>{fullDateFormatted}</span>
+              </div>
+            </div>
+
             {/* Contenido del Modal */}
             <div className="p-6 overflow-y-auto space-y-6 text-sm">
-              {/* Diagnóstico */}
+              {/* Diagnóstico Principal */}
               <div>
                 <h4 className="text-xs font-semibold text-content-meta uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-zinc-500" />
                   Mensaje de Diagnóstico
                 </h4>
-                <div className="p-3 rounded-lg bg-zinc-50 border border-layout-divider font-mono text-xs text-zinc-800 break-words">
+                <div className="p-3 rounded-lg bg-zinc-50 border border-layout-divider font-mono text-xs text-zinc-800 break-words leading-relaxed">
                   {selectedLog.message}
                 </div>
               </div>
 
-              {/* 1. Solicitud (Prompt y Contexto) */}
-              <div className="border border-layout-divider rounded-lg p-4 bg-surface-subtle/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-sky-700 uppercase tracking-wider flex items-center gap-2">
-                    <Navigation className="w-4 h-4 text-sky-600" />
-                    Solicitud Inyectada (Prompt & Contexto)
-                  </h4>
-                  {typeof requestInfo?.promptLength === 'number' && (
-                    <span className="text-[11px] font-mono text-content-meta">
-                      {requestInfo.promptLength} caracteres
-                    </span>
-                  )}
-                </div>
-
-                {requestInfo?.prompt ? (
-                  <div>
-                    <label className="text-[11px] text-content-meta block mb-1">Prompt del Usuario:</label>
-                    <div className="p-2.5 rounded bg-white border border-layout-divider text-zinc-800 font-mono text-xs whitespace-pre-wrap">
-                      {String(requestInfo.prompt)}
-                    </div>
+              {/* Traza Técnica (Stack Trace) si está disponible */}
+              {stackTrace && (
+                <div className="border border-red-200 bg-red-50/40 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-red-800 uppercase tracking-wider flex items-center gap-2">
+                      <Terminal className="w-4 h-4 text-red-600" />
+                      Traza Técnica (Stack Trace)
+                    </h4>
+                    <button
+                      onClick={() => handleCopyText(stackTrace, 'stack')}
+                      className="inline-flex items-center gap-1 text-[11px] text-red-800 hover:text-red-950 px-2 py-0.5 rounded bg-white hover:bg-red-100/70 border border-red-200 transition-colors shadow-xs"
+                    >
+                      {copiedStack ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span className="text-emerald-700 font-medium">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3 text-red-500" />
+                          <span>Copiar Traza</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                ) : (
-                  <div className="text-xs text-zinc-400 italic">No se especificó prompt explícito.</div>
-                )}
+                  <pre className="p-3 rounded-lg bg-zinc-900 text-red-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap max-h-56 border border-zinc-800 leading-relaxed">
+                    {stackTrace}
+                  </pre>
+                </div>
+              )}
 
-                {/* Variables Contextuales */}
-                {Boolean(requestInfo?.environmentVariables && typeof requestInfo.environmentVariables === 'object') && (
-                  <div>
-                    <label className="text-[11px] text-content-meta block mb-1">Variables de Entorno y Logística:</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
-                      {Object.entries(requestInfo?.environmentVariables as Record<string, unknown>).map(
-                        ([k, v]) => (
+              {/* 1. Solicitud (Prompt y Contexto) - Solo si aplica */}
+              {(selectedLog.context === 'LLM_ENGINE' || Boolean(requestInfo?.prompt)) && (
+                <div className="border border-layout-divider rounded-lg p-4 bg-surface-subtle/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-sky-700 uppercase tracking-wider flex items-center gap-2">
+                      <Navigation className="w-4 h-4 text-sky-600" />
+                      Solicitud Inyectada (Prompt & Contexto)
+                    </h4>
+                    {typeof requestInfo?.promptLength === 'number' && (
+                      <span className="text-[11px] font-mono text-content-meta">
+                        {requestInfo.promptLength} caracteres
+                      </span>
+                    )}
+                  </div>
+
+                  {requestInfo?.prompt ? (
+                    <div>
+                      <label className="text-[11px] text-content-meta block mb-1">Prompt del Usuario:</label>
+                      <div className="p-2.5 rounded bg-white border border-layout-divider text-zinc-800 font-mono text-xs whitespace-pre-wrap">
+                        {String(requestInfo.prompt)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-zinc-400 italic">No se especificó prompt explícito.</div>
+                  )}
+
+                  {/* Variables Contextuales */}
+                  {Boolean(
+                    requestInfo?.environmentVariables &&
+                      typeof requestInfo.environmentVariables === 'object'
+                  ) && (
+                    <div>
+                      <label className="text-[11px] text-content-meta block mb-1">
+                        Variables de Entorno y Logística:
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                        {Object.entries(
+                          requestInfo?.environmentVariables as Record<string, unknown>
+                        ).map(([k, v]) => (
                           <div
                             key={k}
                             className="p-2 rounded bg-white border border-layout-divider flex flex-col gap-0.5"
@@ -322,20 +478,24 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                               {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                             </span>
                           </div>
-                        ),
-                      )}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
-              {/* 2. Datos Devueltos (Respuesta) */}
+              {/* 2. Datos Devueltos / Respuesta Estructurada / Excepción Técnica */}
               <div className="border border-layout-divider rounded-lg p-4 bg-surface-subtle/50 space-y-3">
                 <h4 className="text-xs font-bold text-content-accent uppercase tracking-wider flex items-center gap-2">
                   {selectedLog.level === 'WARN' ? (
                     <>
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
-                      <span className="text-amber-800">Datos Devueltos: Claudicación Cognitiva</span>
+                      <span className="text-amber-800">
+                        {responseInfo?.status === 'CLAUDICATION'
+                          ? 'Datos Devueltos: Claudicación Cognitiva'
+                          : 'Diagnóstico de Advertencia Táctica'}
+                      </span>
                     </>
                   ) : selectedLog.level === 'ERROR' ? (
                     <>
@@ -345,12 +505,12 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Datos Devueltos: Itinerario Táctico Sintetizado</span>
+                      <span>Datos Devueltos: Respuesta Operativa</span>
                     </>
                   )}
                 </h4>
 
-                {/* Caso A: Respuesta estructurada de Ruta */}
+                {/* Caso A: Respuesta estructurada de Ruta LLM */}
                 {responseInfo && typeof responseInfo === 'object' && 'waypoints' in responseInfo ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-xs">
@@ -391,18 +551,6 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                                 )}
                               </div>
                               <p className="text-zinc-600 text-[11px]">{String(wp.description)}</p>
-                              {Array.isArray(wp.recommendations) && wp.recommendations.length > 0 && (
-                                <div className="flex flex-wrap gap-1 pt-1">
-                                  {wp.recommendations.map((rec, rIdx) => (
-                                    <span
-                                      key={rIdx}
-                                      className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-layout-divider text-[10px]"
-                                    >
-                                      {String(rec)}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
                             </div>
                           ))}
                         </div>
@@ -420,12 +568,27 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                       </p>
                     )}
                   </div>
+                ) : technicalDetails && technicalDetails.length > 0 ? (
+                  /* Caso C: Desglose técnico de la excepción/anomalía */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                    {technicalDetails.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded bg-white border border-layout-divider flex flex-col gap-1 shadow-2xs"
+                      >
+                        <span className="text-zinc-500 text-[10px] uppercase font-semibold tracking-wider">
+                          {item.label}
+                        </span>
+                        <span className="text-zinc-800 break-words font-medium">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  /* Caso C: Otros o Fallback */
+                  /* Caso D: Fallback */
                   <div className="text-xs text-zinc-500 italic">
                     {responseInfo
                       ? JSON.stringify(responseInfo, null, 2)
-                      : 'No se registraron datos de respuesta estructurados.'}
+                      : 'No se registraron datos de respuesta estructurados adicionales.'}
                   </div>
                 )}
               </div>
@@ -437,7 +600,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                     Payload JSON Persistido
                   </h4>
                   <button
-                    onClick={() => handleCopyJson(selectedLog.payload)}
+                    onClick={() => handleCopyText(JSON.stringify(selectedLog.payload, null, 2), 'json')}
                     className="inline-flex items-center gap-1 text-[11px] text-zinc-700 hover:text-zinc-900 px-2 py-0.5 rounded bg-white hover:bg-zinc-100 border border-layout-divider transition-colors shadow-xs"
                   >
                     {copied ? (
@@ -453,7 +616,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                     )}
                   </button>
                 </div>
-                <pre className="p-3 rounded-lg bg-zinc-50 border border-layout-divider text-[11px] font-mono text-zinc-800 overflow-x-auto max-h-48">
+                <pre className="p-3 rounded-lg bg-zinc-50 border border-layout-divider text-[11px] font-mono text-zinc-800 overflow-x-auto max-h-48 leading-relaxed">
                   {JSON.stringify(selectedLog.payload, null, 2) ?? '// Sin payload'}
                 </pre>
               </div>
@@ -474,3 +637,5 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
     </>
   );
 }
+
+

@@ -54,14 +54,23 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
     if (!botInfo) {
       const state: TelegramBotHealthState = 'error';
       const msg = 'Token Inválido / No Configurado';
+      const traceErr = new Error(
+        `[TelegramBotApiGateway] Sonda de identidad getMe falló (HTTP 401 o timeout a los ${latencyMs}ms). Token revocado, ausente o conexión rechazada.`
+      );
 
       await this.logSafely(
         'ERROR',
         `[Telegram Bot] Sonda táctica degradada: ${msg}`,
         {
+          error: traceErr.message,
+          stack: traceErr.stack,
           latencyMs,
           expectedWebhookUrl: this.expectedWebhookUrl,
           webhookActualUrl: webhookInfo?.url,
+          reason:
+            latencyMs >= 3400
+              ? 'Timeout de red al conectar con api.telegram.org (>3500ms)'
+              : 'Token inválido o no reconocido por BotFather',
         },
         401,
         latencyMs
@@ -86,14 +95,20 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
     if (!webhookInfo) {
       const state: TelegramBotHealthState = 'warn';
       const msg = 'Webhook Inaccesible';
+      const traceErr = new Error(
+        '[TelegramBotApiGateway] Sonda getWebhookInfo falló o retornó nulo ante timeout o error de red.'
+      );
 
       await this.logSafely(
         'WARN',
         `[Telegram Bot] Sonda táctica degradada: ${msg}`,
         {
+          error: traceErr.message,
+          stack: traceErr.stack,
           botUsername,
           latencyMs,
           expectedWebhookUrl: this.expectedWebhookUrl,
+          reason: 'Fallo al interrogar getWebhookInfo en api.telegram.org',
         },
         503,
         latencyMs
@@ -119,15 +134,21 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
     if (!isWebhookAligned) {
       const state: TelegramBotHealthState = 'warn';
       const msg = 'Webhook Desalineado';
+      const traceErr = new Error(
+        `[TelegramBotApiGateway] Desalineación de Webhook: La URL registrada en Telegram (${webhookInfo.url}) no coincide con la canónica (${this.expectedWebhookUrl}).`
+      );
 
       await this.logSafely(
         'WARN',
         `[Telegram Bot] Sonda táctica degradada: Webhook desalineado (${webhookInfo.url || 'vacía'})`,
         {
+          error: traceErr.message,
+          stack: traceErr.stack,
           botUsername,
           actualWebhookUrl: webhookInfo.url,
           expectedWebhookUrl: this.expectedWebhookUrl,
           pendingUpdates: webhookInfo.pendingUpdateCount,
+          reason: 'El webhook apunta a un entorno disonante (ej. túnel de desarrollo ngrok o URL desactualizada).',
           latencyMs,
         },
         200,
@@ -153,21 +174,28 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
       const msg = webhookInfo.lastErrorMessage.length > 50
         ? `${webhookInfo.lastErrorMessage.slice(0, 47)}...`
         : webhookInfo.lastErrorMessage;
+      const traceErr = new Error(
+        `[TelegramBotApiGateway] Telegram reportó error de entrega en webhook: ${webhookInfo.lastErrorMessage}`
+      );
 
       await this.logSafely(
         'WARN',
         `[Telegram Bot] Fricción de entrega reportada: ${webhookInfo.lastErrorMessage}`,
         {
+          error: webhookInfo.lastErrorMessage,
+          stack: traceErr.stack,
           botUsername,
           webhookUrl: webhookInfo.url,
           lastErrorDate: webhookInfo.lastErrorDate,
           lastErrorMessage: webhookInfo.lastErrorMessage,
           pendingUpdates: webhookInfo.pendingUpdateCount,
+          reason: 'Telegram intentó entregar un mensaje al webhook pero el servidor remoto respondió con error.',
           latencyMs,
         },
         200,
         latencyMs
       );
+
 
       return {
         state,
