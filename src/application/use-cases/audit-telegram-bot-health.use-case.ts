@@ -169,7 +169,15 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
     }
 
     // 4. Fricción por Error de Entrega Reciente
-    if (webhookInfo.lastErrorMessage) {
+    // Telegram conserva `last_error_message` de forma persistente incluso tras entregas exitosas.
+    // Solo se degrada a WARN si el error ocurrió en los últimos 15 minutos (error activo).
+    // Errores más antiguos son residuales de despliegues anteriores o incidentes ya resueltos.
+    const staleErrorThresholdMs = 15 * 60 * 1000; // 15 minutos
+    const isErrorStale = webhookInfo.lastErrorDate
+      ? (Date.now() - webhookInfo.lastErrorDate * 1000) > staleErrorThresholdMs
+      : true;
+
+    if (webhookInfo.lastErrorMessage && !isErrorStale) {
       const state: TelegramBotHealthState = 'warn';
       const msg = webhookInfo.lastErrorMessage.length > 50
         ? `${webhookInfo.lastErrorMessage.slice(0, 47)}...`
@@ -195,7 +203,6 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
         200,
         latencyMs
       );
-
 
       return {
         state,

@@ -11,9 +11,18 @@
   retries: 20
   delay: 2
 
-- name: Sincronizar esquema de TelemetryLog en MySQL (Nodo 11)
+- name: Sincronizar esquemas de MySQL (TelemetryLog, user_anchors, magic_link_nonces, SystemConfig)
   shell: |
     docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'
+    CREATE TABLE IF NOT EXISTS `SystemConfig` (
+        `id` INTEGER NOT NULL AUTO_INCREMENT,
+        `key` VARCHAR(191) NOT NULL,
+        `value` VARCHAR(191) NOT NULL,
+        `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+        UNIQUE INDEX `SystemConfig_key_key`(`key`),
+        PRIMARY KEY (`id`)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
     CREATE TABLE IF NOT EXISTS `TelemetryLog` (
         `id` VARCHAR(191) NOT NULL,
         `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -30,4 +39,34 @@
         INDEX `TelemetryLog_level_idx`(`level`),
         PRIMARY KEY (`id`)
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    CREATE TABLE IF NOT EXISTS `user_anchors` (
+        `id` VARCHAR(191) NOT NULL,
+        `sessionId` VARCHAR(64) NOT NULL,
+        `telegramChatId` VARCHAR(64) NOT NULL,
+        `telegramUsername` VARCHAR(128) NULL,
+        `firstName` VARCHAR(128) NULL,
+        `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+        `lastInteractionAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+        UNIQUE INDEX `user_anchors_telegramChatId_key`(`telegramChatId`),
+        INDEX `user_anchors_sessionId_idx`(`sessionId`),
+        INDEX `user_anchors_telegramChatId_idx`(`telegramChatId`),
+        PRIMARY KEY (`id`)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    CREATE TABLE IF NOT EXISTS `magic_link_nonces` (
+        `id` VARCHAR(191) NOT NULL,
+        `tokenHash` VARCHAR(64) NOT NULL,
+        `sessionId` VARCHAR(64) NOT NULL,
+        `expiresAt` DATETIME(3) NOT NULL,
+        `consumedAt` DATETIME(3) NULL,
+        `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+        UNIQUE INDEX `magic_link_nonces_tokenHash_key`(`tokenHash`),
+        INDEX `magic_link_nonces_tokenHash_expiresAt_idx`(`tokenHash`, `expiresAt`),
+        PRIMARY KEY (`id`)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     EOF
+

@@ -100,6 +100,9 @@ describe('AuditTelegramBotHealthUseCase', () => {
   });
 
   it('Escenario 4: Fricción de Entrega Reciente en Webhook (Ámbar) emite log WARN con mensaje', async () => {
+    // lastErrorDate dentro de los últimos 15 minutos → error activo → WARN
+    const recentErrorDate = Math.floor(Date.now() / 1000) - 60; // hace 1 minuto
+
     vi.mocked(mockGateway.getMe).mockResolvedValue({
       id: 123456,
       username: 'BXplorerBot',
@@ -110,7 +113,7 @@ describe('AuditTelegramBotHealthUseCase', () => {
       url: 'https://barcelonaxplorer.com/api/telegram/webhook',
       hasCustomCertificate: false,
       pendingUpdateCount: 3,
-      lastErrorDate: 1727000000,
+      lastErrorDate: recentErrorDate,
       lastErrorMessage: 'Wrong response from the webhook: 401 Unauthorized',
     });
 
@@ -178,5 +181,35 @@ describe('AuditTelegramBotHealthUseCase', () => {
     expect(result.state).toBe('warn');
     expect(result.isHealthy).toBe(false);
     expect(result.msg).toBe('Saturación (120 pendientes)');
+  });
+
+  it('Escenario 7: Error Residual Histórico de Telegram (>15min) se clasifica como S+ Grade', async () => {
+    // lastErrorDate hace más de 15 minutos → error stale/residual → no degrada el semáforo
+    const staleErrorDate = Math.floor(Date.now() / 1000) - 60 * 20; // hace 20 minutos
+
+    vi.mocked(mockGateway.getMe).mockResolvedValue({
+      id: 123456,
+      username: 'BXplorerBot',
+      firstName: 'BarcelonaXplorer',
+      canJoinGroups: true,
+    });
+    vi.mocked(mockGateway.getWebhookInfo).mockResolvedValue({
+      url: 'https://barcelonaxplorer.com/api/telegram/webhook',
+      hasCustomCertificate: false,
+      pendingUpdateCount: 0,
+      lastErrorDate: staleErrorDate,
+      lastErrorMessage: 'Wrong response from the webhook: 404 Not Found',
+    });
+
+    const useCase = new AuditTelegramBotHealthUseCase(mockGateway, mockTelemetryRepo, {
+      expectedWebhookUrl: 'https://barcelonaxplorer.com/api/telegram/webhook',
+    });
+
+    const result = await useCase.execute();
+
+    expect(result.state).toBe('ok');
+    expect(result.isHealthy).toBe(true);
+    expect(result.msg).toBe('@BXplorerBot');
+    expect(mockTelemetryRepo.log).not.toHaveBeenCalled();
   });
 });
