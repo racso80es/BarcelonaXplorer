@@ -333,5 +333,10 @@ Y el resto del panel (/Admin/System, MySQL, Aduana DNS, Gemini, Groq, Jev) se re
   - **Total Repositorio:** 44 suites de prueba, 228 pruebas unitarias y de integración pasando con éxito absoluto (100%).
 - **Certificación de Resiliencia en Producción:**
   - Validación de respuesta contra Telegram API oficial sin bloquear el renderizado del dashboard.
-  - Sonda dual en paralelo vía `Promise.allSettled` con latencia acotada a un timeout estricto de 3500ms.
+  - Sonda dual en paralelo vía `Promise.allSettled` con latencia acotada a un timeout estricto y configurable.
   - Manejo integral de semáforos cromáticos (Emerald / Amber / Red) y despacho defensivo de logs a `SECURITY_PERIMETER`.
+  - **Resolución Post-Despliegue (Nodo 11):**
+    1. *Latencia DNS:* Inyección de `NODE_OPTIONS=--dns-result-order=ipv4first` redujo la latencia de 3502ms a ~130ms.
+    2. *Esquemas de Base de Datos:* Creación de tablas faltantes `user_anchors`, `magic_link_nonces` y `SystemConfig` en MySQL e integración en `ansible/hooks/after_symlink.yml`.
+    3. *Higienización de Webhook:* Purga del error histórico 404 en Telegram Bot API y adición de ventana de tolerancia a errores residuales (>15 min).
+
