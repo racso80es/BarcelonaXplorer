@@ -23,14 +23,26 @@ function constantTimeEqual(a: string, b: string): boolean {
 /**
  * Adaptador de infraestructura para interactuar con la API oficial de Telegram Bot.
  * Implementa Fail-Closed en verificación de cabeceras y Fail-Safe con timeout en envíos y sondas.
+ *
+ * Timeouts diferenciados por contexto operativo:
+ * - Sonda de salud (getMe/getWebhookInfo): 8000ms — tolera latencia DNS elevada en Docker/producción
+ *   sin impactar la seguridad del webhook. Solo afecta al tiempo de carga del panel /Admin/System.
+ * - Envío de mensajes (sendMessage): 10000ms — el webhook de Telegram espera hasta 60s, por lo que
+ *   hay margen holgado. Protege contra caídas completas de la API sin truncar entregas legítimas.
  */
 export class TelegramBotApiGateway implements TelegramBotGatewayPort {
   private readonly botToken: string | undefined;
   private readonly webhookSecret: string | undefined;
+  /** Timeout para sondas de salud (getMe, getWebhookInfo) en ms */
+  private readonly probeTimeoutMs: number;
+  /** Timeout para operaciones de envío (sendMessage) en ms */
+  private readonly sendTimeoutMs: number;
 
-  constructor(botToken?: string, webhookSecret?: string) {
+  constructor(botToken?: string, webhookSecret?: string, options?: { probeTimeoutMs?: number; sendTimeoutMs?: number }) {
     this.botToken = botToken || process.env.TELEGRAM_BOT_TOKEN;
     this.webhookSecret = webhookSecret || process.env.TELEGRAM_WEBHOOK_SECRET;
+    this.probeTimeoutMs = options?.probeTimeoutMs ?? 8000;
+    this.sendTimeoutMs = options?.sendTimeoutMs ?? 10000;
   }
 
   verifySecretHeader(headerSecret: string | null): boolean {
@@ -65,7 +77,7 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), this.sendTimeoutMs);
 
     try {
       const response = await fetch(
@@ -105,7 +117,7 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), this.probeTimeoutMs);
 
     try {
       const response = await fetch(`https://api.telegram.org/bot${this.botToken}/getMe`, {
@@ -153,7 +165,7 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), this.probeTimeoutMs);
 
     try {
       const response = await fetch(`https://api.telegram.org/bot${this.botToken}/getWebhookInfo`, {

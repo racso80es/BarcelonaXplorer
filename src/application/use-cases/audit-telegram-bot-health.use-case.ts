@@ -68,8 +68,8 @@ export class AuditTelegramBotHealthUseCase implements AuditTelegramBotHealthUseC
           expectedWebhookUrl: this.expectedWebhookUrl,
           webhookActualUrl: webhookInfo?.url,
           reason:
-            latencyMs >= 3400
-              ? 'Timeout de red al conectar con api.telegram.org (>3500ms)'
+            latencyMs >= 7800
+              ? 'Timeout de red al conectar con api.telegram.org (>8000ms)'
               : 'Token inválido o no reconocido por BotFather',
         },
         401,
