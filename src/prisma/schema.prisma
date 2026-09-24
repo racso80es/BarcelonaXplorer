@@ -46,3 +46,33 @@ model TelemetryLog {
   @@index([createdAt])
   @@index([level])
 }
+
+// Tabla para Anclaje Táctico y Persistencia de Larga Duración (Telegram Bridge)
+model UserAnchor {
+  id                String   @id @default(cuid())
+  sessionId         String   @db.VarChar(64)
+  telegramChatId    String   @unique @db.VarChar(64)
+  telegramUsername  String?  @db.VarChar(128)
+  firstName         String?  @db.VarChar(128)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastInteractionAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([telegramChatId])
+  @@map("user_anchors")
+}
+
+// Nonces de un solo uso para enlaces mágicos temporales (Cross-Device)
+model MagicLinkNonce {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique @db.VarChar(64)
+  sessionId  String    @db.VarChar(64)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([tokenHash, expiresAt])
+  @@map("magic_link_nonces")
+}
+

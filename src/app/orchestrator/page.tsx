@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { OrchestratorBlock } from '@/components/OrchestratorBlock';
 import { TacticalSpark, TacticalSparkProps } from '@/components/TacticalSpark';
-import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle } from 'lucide-react';
+import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
+import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
 import { TacticalRoute } from '@/domain/entities/tactical-route.entity';
 
@@ -18,7 +19,25 @@ type Turn = {
 export default function OrchestratorPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('session_restored') === 'true') {
+        setNotification({
+          type: 'success',
+          message: '🛡️ ¡Sesión restaurada con éxito desde Telegram! Tu itinerario ha sido recuperado.',
+        });
+      } else if (params.get('auth_error')) {
+        setNotification({
+          type: 'error',
+          message: '⚠️ El enlace de acceso no es válido o ha expirado. Solicita uno nuevo en Telegram.',
+        });
+      }
+    }
+  }, []);
 
   // Derivamos si la UI está bloqueada en base al último turno
   const currentTurn = turns[turns.length - 1];
@@ -202,6 +221,32 @@ export default function OrchestratorPage() {
       >
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-y-12 sm:gap-y-16">
           
+          {notification && (
+            <div
+              className={`w-full p-4 rounded-xl border flex items-center justify-between gap-3 text-sm shadow-sm ${
+                notification.type === 'success'
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                  : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {notification.type === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+                )}
+                <span>{notification.message}</span>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="p-1 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white"
+                aria-label="Cerrar notificación"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {turns.length === 0 && (
             <div className="h-full w-full flex items-center justify-center min-h-[50vh] text-zinc-400 font-mono text-xs sm:text-sm">
               [ SISTEMA EN ESPERA DE INPUT TÁCTICO ]
@@ -304,6 +349,11 @@ export default function OrchestratorPage() {
                      }
                      timestamp={new Date()}
                    />
+
+                   {/* Drop de Anclaje Táctico y Alertas en Telegram tras completar ruta */}
+                   {typeof turn.aiResponse !== 'string' && turn.aiResponse && (
+                     <TelegramAnchorDrop />
+                   )}
                  </div>
               )}
             </div>
