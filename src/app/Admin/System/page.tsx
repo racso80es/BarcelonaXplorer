@@ -6,6 +6,10 @@ import { AiTelemetryCard, AiTelemetryCardSkeleton } from './AiTelemetryCard';
 import { GroqTelemetryCard, GroqTelemetryCardSkeleton } from './GroqTelemetryCard';
 import { JevTelemetryCard, JevTelemetryCardSkeleton } from './JevTelemetryCard';
 import {
+  TelegramTelemetryCard,
+  TelegramTelemetryCardSkeleton,
+} from './TelegramTelemetryCard';
+import {
   TelemetryRecentLogsCard,
   TelemetryRecentLogsCardSkeleton,
 } from './TelemetryRecentLogsCard';
@@ -41,7 +45,7 @@ export default async function SystemAdmin() {
           </h1>
         </div>
         
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
           {/* Tarjeta MySQL */}
           <Card className="bg-surface-container border-layout-divider shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -92,7 +96,13 @@ export default async function SystemAdmin() {
           <Suspense fallback={<JevTelemetryCardSkeleton />}>
             <JevTelemetryCard />
           </Suspense>
+
+          {/* Tarjeta Gateway Telegram Bot */}
+          <Suspense fallback={<TelegramTelemetryCardSkeleton />}>
+            <TelegramTelemetryCard />
+          </Suspense>
         </div>
+
 
         {/* Sección de Telemetría Centralizada y Trazabilidad Polimórfica */}
         <Suspense fallback={<TelemetryRecentLogsCardSkeleton />}>

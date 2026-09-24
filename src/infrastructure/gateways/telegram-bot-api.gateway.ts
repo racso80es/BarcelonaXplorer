@@ -1,7 +1,13 @@
 import {
   TelegramBotGatewayPort,
   TelegramButton,
+  TelegramBotInfo,
+  TelegramWebhookInfo,
 } from '@/application/ports/out/telegram-bot-gateway.port';
+import {
+  TelegramGetMeResponseSchema,
+  TelegramGetWebhookInfoResponseSchema,
+} from '@/domain/schemas/telegram-webhook.schema';
 
 function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) {
@@ -16,7 +22,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 
 /**
  * Adaptador de infraestructura para interactuar con la API oficial de Telegram Bot.
- * Implementa Fail-Closed en verificación de cabeceras y Fail-Safe con timeout en envíos.
+ * Implementa Fail-Closed en verificación de cabeceras y Fail-Safe con timeout en envíos y sondas.
  */
 export class TelegramBotApiGateway implements TelegramBotGatewayPort {
   private readonly botToken: string | undefined;
@@ -87,4 +93,103 @@ export class TelegramBotApiGateway implements TelegramBotGatewayPort {
       clearTimeout(timeoutId);
     }
   }
+
+  /**
+   * Sonda de Identidad: Consulta los datos del bot autenticado.
+   * Retorna null si el token no está configurado, es inválido o la petición falla.
+   */
+  async getMe(): Promise<TelegramBotInfo | null> {
+    if (!this.botToken) {
+      console.warn('[TelegramBotApiGateway] getMe abortado: TELEGRAM_BOT_TOKEN no configurado');
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${this.botToken}/getMe`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        console.warn(`[TelegramBotApiGateway] getMe error status ${response.status}`);
+        return null;
+      }
+
+      const json = await response.json();
+      const parseResult = TelegramGetMeResponseSchema.safeParse(json);
+      if (!parseResult.success) {
+        console.warn('[TelegramBotApiGateway] getMe parse error:', parseResult.error.message);
+        return null;
+      }
+
+      return {
+        id: parseResult.data.result.id,
+        username: parseResult.data.result.username ?? '',
+        firstName: parseResult.data.result.first_name,
+        canJoinGroups: parseResult.data.result.can_join_groups ?? false,
+      };
+    } catch (error) {
+      console.warn(
+        '[TelegramBotApiGateway] getMe fallo de conexión o timeout:',
+        error instanceof Error ? error.message : error
+      );
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  /**
+   * Sonda de Enrutamiento: Consulta el estado del webhook configurado en Telegram.
+   * Retorna null si no es posible consultar el webhook o la petición falla.
+   */
+  async getWebhookInfo(): Promise<TelegramWebhookInfo | null> {
+    if (!this.botToken) {
+      console.warn('[TelegramBotApiGateway] getWebhookInfo abortado: TELEGRAM_BOT_TOKEN no configurado');
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${this.botToken}/getWebhookInfo`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        console.warn(`[TelegramBotApiGateway] getWebhookInfo error status ${response.status}`);
+        return null;
+      }
+
+      const json = await response.json();
+      const parseResult = TelegramGetWebhookInfoResponseSchema.safeParse(json);
+      if (!parseResult.success) {
+        console.warn('[TelegramBotApiGateway] getWebhookInfo parse error:', parseResult.error.message);
+        return null;
+      }
+
+      return {
+        url: parseResult.data.result.url,
+        hasCustomCertificate: parseResult.data.result.has_custom_certificate,
+        pendingUpdateCount: parseResult.data.result.pending_update_count,
+        lastErrorDate: parseResult.data.result.last_error_date,
+        lastErrorMessage: parseResult.data.result.last_error_message,
+        maxConnections: parseResult.data.result.max_connections,
+      };
+    } catch (error) {
+      console.warn(
+        '[TelegramBotApiGateway] getWebhookInfo fallo de conexión o timeout:',
+        error instanceof Error ? error.message : error
+      );
+      return null;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }
+
