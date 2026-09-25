@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LinkTelegramSessionUseCase } from '@/application/use-cases/link-telegram-session.use-case';
-import { AnchorTokenEncryptorPort } from '@/application/ports/out/anchor-token-encryptor.port';
-import { UserAnchorRepositoryPort } from '@/application/ports/out/user-anchor-repository.port';
+import { LinkTelegramSessionUseCase } from './link-telegram-session.use-case';
+import { AnchorTokenEncryptorPort } from './anchor-token-encryptor.port';
+import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
-import { UserAnchor } from '@/domain/entities/user-anchor.entity';
+import { UserAnchor } from './user-anchor.entity';
 
 describe('LinkTelegramSessionUseCase', () => {
   it('vincula exitosamente una sesión, persiste atómicamente y despacha mensaje con botones', async () => {
@@ -25,6 +25,9 @@ describe('LinkTelegramSessionUseCase', () => {
     const mockBotGateway: TelegramBotGatewayPort = {
       sendMessage: vi.fn().mockResolvedValue(undefined),
       verifySecretHeader: vi.fn().mockReturnValue(true),
+      getMe: vi.fn().mockResolvedValue(null),
+      getWebhookInfo: vi.fn().mockResolvedValue(null),
+      isGatewayEnabled: vi.fn().mockReturnValue(true),
     };
 
     const useCase = new LinkTelegramSessionUseCase(

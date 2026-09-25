@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   constantTimeEqual,
   constantTimeEqualSync,
-} from '@/infrastructure/security/crypto.utils';
+} from './crypto.utils';
 
 describe('crypto.utils', () => {
   describe('constantTimeEqual (asíncrono con pre-hashing SHA-256)', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { HmacMagicLinkSigner } from '@/infrastructure/security/hmac-magic-link-signer';
+import { HmacMagicLinkSigner } from './hmac-magic-link-signer';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
 describe('HmacMagicLinkSigner', () => {

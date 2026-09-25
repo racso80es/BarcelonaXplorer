@@ -1,8 +1,8 @@
-import { UserAnchorRepositoryPort } from '@/application/ports/out/user-anchor-repository.port';
-import { MagicLinkSignerPort } from '@/application/ports/out/magic-link-signer.port';
+import { UserAnchorRepositoryPort } from '@/features/auth';
+import { MagicLinkSignerPort } from '@/features/auth';
 import { MagicLinkNonceRepositoryPort } from '@/application/ports/out/magic-link-nonce-repository.port';
 import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { TelegramChatId } from '@/features/auth';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
 async function computeSha256Hex(value: string): Promise<string> {

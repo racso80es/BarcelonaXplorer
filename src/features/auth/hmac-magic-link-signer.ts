@@ -1,7 +1,7 @@
 import {
   MagicLinkPayload,
   MagicLinkSignerPort,
-} from '@/application/ports/out/magic-link-signer.port';
+} from './magic-link-signer.port';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
 /**

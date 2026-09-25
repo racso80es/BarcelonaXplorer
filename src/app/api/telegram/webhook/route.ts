@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelegramUpdateSchema } from '@/domain/schemas/telegram-webhook.schema';
 import { TelegramBotApiGateway } from '@/infrastructure/gateways/telegram-bot-api.gateway';
-import { AesGcmAnchorTokenEncryptor } from '@/infrastructure/security/aes-gcm-anchor-token.encryptor';
+import { AesGcmAnchorTokenEncryptor } from '@/features/auth';
 import { PrismaUserAnchorRepository } from '@/infrastructure/repositories/prisma-user-anchor.repository';
 import { PrismaMagicLinkNonceRepository } from '@/infrastructure/repositories/prisma-magic-link-nonce.repository';
-import { HmacMagicLinkSigner } from '@/infrastructure/security/hmac-magic-link-signer';
-import { LinkTelegramSessionUseCase } from '@/application/use-cases/link-telegram-session.use-case';
+import { HmacMagicLinkSigner } from '@/features/auth';
+import { LinkTelegramSessionUseCase } from '@/features/auth';
 import { GenerateMagicLinkUseCase } from '@/application/use-cases/generate-magic-link.use-case';
-import { RevokeTelegramAnchorUseCase } from '@/application/use-cases/revoke-telegram-anchor.use-case';
+import { RevokeTelegramAnchorUseCase } from '@/features/auth';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const botGateway = new TelegramBotApiGateway();

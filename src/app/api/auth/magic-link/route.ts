@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RestoreSessionFromMagicLinkUseCase } from '@/application/use-cases/restore-session-from-magic-link.use-case';
-import { HmacMagicLinkSigner } from '@/infrastructure/security/hmac-magic-link-signer';
+import { RestoreSessionFromMagicLinkUseCase } from '@/features/auth';
+import { HmacMagicLinkSigner } from '@/features/auth';
 import { PrismaMagicLinkNonceRepository } from '@/infrastructure/repositories/prisma-magic-link-nonce.repository';
 import { PrismaUserAnchorRepository } from '@/infrastructure/repositories/prisma-user-anchor.repository';
 

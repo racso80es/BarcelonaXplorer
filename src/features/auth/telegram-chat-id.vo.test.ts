@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { TelegramChatId } from './telegram-chat-id.vo';
 import { InvalidTelegramChatIdException } from '@/domain/exceptions/invalid-telegram-chat-id.exception';
 
 describe('TelegramChatId Value Object', () => {

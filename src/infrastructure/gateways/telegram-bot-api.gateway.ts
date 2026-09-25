@@ -8,7 +8,7 @@ import {
   TelegramGetMeResponseSchema,
   TelegramGetWebhookInfoResponseSchema,
 } from '@/domain/schemas/telegram-webhook.schema';
-import { constantTimeEqualSync } from '@/infrastructure/security/crypto.utils';
+import { constantTimeEqualSync } from '@/features/auth';
 
 /**
  * Expresión regular que detecta y redacta tokens de la Telegram Bot API en URLs o cadenas de error.

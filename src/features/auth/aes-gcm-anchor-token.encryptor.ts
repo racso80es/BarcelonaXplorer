@@ -1,4 +1,4 @@
-import { AnchorTokenEncryptorPort } from '@/application/ports/out/anchor-token-encryptor.port';
+import { AnchorTokenEncryptorPort } from './anchor-token-encryptor.port';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
 /**

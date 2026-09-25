@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RevokeTelegramAnchorUseCase } from '@/application/use-cases/revoke-telegram-anchor.use-case';
-import { UserAnchorRepositoryPort } from '@/application/ports/out/user-anchor-repository.port';
+import { RevokeTelegramAnchorUseCase } from './revoke-telegram-anchor.use-case';
+import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
-import { UserAnchor } from '@/domain/entities/user-anchor.entity';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { UserAnchor } from './user-anchor.entity';
+import { TelegramChatId } from './telegram-chat-id.vo';
 
 describe('RevokeTelegramAnchorUseCase', () => {
   it('ejecuta un Hard-Delete en MySQL y despacha confirmación al usuario', async () => {
@@ -26,6 +26,9 @@ describe('RevokeTelegramAnchorUseCase', () => {
     const mockBotGateway: TelegramBotGatewayPort = {
       sendMessage: vi.fn().mockResolvedValue(undefined),
       verifySecretHeader: vi.fn().mockReturnValue(true),
+      getMe: vi.fn().mockResolvedValue(null),
+      getWebhookInfo: vi.fn().mockResolvedValue(null),
+      isGatewayEnabled: vi.fn().mockReturnValue(true),
     };
 
     const useCase = new RevokeTelegramAnchorUseCase(mockRepo, mockBotGateway);

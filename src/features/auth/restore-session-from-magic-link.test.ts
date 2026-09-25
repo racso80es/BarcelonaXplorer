@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RestoreSessionFromMagicLinkUseCase } from '@/application/use-cases/restore-session-from-magic-link.use-case';
-import { MagicLinkSignerPort } from '@/application/ports/out/magic-link-signer.port';
+import { RestoreSessionFromMagicLinkUseCase } from './restore-session-from-magic-link.use-case';
+import { MagicLinkSignerPort } from './magic-link-signer.port';
 import { MagicLinkNonceRepositoryPort } from '@/application/ports/out/magic-link-nonce-repository.port';
-import { UserAnchorRepositoryPort } from '@/application/ports/out/user-anchor-repository.port';
-import { UserAnchor } from '@/domain/entities/user-anchor.entity';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
+import { UserAnchor } from './user-anchor.entity';
+import { TelegramChatId } from './telegram-chat-id.vo';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
 describe('RestoreSessionFromMagicLinkUseCase', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { UserAnchor } from '@/domain/entities/user-anchor.entity';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { UserAnchor } from './user-anchor.entity';
+import { TelegramChatId } from './telegram-chat-id.vo';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
 describe('UserAnchor Domain Entity', () => {

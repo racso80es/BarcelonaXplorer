@@ -3,9 +3,9 @@ import {
   RevokeTelegramAnchorResult,
   RevokeTelegramAnchorUseCasePort,
 } from '@/application/ports/in/revoke-telegram-anchor.use-case.port';
-import { UserAnchorRepositoryPort } from '@/application/ports/out/user-anchor-repository.port';
+import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { TelegramChatId } from './telegram-chat-id.vo';
 
 export class RevokeTelegramAnchorUseCase implements RevokeTelegramAnchorUseCasePort {
   constructor(

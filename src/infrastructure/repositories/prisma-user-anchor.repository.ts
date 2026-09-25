@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import { UserAnchorRepositoryPort } from '@/application/ports/out/user-anchor-repository.port';
-import { UserAnchor } from '@/domain/entities/user-anchor.entity';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { UserAnchorRepositoryPort } from '@/features/auth';
+import { UserAnchor } from '@/features/auth';
+import { TelegramChatId } from '@/features/auth';
 
 // Prisma singleton para reutilización en entornos serverless/Next.js
 const globalForPrisma = globalThis as unknown as {

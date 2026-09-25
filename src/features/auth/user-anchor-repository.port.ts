@@ -1,5 +1,5 @@
-import { UserAnchor } from '@/domain/entities/user-anchor.entity';
-import { TelegramChatId } from '@/domain/value-objects/telegram-chat-id.vo';
+import { UserAnchor } from './user-anchor.entity';
+import { TelegramChatId } from './telegram-chat-id.vo';
 
 /**
  * Puerto de Salida para el almacenamiento relacional de anclajes de usuario.
