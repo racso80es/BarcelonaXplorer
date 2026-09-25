@@ -25,8 +25,11 @@ El monolito (Next.js App Router) se rige por una disciplina arquitectónica dond
    Reemplazar un proveedor de IA (ej. Google Gemini por otro motor) o migrar el motor de base de datos vectorial (LanceDB) no alterará un solo token de la lógica de negocio ni de las entidades de dominio.
 3. **Prohibición de Primitivos (Value Objects):**
    Se erradica la obsesión por los tipos primitivos. Todo concepto (ej. Presupuesto, Coordenadas, TiempoDisponible, RadioBúsqueda) debe encapsularse en **Objetos de Valor inmutables** que autovaliden sus invariantes en el constructor. El estado inválido es físicamente imposible de instanciar en la memoria del sistema.
-4. **Cláusula de Evolución Topológica Empírica:**
-   La organización física de directorios (Clean Architecture por Capas vs. Vertical Slicing por Features) está supeditada al **Filtro Empírico** mediante tests controlados de fricción algorítmica ([`PBI-ARCH-TEST-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Test%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20-%20Evaluaci%C3%B3n%20Emp%C3%ADrica%20de%20Opciones%20Arquitect%C3%B3nicas%20%28A%20vs%20B%29.md)). La estructura definitiva será consolidada irreversiblemente en [`PBI-ARCH-APPLY-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Aplicaci%C3%B3n%20Definitiva%20de%20Modificaciones%20Arquitect%C3%B3nicas%20Post-Veredicto.md) sin vulnerar jamás el aislamiento de puertos y adaptadores.
+4. **Consagración Canónica de Vertical Slicing (Post-Veredicto ADR-001):**
+   Tras la superación del Filtro Empírico en [`PBI-ARCH-TEST-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Test%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20-%20Evaluaci%C3%B3n%20Emp%C3%ADrica%20de%20Opciones%20Arquitect%C3%B3nicas%20%28A%20vs%20B%29.md) y su ratificación en [`ADR-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md), la topología física oficial del repositorio adopta de forma irreversible la arquitectura de **Vertical Slicing por Features** (`src/features/*`) complementada por el núcleo transversal (`src/shared/*`).
+   - Quedan erradicados definitivamente los directorios globales de capas dispersas (`domain/`, `application/`, `infrastructure/`).
+   - Cada vertical (`triage`, `telemetry`, `auth`, `cognitive-memory`, `ai-engine`, `planner`, `telegram`) encapsula localmente sus entidades, objetos de valor, puertos, casos de uso, adaptadores y tests unitarios colocados.
+   - Las invariantes de Clean Architecture / DDD (aislamiento del dominio, inversión de dependencias y pureza lógica) se preservan con rigor absoluto en el interior de cada cápsula.
 
 ---
 
