@@ -1,16 +1,27 @@
 ---
+# ═══════════════════════════════════════════════════════════════
+# Pipeline IaaC: Despliegue Atómico Ansistrano — BarcelonaXplorer
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axioma I: Localidad de Comportamiento — Estructura aislada de releases
+# Axioma II: Tolerancia Cero a la Inferencia — Permisos y rutas estrictas
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa
+# ═══════════════════════════════════════════════════════════════
+
 - name: Despliegue PWA BarcelonaXplorer
   hosts: nodos_pro
   gather_facts: false
   vars:
+    # Axioma I: Directorio fuente sincronizado hacia el nodo de destino
     ansistrano_deploy_from: "../src/"
-    # Ruta en el PC 11 donde se construirá la estructura (releases, shared, current)
+    # Ruta en el PC 11 donde se orquesta la estructura atómica (releases, shared, current)
     ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
     ansistrano_deploy_via: "rsync"
+    # Rotación automática de versiones para contención de disco
     ansistrano_keep_releases: 3
+    # Axioma II: Archivos de configuración y secretos inmutables preservados entre despliegues
     ansistrano_shared_files:
       - .env.production
-    # Llama al hook de Docker justo después de actualizar el enlace simbólico
+    # Axioma III: Hook declarativo de post-enlace simbólico para ignición de contenedores
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
   pre_tasks:
     - name: Asegurar existencia del directorio shared en el Nodo 11
@@ -19,16 +30,20 @@
         state: directory
         mode: '0755'
 
+    # Axioma I: Aislamiento del volumen vectorial LanceDB fuera de la rotación de releases
     - name: Asegurar existencia del directorio lancedb_data para persistencia vectorial (UID 1001)
       ansible.builtin.file:
         path: "{{ ansistrano_deploy_to }}/lancedb_data"
         state: directory
         mode: '0777'
 
+    # Axioma II: Blindaje de secretos en producción con permisos de lectura exclusivos (0600)
     - name: Transferir automáticamente .env.production a shared
       ansible.builtin.copy:
         src: "../src/.env.production"
         dest: "{{ ansistrano_deploy_to }}/shared/.env.production"
         mode: '0600'
   roles:
+    # Rol Ansistrano: orquestación atómica cero-downtime (setup -> update -> symlink -> cleanup)
     - ansistrano.deploy
+

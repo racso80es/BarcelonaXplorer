@@ -1,14 +1,26 @@
 ---
+# ═══════════════════════════════════════════════════════════════
+# Hook Ansistrano: After Symlink (Ignición y Estabilización)
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axioma I: Localidad de Comportamiento — Ejecución contextual en current
+# Axioma II: Tolerancia Cero a la Inferencia — Sondeos estrictos de salud
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa
+# Axioma IV: El Peaje del Oráculo — Bloqueo preventivo ante fallas
+# ═══════════════════════════════════════════════════════════════
+
+# Axioma III: Recarga atómica de contenedores con recreación y purga de huérfanos
 - name: Recargar orquestación Docker en la nueva versión
   ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer down && docker compose --env-file .env.production -p barcelonaxplorer up -d --build --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
 
+# Axioma II: Ventana de estabilización temporal para apertura de sockets TCP/InnoDB
 - name: Pausa táctica para ignición y estabilización del socket InnoDB (MySQL)
   ansible.builtin.pause:
     seconds: 5
     prompt: "Aguardando estabilización del socket de InnoDB en el Nodo 11..."
 
+# Axioma IV: Oráculo de disponibilidad — Sondeo activo mysqladmin con reintentos acotados
 - name: Esperar a que el motor MySQL esté saludable
   ansible.builtin.shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -ubx_admin -pbx_secure_pass --silent
   register: mysql_ping
@@ -17,6 +29,7 @@
   delay: 2
   changed_when: false
 
+# Axioma I: Migración DDL idempotente ejecutada in-situ para garantizar consistencia relacional
 - name: Sincronizar esquemas de MySQL (TelemetryLog, user_anchors, magic_link_nonces, SystemConfig)
   ansible.builtin.shell: |
     docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'

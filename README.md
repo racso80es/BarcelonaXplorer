@@ -339,10 +339,12 @@ ansible-playbook -i ansible/inventory.ini ansible/rollback.yml
 
 ## 📜 Axiomas y Dogmas de Ingeniería (CONSTITUTION.MD)
 
-Todo el código de BarcelonaXplorer está blindado bajo las directivas de su **Constitución Arquitectónica**:
+Todo el código de BarcelonaXplorer está blindado bajo las directivas de su **[Constitución Arquitectónica](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.MD)**:
 
 1. **Aislamiento del Dominio:** Las dependencias fluyen estrictamente de fuera hacia adentro. El núcleo de negocio jamás conoce los detalles de su propia infraestructura (LLMs, MySQL, frameworks).
 2. **Sustitución de Entropía:** Sustituir un proveedor de IA o cambiar el motor de persistencia no alterará un solo token de la lógica de negocio ni de las entidades de dominio.
 3. **Prohibición de Primitivos (Value Objects):** Todo concepto (coordenadas, presupuestos, intervalos temporales) se encapsula en Objetos de Valor inmutables que autovalidan sus invariantes en el constructor. El estado inválido es físicamente imposible de instanciar en memoria.
 4. **Tolerancia Cero a `any`:** Proscripción del tipo `any`. Toda entropía externa entrante (especialmente JSONs de LLMs) pasa por el Triaje Entrópico de Zod antes de ingresar al sistema.
 5. **Filtro Empírico:** El código teórico es ruido; solo el código desplegado y testado es vitalidad. Toda funcionalidad se verifica empíricamente con suites de tests automatizados y pruebas de aislamiento.
+6. **Consolidación Declarativa YAML (Axioma III):** Primacía de YAML sobre JSON para configuración estática e IaaC (~30% de ahorro en tokens para IA), habilitación de JSONC documentado (`tsconfig.json`, `components.json`) y blindaje P0 con deserialización segura (`yaml.safe_load`).
+7. **Axiomas de Forja S+ Grade (Optimización para IA):** Reglas innegociables para agentes de IA que norman la localidad de comportamiento (Axioma I: ≤ 3 archivos por operación atómica), la aduana de fricción con linter AST y la encapsulación estructural.

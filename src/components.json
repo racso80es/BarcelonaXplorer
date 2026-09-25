@@ -1,7 +1,15 @@
 {
+  // ═══════════════════════════════════════════════════════════════
+  // Configuración Shadcn/ui — BarcelonaXplorer
+  // Marco Constitucional: Protocolo de Acero — Grado S+
+  // Axioma III: Diseño Declarativo sobre Lógica Imperativa
+  // Schema Contractual: https://ui.shadcn.com/schema.json
+  // ═══════════════════════════════════════════════════════════════
   "$schema": "https://ui.shadcn.com/schema.json",
   "style": "base-nova",
+  // Axioma III: Renderizado en servidor por defecto (React Server Components)
   "rsc": true,
+  // Axioma II: Mandato estricto de TypeScript en componentes UI (TSX obligatorio)
   "tsx": true,
   "tailwind": {
     "config": "",
@@ -12,6 +20,7 @@
   },
   "iconLibrary": "lucide",
   "rtl": false,
+  // Axioma I: Localidad de comportamiento — Estructura declarativa de módulos UI
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
@@ -23,3 +32,4 @@
   "menuAccent": "subtle",
   "registries": {}
 }
+

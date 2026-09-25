@@ -1,0 +1,132 @@
+# ═══════════════════════════════════════════════════════════════
+# ESTÁNDAR ARQUITECTÓNICO DE GOBERNANZA: FORMATOS DE CONFIGURACIÓN
+# Identificador: GOV-ARCH-CFG-001
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axiomas Vinculados:
+#   - Axioma I: Ley de Economía Termodinámica (Localidad de Comportamiento)
+#   - Axioma II: Tolerancia Cero a la Inferencia (Fronteras Deterministas)
+#   - Axioma III: Diseño Declarativo sobre Lógica Imperativa
+#   - Axioma IV: El Peaje del Oráculo (Aduana de Fricción)
+#   - Axioma V: Ejecución Encapsulada y Transparencia Estructural
+# Estatus: Vigente / Canónico
+# Fecha de Emisión: 2026-09-25
+# Autor: Vértice Biológico / Nodo de Control
+# ═══════════════════════════════════════════════════════════════
+
+estandar:
+  nombre: "Consolidación Declarativa YAML y Gobernanza de Formatos"
+  version: "1.0.0"
+  alcance: "Raíz del repositorio, código fuente src/, infraestructura ansible/ y tooling"
+
+principios_fundacionales:
+  axioma_iii_declarativo:
+    declaracion: >
+      Toda configuración estática de comportamiento, despliegue y orquestación
+      es termodinámicamente superior cuando se define de forma declarativa.
+      YAML es el estándar canónico y preferente del ecosistema debido a su menor
+      densidad de tokens (~30% menos sobrecarga que JSON), su comentabilidad nativa
+      y su indentación semántica orientada a agentes IA y desarrolladores.
+  politica_jsonc:
+    declaracion: >
+      Aquellos archivos de configuración que por restricción contractual de herramientas
+      externas deban conservar la extensión .json (ej. tsconfig.json, components.json),
+      pero cuyos compiladores soporten formalmente la especificación JSONC (JSON con Comentarios),
+      deben ser enriquecidos con comentarios semánticos (//) documentando las justificaciones
+      constitucionales de cada directiva.
+  politica_json_puro_blindado:
+    declaracion: >
+      Los archivos JSON puro que subsistan sin comentarios (ej. package.json, package-lock.json)
+      lo hacen exclusivamente por incompatibilidad física del gestor de paquetes (npm),
+      el cual colapsa o purga comentarios sintácticos. Queda prohibida la modificación manual
+      de estos archivos para inyectar comentarios no soportados.
+
+blindaje_seguridad_parseo_yaml:
+  clasificacion_riesgo: "P0 - Ejecución Arbitraria de Código (RCE)"
+  regla_innegociable: >
+    Queda terminantemente proscrito el uso de métodos de deserialización insegura
+    en cualquier script, worker, middleware o ruta API que procese archivos YAML.
+  metodos_proscritos:
+    python: "yaml.load(data)"
+    ruby: "YAML.load(data)"
+    nodejs_js_yaml: "yaml.load(data) sin SAFE_SCHEMA"
+  metodos_mandatarios:
+    python: "yaml.safe_load(data)"
+    nodejs_yaml: "YAML.parse(data)"
+    nodejs_js_yaml: "yaml.load(data, { schema: yaml.SAFE_SCHEMA })"
+    ruby: "YAML.safe_load(data)"
+
+inventario_clasificacion_formatos:
+  categoria_1_yaml_conforme:
+    descripcion: "Archivos nativamente en YAML enriquecidos con comentarios constitucionales"
+    archivos:
+      - ruta: "src/docker-compose.yml"
+        justificacion: "Orquestación de producción (web + MySQL + LanceDB)"
+        estado: "Enriquecido y verificado con docker compose config"
+      - ruta: "ansible/deploy.yml"
+        justificacion: "Pipeline atómico de despliegue Ansistrano"
+        estado: "Enriquecido y verificado con syntax-check"
+      - ruta: "ansible/rollback.yml"
+        justificacion: "Procedimiento de reversión a release previo"
+        estado: "Enriquecido y verificado con syntax-check"
+      - ruta: "ansible/hooks/after_symlink.yml"
+        justificacion: "Hook de ignición Docker y migración relacional DDL"
+        estado: "Enriquecido y verificado con syntax-check"
+
+  categoria_2_jsonc_aprovechable:
+    descripcion: "Archivos con extensión .json tratados como JSONC con comentarios //"
+    archivos:
+      - ruta: "src/tsconfig.json"
+        parser: "TypeScript Compiler (tsc)"
+        soporte_jsonc: "Nativo desde TypeScript 1.0"
+        justificacion: "Documenta directivas de compilador (strict, noEmit, paths)"
+        estado: "Enriquecido y verificado con npx tsc --noEmit"
+      - ruta: "src/components.json"
+        parser: "Shadcn/ui CLI"
+        soporte_jsonc: "Tolerante nativo"
+        justificacion: "Documenta configuración de UI, RSC y alias de componentes"
+        estado: "Enriquecido y verificado con compilación y suite de pruebas"
+
+  categoria_3_json_puro_blindado:
+    descripcion: "Archivos JSON estrictos donde los comentarios están prohibidos por tooling"
+    archivos:
+      - ruta: "src/package.json"
+        motivo_blindaje: "npm CLI falla si contiene comentarios sintácticos"
+        accion: "Preservar intacto sin comentarios"
+      - ruta: "src/package-lock.json"
+        motivo_blindaje: "Generado automáticamente por el motor npm"
+        accion: "Preservar intacto sin intervención directa"
+
+  categoria_4_formato_nativo_propio:
+    descripcion: "Archivos en formato propio exigido por el motor de ejecución"
+    archivos:
+      - ruta: "ansible/ansible.cfg"
+        formato: "INI"
+        motivo: "Ansible Core solo soporta formato INI para ansible.cfg"
+      - ruta: "ansible/inventory.ini"
+        formato: "INI"
+        motivo: "Inventario de nodos en formato estándar INI"
+      - ruta: "src/eslint.config.mjs"
+        formato: "JavaScript (Flat Config)"
+        motivo: "ESLint 9+ Flat Config exige módulo JS/TS"
+      - ruta: "src/vitest.config.ts"
+        formato: "TypeScript"
+        motivo: "Vitest exige archivo tipado TS/JS"
+      - ruta: "src/next.config.ts"
+        formato: "TypeScript"
+        motivo: "Next.js soporta TS nativo para configuración de bundler"
+      - ruta: "src/postcss.config.mjs"
+        formato: "JavaScript"
+        motivo: "PostCSS exige módulo ESM/CJS"
+
+directriz_futura:
+  regla_oro: >
+    Ante la incorporación de cualquier nueva herramienta, linter, bot de dependencias
+    o pipeline de CI/CD que admita soporte dual (YAML y JSON), la elección mandataria
+    es invariablemente YAML.
+  ejemplos_tipificados:
+    - herramienta: "Workflows de CI/CD (GitHub Actions / GitLab CI)"
+      formato_mandatario: ".github/workflows/*.yml"
+    - herramienta: "Gestores de Dependencias Automatizados (Renovate)"
+      formato_mandatario: "renovate.yml"
+    - herramienta: "Dependabot"
+      formato_mandatario: ".github/dependabot.yml"

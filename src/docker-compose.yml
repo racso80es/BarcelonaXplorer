@@ -1,12 +1,25 @@
+# ═══════════════════════════════════════════════════════════════
+# Orquestación de Servicios: BarcelonaXplorer (Producción)
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axioma I: Localidad de Comportamiento — Stack completo orquestado
+# Axioma II: Tolerancia Cero a la Inferencia — Mapeos y vars explícitas
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa
+# ═══════════════════════════════════════════════════════════════
+
 services:
+  # ─────────────────────────────────────────────────────────────
+  # Servicio Web: PWA Next.js 16 (App Router + Standalone Output)
+  # ─────────────────────────────────────────────────────────────
   web:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: barcelonaxplorer_nginx
+    # Axioma III: Publicación declarativa de puertos (8080 host -> 3000 contenedor)
     ports:
       - "8080:3000"
     restart: unless-stopped
+    # Inyección de secretos e identidad operativa desde shared
     env_file: .env.production
     environment:
       - NODE_ENV=production
@@ -15,13 +28,19 @@ services:
       - DATABASE_URL=mysql://bx_admin:bx_secure_pass@db:3306/barcelonaxplorer_db
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      # Estabilización de resolución DNS en Node.js (prioridad IPv4 para APIs externas)
       - NODE_OPTIONS=--dns-result-order=ipv4first
+      # Persistencia Vectorial LanceDB: URI in-process sobre almacenamiento persistente
       - LANCEDB_URI=${LANCEDB_URI:-/app/vector_storage}
     volumes:
+      # Axioma I: Aislamiento IaaC del almacenamiento vectorial LanceDB (Apache Arrow)
       - ${LANCEDB_DATA_PATH:-./data/lancedb}:/app/vector_storage
     depends_on:
       - db
 
+  # ─────────────────────────────────────────────────────────────
+  # Servicio DB: Motor Relacional MySQL 8.0 (Telemetría y Anclajes)
+  # ─────────────────────────────────────────────────────────────
   db:
     image: mysql:8.0
     container_name: barcelonaxplorer_mysql
@@ -32,6 +51,9 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
+      # Axioma I: Persistencia de datos transaccionales fuera del ciclo de vida del release
       - /home/racso/Despliegues/BarcelonaXplorer/mysql_data:/var/lib/mysql
+    # Enlace restringido a interfaz de loopback para acceso seguro en host
     ports:
       - "127.0.0.1:3306:3306"
+

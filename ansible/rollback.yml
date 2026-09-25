@@ -1,10 +1,20 @@
 ---
+# ═══════════════════════════════════════════════════════════════
+# Pipeline IaaC: Rollback Atómico Ansistrano — BarcelonaXplorer
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axioma I: Localidad de Comportamiento — Conmutación instantánea a release previo
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa — Reversión determinista
+# ═══════════════════════════════════════════════════════════════
+
 - name: Rollback PWA BarcelonaXplorer a la versión anterior
   hosts: nodos_pro
   gather_facts: false
   vars:
+    # Ruta base del despliegue en Nodo 11
     ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
-    # Reutilizamos el hook para que Docker se reinicie tras el rollback
+    # Axioma III: Reutilización simétrica del hook de ignición tras conmutar symlink
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
   roles:
+    # Rol Ansistrano: revierte current al release previo y purga el release defectuoso
     - ansistrano.rollback
+
