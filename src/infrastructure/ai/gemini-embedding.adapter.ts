@@ -59,11 +59,12 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
           contents: trimmed,
         });
 
-        // La respuesta puede contener embeddings array o embedding único
+        // La respuesta puede contener embeddings array o embedding único según versión del SDK
+        const res = response as { embedding?: { values?: number[] }; embeddings?: Array<{ values?: number[] }> };
         const values =
-          response.embedding?.values ??
-          (response.embeddings && response.embeddings.length > 0
-            ? response.embeddings[0]?.values
+          res.embedding?.values ??
+          (res.embeddings && res.embeddings.length > 0
+            ? res.embeddings[0]?.values
             : undefined);
 
         if (values && Array.isArray(values) && values.length > 0) {
@@ -119,7 +120,7 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
     payload: Record<string, unknown>,
   ): void {
     if (!this.telemetryRepo) return;
-    const entry = new TelemetryEntry(level, 'AI_ENGINE', message, payload, 500, 0);
+    const entry = new TelemetryEntry(level, 'LLM_ENGINE', message, payload, 500, 0);
     this.telemetryRepo.log(entry).catch(() => {});
   }
 }

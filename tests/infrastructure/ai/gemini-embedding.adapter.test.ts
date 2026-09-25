@@ -65,7 +65,7 @@ describe('GeminiEmbeddingAdapter', () => {
     expect(mockTelemetry.log).toHaveBeenCalledWith(
       expect.objectContaining({
         level: 'WARN',
-        context: 'AI_ENGINE',
+        context: 'LLM_ENGINE',
       }),
     );
   });

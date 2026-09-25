@@ -18,11 +18,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['../tests/**/*.test.ts', './**/*.test.tsx'],
+    include: ['../tests/**/*.test.{ts,tsx}', './**/*.test.tsx'],
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      '@testing-library/react': path.resolve(__dirname, 'node_modules/@testing-library/react'),
     },
   },
   server: {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Activity, Terminal, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Activity, Terminal, Brain, ArrowUpRight, ShieldCheck } from 'lucide-react';
 
 interface NavItem {
   readonly label: string;
@@ -15,22 +15,27 @@ const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Dashboard', href: '/Admin', icon: LayoutDashboard },
   { label: 'Sensores', href: '/Admin/System', icon: Activity },
   { label: 'Bitácora', href: '/Admin/Logs', icon: Terminal },
+  { label: 'Cognición RAG', href: '/Admin/Cognitive', icon: Brain },
 ];
 
 export interface AdminSidebarRightProps {
   readonly nodeName?: string;
   readonly environmentName?: string;
   readonly securityMode?: string;
+  readonly currentPath?: string;
 }
 
 export function AdminSidebarRight({
   nodeName = 'LOCAL / DEV',
   environmentName = 'Pruebas / Local',
   securityMode = 'Basic Auth (Edge)',
+  currentPath,
 }: AdminSidebarRightProps = {}) {
-  const pathname = usePathname();
+  const browserPathname = usePathname();
+  const pathname = currentPath ?? browserPathname;
 
   const isItemActive = (href: string) => {
+    if (!pathname) return false;
     if (href === '/Admin') {
       return pathname === '/Admin';
     }

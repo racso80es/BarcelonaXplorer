@@ -35,8 +35,8 @@ export async function getLanceDbConnection(customUri?: string): Promise<lancedb.
   // Si la URI es una ruta de sistema de archivos local, asegurar que la carpeta base exista
   if (!uri.startsWith('s3://') && !uri.startsWith('gs://')) {
     try {
-      if (!fs.existsSync(uri)) {
-        fs.mkdirSync(uri, { recursive: true });
+      if (!fs.existsSync(/*turbopackIgnore: true*/ uri)) {
+        fs.mkdirSync(/*turbopackIgnore: true*/ uri, { recursive: true });
       }
     } catch (err) {
       console.warn(`[LanceDbClient] No se pudo asegurar el directorio base ${uri}:`, err);
