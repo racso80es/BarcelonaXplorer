@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeminiClient } from '@/infrastructure/ai/gemini-client';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 describe('GeminiClient (Telemetría LLM_ENGINE e Inferencia)', () => {
   const originalEnv = process.env;

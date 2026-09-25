@@ -4,8 +4,8 @@ import {
   TelegramBotHealthState,
 } from '@/application/ports/in/audit-telegram-bot-health.use-case.port';
 import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 export interface AuditTelegramBotHealthConfig {
   readonly expectedWebhookUrl?: string;

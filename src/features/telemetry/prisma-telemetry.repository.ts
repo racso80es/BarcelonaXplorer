@@ -1,5 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from './telemetry-repository.port';
 import {
   TelemetryEntry,
   TelemetryFilter,
@@ -7,7 +7,7 @@ import {
   TelemetryLevel,
   TelemetryContext,
   TelemetryPayload,
-} from '@/domain/entities/telemetry-entry.entity';
+} from './telemetry-entry.entity';
 
 // Prisma singleton para reutilización en entornos serverless/Next.js
 const globalForPrisma = globalThis as unknown as {

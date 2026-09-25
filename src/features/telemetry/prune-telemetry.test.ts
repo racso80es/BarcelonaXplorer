@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { PruneTelemetryUseCase } from '@/application/use-cases/prune-telemetry.use-case';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { PruneTelemetryUseCase } from './prune-telemetry.use-case';
+import { TelemetryRepositoryPort } from './telemetry-repository.port';
 
 describe('PruneTelemetryUseCase (Poda Ontológica)', () => {
   it('debe aplicar las reglas por defecto de 7 días (DEBUG/INFO) y 30 días (WARN/ERROR)', async () => {

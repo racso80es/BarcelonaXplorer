@@ -4,8 +4,8 @@ import {
   LanceDbHealthState,
 } from '@/application/ports/in/audit-lancedb-health.use-case.port';
 import { IVectorStorePort } from '@/application/ports/out/vector-store.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 export interface AuditLanceDbHealthConfig {
   readonly latencyWarnThresholdMs?: number;

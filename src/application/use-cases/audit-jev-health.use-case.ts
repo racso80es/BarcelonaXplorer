@@ -4,8 +4,8 @@ import {
   JevHealthState,
 } from '@/application/ports/in/audit-jev-health.use-case.port';
 import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngine';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 export interface AuditJevHealthConfig {
   latencyWarnThresholdMs?: number;

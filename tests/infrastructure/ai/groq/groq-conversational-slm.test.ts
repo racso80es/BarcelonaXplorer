@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GroqConversationalSlmAdapter } from '@/infrastructure/ai/groq/groq-conversational-slm.adapter';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('GroqConversationalSlmAdapter (HU-CORE-TRIAGE-002: System Two Ligero)', () => {
   const originalEnv = process.env;

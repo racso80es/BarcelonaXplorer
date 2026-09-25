@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/telemetry/prune/route';
 
-vi.mock('@/infrastructure/repositories/prisma-telemetry.repository', () => {
+vi.mock('@/features/telemetry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/telemetry')>();
   return {
+    ...actual,
     PrismaTelemetryRepository: class {
       prune = vi.fn().mockResolvedValue({ deletedCount: 17 });
     },

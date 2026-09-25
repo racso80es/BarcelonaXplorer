@@ -1,7 +1,7 @@
 import { AiGeneratorPort } from '@/application/ports/out/ai-generator.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TacticalRoute } from '@/domain/entities/tactical-route.entity';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryEntry } from '@/features/telemetry';
 import {
   LlmEnvironmentContext,
   LlmTelemetryEvent,

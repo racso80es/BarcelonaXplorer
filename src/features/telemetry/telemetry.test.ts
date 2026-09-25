@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { PrismaTelemetryRepository } from './prisma-telemetry.repository';
+import { TelemetryEntry } from './telemetry-entry.entity';
 import { PrismaClient } from '@prisma/client';
 
 describe('PrismaTelemetryRepository (Vía del Yunque S+)', () => {

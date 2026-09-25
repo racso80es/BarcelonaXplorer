@@ -5,7 +5,7 @@ import { IConversationalSLMPort } from '@/application/ports/out/conversational-s
 import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
 import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
 import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('TriageInputUseCase (HU-CORE-TRIAGE-002: Orquestación del Triaje Entrópico - Laudos 1 y 2)', () => {
   let mockDecisionEngine: ITypedDecisionEngine;

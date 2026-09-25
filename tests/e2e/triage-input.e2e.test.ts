@@ -5,7 +5,7 @@ import { TriageInputUseCase } from '@/application/use-cases/triage-input.use-cas
 import { JevClient } from '@/infrastructure/ai/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/infrastructure/ai/groq/groq-conversational-slm.adapter';
 import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('Aduana Universal y Triaje Entrópico Upstream Live E2E (HU-CORE-TRIAGE-002)', () => {
   beforeAll(() => {

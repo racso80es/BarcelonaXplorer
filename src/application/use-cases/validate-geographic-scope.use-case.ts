@@ -4,13 +4,13 @@ import {
 } from '@/application/ports/in/validate-geographic-scope.use-case.port';
 import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
 import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
 import {
   ValidateGeographicScopeInputDto,
   ValidateGeographicScopeInputSchema,
 } from '@/domain/schemas/geographic-scope.schema';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryEntry } from '@/features/telemetry';
 
 /**
  * Caso de Uso: Aduana Universal - Validación de Anclaje Geográfico (HU-PERIM-GEO-001).

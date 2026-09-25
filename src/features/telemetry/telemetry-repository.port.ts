@@ -2,7 +2,7 @@ import {
   TelemetryEntry,
   TelemetryFilter,
   RetentionRules,
-} from '@/domain/entities/telemetry-entry.entity';
+} from './telemetry-entry.entity';
 
 /**
  * Puerto de Salida Hexagonal para la persistencia, consulta y poda

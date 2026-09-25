@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuditTelegramBotHealthUseCase } from '@/application/use-cases/audit-telegram-bot-health.use-case';
 import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('AuditTelegramBotHealthUseCase', () => {
   let mockGateway: TelegramBotGatewayPort;

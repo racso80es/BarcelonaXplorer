@@ -4,8 +4,8 @@ import {
   JevDecisionProbeResult,
   JevNoulEvaluation,
 } from '@/application/ports/out/ITypedDecisionEngine';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 import { getJevConfig, JevConfig } from './config';
 import {
   JevChoiceAnswerSchema,

@@ -28,9 +28,11 @@
         "name": "next"
       }
     ],
-    // Axioma I: Localidad de comportamiento — Alias canónico para resolución interna
+    // Axioma I: Localidad de comportamiento — Alias canónico y amortiguación de transición
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/features/*": ["./features/*"],
+      "@/shared/*": ["./shared/*"]
     }
   },
   "include": [

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { JevClient } from '@/infrastructure/ai/jev/jevClient';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () => {
   const originalEnv = process.env;

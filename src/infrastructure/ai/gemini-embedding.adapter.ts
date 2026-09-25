@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { IEmbeddingPort } from '@/application/ports/out/embedding.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 /**
  * Adaptador de Infraestructura para generación de embeddings sobre Google GenAI.

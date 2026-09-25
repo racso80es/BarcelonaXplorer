@@ -1,7 +1,7 @@
 import Groq from 'groq-sdk';
 import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 import {
   GEOGRAPHIC_REBOUND_SYSTEM_PROMPT,
   buildGeographicReboundUserPrompt,

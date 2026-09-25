@@ -1,5 +1,5 @@
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { RetentionRules } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from './telemetry-repository.port';
+import { RetentionRules } from './telemetry-entry.entity';
 
 export interface PruneTelemetryResult {
   deletedCount: number;

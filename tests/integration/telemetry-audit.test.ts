@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
-import { PruneTelemetryUseCase } from '@/application/use-cases/prune-telemetry.use-case';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { PruneTelemetryUseCase } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 import { TelemetryLogInputSchema } from '@/infrastructure/ai/schemas/telemetry.schema';
 import * as fs from 'fs';
 import * as path from 'path';

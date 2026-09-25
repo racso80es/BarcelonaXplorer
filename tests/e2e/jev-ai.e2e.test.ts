@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { JevClient } from '@/infrastructure/ai/jev/jevClient';
 import { AuditJevHealthUseCase } from '@/application/use-cases/audit-jev-health.use-case';
 import { JevTelemetryCard } from '@/app/Admin/System/JevTelemetryCard';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { getJevConfig } from '@/infrastructure/ai/jev/config';
 import * as path from 'path';
 import * as fs from 'fs';

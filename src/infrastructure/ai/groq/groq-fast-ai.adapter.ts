@@ -5,9 +5,9 @@ import type {
 } from '@/application/ports/out/fast-interaction-ai.port';
 import { FastInsight } from '@/domain/entities/fast-insight.entity';
 import { FastInsightZodSchema } from '@/infrastructure/ai/schemas/fast-insight.schema';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 /**
  * Mensaje genérico devuelto cuando la API de Groq falla.

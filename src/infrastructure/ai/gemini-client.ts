@@ -3,8 +3,8 @@ import { AiGeneratorPort } from '@/application/ports/out/ai-generator.port';
 import { TacticalRoute, TacticalWaypoint, GeoCoordinates, TimeSpan } from '@/domain/entities/tactical-route.entity';
 import { TacticalRouteZodSchema } from '@/infrastructure/ai/schemas/tactical-route.schema';
 import { DomainException } from '@/domain/exceptions/domain.exception';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
+import { TelemetryEntry } from '@/features/telemetry';
 
 /**
  * Adaptador de Infraestructura: Cliente de Google Gemini AI.

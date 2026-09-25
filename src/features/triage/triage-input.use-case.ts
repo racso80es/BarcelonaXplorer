@@ -2,7 +2,7 @@ import { ITriageInputUseCasePort } from './triage-input.use-case.port';
 import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngine';
 import { IConversationalSLMPort } from '@/application/ports/out/conversational-slm.port';
 import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
 import { HeuristicGeographicDecisionEngine } from '@/infrastructure/ai/rules/heuristic-geographic-decision-engine';
 import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
@@ -16,7 +16,7 @@ import {
 } from '@/domain/schemas/matrix';
 import { TriageOutcome } from './triage-outcome.vo';
 import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
-import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
+import { TelemetryEntry } from '@/features/telemetry';
 
 import { ICognitiveMemoryPort } from '@/application/ports/out/cognitive-memory.port';
 import { IEmbeddingPort } from '@/application/ports/out/embedding.port';

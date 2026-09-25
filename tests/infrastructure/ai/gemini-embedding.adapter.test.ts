@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { GeminiEmbeddingAdapter } from '@/infrastructure/ai/gemini-embedding.adapter';
 import { GoogleGenAI } from '@google/genai';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('GeminiEmbeddingAdapter', () => {
   it('debe reportar 768 dimensiones estándar', () => {

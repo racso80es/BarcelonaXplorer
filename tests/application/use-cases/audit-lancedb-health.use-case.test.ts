@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuditLanceDbHealthUseCase } from '@/application/use-cases/audit-lancedb-health.use-case';
 import { IVectorStorePort } from '@/application/ports/out/vector-store.port';
-import { TelemetryRepositoryPort } from '@/application/ports/out/telemetry-repository.port';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('AuditLanceDbHealthUseCase', () => {
   let mockVectorStore: IVectorStorePort;

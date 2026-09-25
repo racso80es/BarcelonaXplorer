@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
-import { PruneTelemetryUseCase } from '@/application/use-cases/prune-telemetry.use-case';
+import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { PruneTelemetryUseCase } from '@/features/telemetry';
 import { constantTimeEqual } from '@/infrastructure/security/crypto.utils';
 
 export const runtime = 'nodejs';

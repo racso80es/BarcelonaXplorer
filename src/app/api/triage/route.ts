@@ -6,7 +6,7 @@ import { GroqConversationalSlmAdapter } from '@/infrastructure/ai/groq/groq-conv
 import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
 import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
 import { GeminiClient } from '@/infrastructure/ai/gemini-client';
-import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
+import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/infrastructure/ai/gemini-embedding.adapter';
 import { LanceDbCognitiveMemoryAdapter } from '@/infrastructure/vector/lancedb-cognitive-memory.adapter';
 
