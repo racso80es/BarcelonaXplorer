@@ -1,14 +1,16 @@
 # [ARQUITECTURA] Documento Destilado: PBI - Aplicación Definitiva de Modificaciones Arquitectónicas Post-Veredicto
 
 **Identificador:** PBI-ARCH-APPLY-001  
-**Estatus:** Pendiente de Forja (Bloqueado por PBI-ARCH-TEST-001 y PBI-ARCH-YAML-001)  
+**Estatus:** Listo para Ejecución Táctica / Planificación Oficial Forjada (Desbloqueado tras ADR-001 y PBI-ARCH-YAML-001)  
 **Fecha de Creación:** 2026-09-25  
-**Historia de Usuario Relacionada:** [Anexo Constitucional: Axiomas de Forja S+ Grade (Optimización para IA)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md) · [Auditoría de Fricción Algorítmica (Evaluación Arquitectónica A vs B)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/Historia%20de%20Usuario:%20Auditor%C3%ADa%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20%28Evaluaci%C3%B3n%20Arquitect%C3%B3nica%20A%20vs%20B%29.md)  
+**Fecha de Planificación Aprobada:** 2026-09-25  
+**Historia de Usuario Relacionada:** [Anexo Constitucional: Axiomas de Forja S+ Grade (Optimización para IA)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md) · [Auditoría de Fricción Algorítmica (Evaluación Arquitectónica A vs B)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/Historia%20de%20Usuario:%20Auditor%C3%ADa%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20%28Evaluaci%C3%B3n%20Arquitect%C3%B3nica%20A%20vs%20B%29.md) · [ADR-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md) · [AUD-ARCH-FRIC-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/Auditorias/Auditoria%20-%20Friccion%20Algoritmica%20y%20Evaluacion%20Arquitectonica%20A%20vs%20B.md)  
 **Módulo:** Refactorización Estructural del Código Fuente Completo  
 **Entorno:** Next.js 16 (App Router), TypeScript 5, Vitest 4, Zod, Prisma, LanceDB, Docker Compose v2, Ansible/Ansistrano  
-**Prioridad:** Crítica (P0 - Ejecución Fundacional post-veredicto que condiciona toda la deuda técnica futura)  
+**Prioridad:** Crítica (P0 - Ejecución Fundacional post-veredicto que erradica la deuda técnica estructural)  
 **Estimación Táctica:** 8 Story Points  
-**Dependencia Secuencial:** ⛔ Este PBI no puede iniciarse hasta que **PBI-ARCH-TEST-001** (Test A/B) y **PBI-ARCH-YAML-001** (Consolidación YML) estén certificados.
+**Estatus de Pre-requisitos:** ✅ **100% Desbloqueado** — PBI-ARCH-YAML-001 certificado, PBI-ARCH-TEST-001 concluido y ADR-001 ratificado por el Vértice Biológico.  
+**Rama Base de Partida:** `feat/test-arch-localidad` (Commit: `74f1152`), preservada con el piloto de Triage en Vertical Slicing.
 
 ---
 
@@ -230,56 +232,234 @@ graph TD
 
 ---
 
-## 4. Manifiesto de Migración (Trazabilidad Archivo por Archivo)
+## 4. Manifiesto Oficial de Migración Arquitectónica (Planificación S+ Grade)
 
-El manifiesto completo se generará durante la ejecución, pero la estructura será la siguiente:
+Este manifiesto constituye el **único mapa de ruta autorizado** para la ejecución de la refactorización definitiva. Todo movimiento se realiza mediante `git mv` obligatorio sobre la rama base `feat/test-arch-localidad`.
 
 ```yaml
 # ═══════════════════════════════════════════════════════════════
 # Manifiesto de Migración Arquitectónica (Documento Inmutable)
-# Generado: 2026-XX-XX
-# Veredicto ADR: [Fragmentada | Vertical Slicing]
-# Rama Base: feat/test-arch-[ganadora]
-# Mecanismo de Movimiento: git mv (OBLIGATORIO)
+# Ratificado por: Vértice Biológico & Google Antigravity
+# Fecha de Aprobación: 2026-09-25
+# Veredicto ADR: ADR-001 (Victoria Vertical Slicing)
+# Rama Base: feat/test-arch-localidad (Commit: 74f1152)
+# Mecanismo de Movimiento: git mv (OBLIGATORIO — Cero cp/rm)
 # ═══════════════════════════════════════════════════════════════
 
-migraciones:
-  - origen: "domain/entities/telemetry-entry.entity.ts"
-    destino: "features/telemetry/telemetry-entry.entity.ts"
-    comando: "git mv domain/entities/telemetry-entry.entity.ts features/telemetry/"
-    fase: 4
-    verificado: false
-
-  - origen: "domain/schemas/triage.schema.ts"
-    destino: "features/triage/triage.schema.ts"
-    comando: "git mv domain/schemas/triage.schema.ts features/triage/"
-    fase: 3
-    verificado: false
-
-  - origen: "infrastructure/repositories/telemetry.repository.ts"
-    destino: "features/telemetry/telemetry.repository.ts"
-    comando: "git mv infrastructure/repositories/telemetry.repository.ts features/telemetry/"
-    fase: 4
-    verificado: false
-
-  # ... (se completará en el Documento Oficial de Planificación)
+configuracion_laboratorio:
+  rama_base_partida: "feat/test-arch-localidad"
+  commit_anclaje: "74f1152"
+  piloto_preexistente: "src/features/triage/"
+  estado_baseline_tests: "63 suites / 318 tests pasando al 100%"
 
 amortiguacion_alias:
   fase_transicion_tsconfig:
     alias_duales_activos: true
-    rutas_legacy_preservadas:
-      - "@/domain/*"
-      - "@/infrastructure/*"
-      - "@/application/*"
-    criterio_eliminacion: "tsc + vitest al 100% sin alias legacy"
+    rutas_transicion:
+      "@/*": ["./*"]
+      "@/features/*": ["./features/*"]
+      "@/shared/*": ["./shared/*"]
+      "@/domain/*": ["./domain/*", "./features/*/domain/*", "./shared/domain/*"]
+      "@/application/*": ["./application/*", "./features/*/application/*", "./shared/application/*"]
+      "@/infrastructure/*": ["./infrastructure/*", "./features/*/infrastructure/*", "./shared/infrastructure/*"]
+    criterio_eliminacion: "tsc --noEmit y vitest al 100% pasando sin alias legacy"
+
+migraciones_por_vertical:
+
+  # ── VERTICAL 1: TRIAGE (PILOTO CONSOLIDADO EN LABORATORIO) ──
+  vertical_triage:
+    estado: "CONSOLIDADO_EN_RAMA_B"
+    directorio_destino: "src/features/triage/"
+    archivos_ya_migrados:
+      - "src/features/triage/triage.schema.ts"
+      - "src/features/triage/triage-outcome.vo.ts"
+      - "src/features/triage/triage-input.use-case.port.ts"
+      - "src/features/triage/triage-input.use-case.ts"
+      - "src/features/triage/triage.test.ts"
+      - "src/features/triage/index.ts"
+
+  # ── VERTICAL 2: TELEMETRY ──
+  vertical_telemetry:
+    fase: 2
+    directorio_destino: "src/features/telemetry/"
+    movimientos:
+      - origen: "src/domain/entities/telemetry-entry.entity.ts"
+        destino: "src/features/telemetry/telemetry-entry.entity.ts"
+        comando: "git mv src/domain/entities/telemetry-entry.entity.ts src/features/telemetry/"
+      - origen: "src/application/ports/out/telemetry-repository.port.ts"
+        destino: "src/features/telemetry/telemetry-repository.port.ts"
+        comando: "git mv src/application/ports/out/telemetry-repository.port.ts src/features/telemetry/"
+      - origen: "src/application/use-cases/prune-telemetry.use-case.ts"
+        destino: "src/features/telemetry/prune-telemetry.use-case.ts"
+        comando: "git mv src/application/use-cases/prune-telemetry.use-case.ts src/features/telemetry/"
+      - origen: "src/infrastructure/repositories/prisma-telemetry.repository.ts"
+        destino: "src/features/telemetry/prisma-telemetry.repository.ts"
+        comando: "git mv src/infrastructure/repositories/prisma-telemetry.repository.ts src/features/telemetry/"
+      - origen: "tests/infrastructure/repositories/prisma-telemetry.repository.test.ts"
+        destino: "src/features/telemetry/telemetry.test.ts"
+        comando: "git mv tests/infrastructure/repositories/prisma-telemetry.repository.test.ts src/features/telemetry/telemetry.test.ts"
+
+  # ── VERTICAL 3: AUTH & USER-ANCHOR ──
+  vertical_auth:
+    fase: 3
+    directorio_destino: "src/features/auth/"
+    movimientos:
+      - origen: "src/domain/entities/user-anchor.entity.ts"
+        destino: "src/features/auth/user-anchor.entity.ts"
+        comando: "git mv src/domain/entities/user-anchor.entity.ts src/features/auth/"
+      - origen: "src/domain/value-objects/telegram-chat-id.vo.ts"
+        destino: "src/features/auth/telegram-chat-id.vo.ts"
+        comando: "git mv src/domain/value-objects/telegram-chat-id.vo.ts src/features/auth/"
+      - origen: "src/application/ports/out/user-anchor-repository.port.ts"
+        destino: "src/features/auth/user-anchor-repository.port.ts"
+        comando: "git mv src/application/ports/out/user-anchor-repository.port.ts src/features/auth/"
+      - origen: "src/application/ports/out/anchor-token-encryptor.port.ts"
+        destino: "src/features/auth/anchor-token-encryptor.port.ts"
+        comando: "git mv src/application/ports/out/anchor-token-encryptor.port.ts src/features/auth/"
+      - origen: "src/application/ports/out/magic-link-signer.port.ts"
+        destino: "src/features/auth/magic-link-signer.port.ts"
+        comando: "git mv src/application/ports/out/magic-link-signer.port.ts src/features/auth/"
+      - origen: "src/infrastructure/security/hmac-magic-link-signer.ts"
+        destino: "src/features/auth/hmac-magic-link-signer.ts"
+        comando: "git mv src/infrastructure/security/hmac-magic-link-signer.ts src/features/auth/"
+      - origen: "src/infrastructure/security/aes-gcm-anchor-token.encryptor.ts"
+        destino: "src/features/auth/aes-gcm-anchor-token.encryptor.ts"
+        comando: "git mv src/infrastructure/security/aes-gcm-anchor-token.encryptor.ts src/features/auth/"
+      - origen: "src/infrastructure/security/crypto.utils.ts"
+        destino: "src/features/auth/crypto.utils.ts"
+        comando: "git mv src/infrastructure/security/crypto.utils.ts src/features/auth/"
+      - origen: "src/application/use-cases/restore-session-from-magic-link.use-case.ts"
+        destino: "src/features/auth/restore-session-from-magic-link.use-case.ts"
+        comando: "git mv src/application/use-cases/restore-session-from-magic-link.use-case.ts src/features/auth/"
+      - origen: "src/application/use-cases/link-telegram-session.use-case.ts"
+        destino: "src/features/auth/link-telegram-session.use-case.ts"
+        comando: "git mv src/application/use-cases/link-telegram-session.use-case.ts src/features/auth/"
+      - origen: "src/application/use-cases/revoke-telegram-anchor.use-case.ts"
+        destino: "src/features/auth/revoke-telegram-anchor.use-case.ts"
+        comando: "git mv src/application/use-cases/revoke-telegram-anchor.use-case.ts src/features/auth/"
+
+  # ── VERTICAL 4: COGNITIVE-MEMORY & VECTOR STORE ──
+  vertical_cognitive_memory:
+    fase: 4
+    directorio_destino: "src/features/cognitive-memory/"
+    movimientos:
+      - origen: "src/domain/value-objects/dense-semantic-matrix.vo.ts"
+        destino: "src/features/cognitive-memory/dense-semantic-matrix.vo.ts"
+        comando: "git mv src/domain/value-objects/dense-semantic-matrix.vo.ts src/features/cognitive-memory/"
+      - origen: "src/application/ports/out/cognitive-memory.port.ts"
+        destino: "src/features/cognitive-memory/cognitive-memory.port.ts"
+        comando: "git mv src/application/ports/out/cognitive-memory.port.ts src/features/cognitive-memory/"
+      - origen: "src/application/ports/out/cognitive-metrics.port.ts"
+        destino: "src/features/cognitive-memory/cognitive-metrics.port.ts"
+        comando: "git mv src/application/ports/out/cognitive-metrics.port.ts src/features/cognitive-memory/"
+      - origen: "src/application/use-cases/audit-lancedb-health.use-case.ts"
+        destino: "src/features/cognitive-memory/audit-lancedb-health.use-case.ts"
+        comando: "git mv src/application/use-cases/audit-lancedb-health.use-case.ts src/features/cognitive-memory/"
+      - origen: "src/infrastructure/vector/lancedb-cognitive-memory.adapter.ts"
+        destino: "src/features/cognitive-memory/lancedb-cognitive-memory.adapter.ts"
+        comando: "git mv src/infrastructure/vector/lancedb-cognitive-memory.adapter.ts src/features/cognitive-memory/"
+      - origen: "src/infrastructure/vector/lancedb-vector.adapter.ts"
+        destino: "src/features/cognitive-memory/lancedb-vector.adapter.ts"
+        comando: "git mv src/infrastructure/vector/lancedb-vector.adapter.ts src/features/cognitive-memory/"
+      - origen: "src/infrastructure/repositories/prisma-cognitive-metrics.repository.ts"
+        destino: "src/features/cognitive-memory/prisma-cognitive-metrics.repository.ts"
+        comando: "git mv src/infrastructure/repositories/prisma-cognitive-metrics.repository.ts src/features/cognitive-memory/"
+
+  # ── VERTICAL 5: AI-ENGINE (GEMINI / JEV / GROQ) ──
+  vertical_ai_engine:
+    fase: 5
+    directorio_destino: "src/features/ai-engine/"
+    movimientos:
+      - origen: "src/application/ports/out/ITypedDecisionEngine.ts"
+        destino: "src/features/ai-engine/ITypedDecisionEngine.ts"
+        comando: "git mv src/application/ports/out/ITypedDecisionEngine.ts src/features/ai-engine/"
+      - origen: "src/application/ports/out/conversational-slm.port.ts"
+        destino: "src/features/ai-engine/conversational-slm.port.ts"
+        comando: "git mv src/application/ports/out/conversational-slm.port.ts src/features/ai-engine/"
+      - origen: "src/application/ports/out/embedding.port.ts"
+        destino: "src/features/ai-engine/embedding.port.ts"
+        comando: "git mv src/application/ports/out/embedding.port.ts src/features/ai-engine/"
+      - origen: "src/infrastructure/ai/gemini-client.ts"
+        destino: "src/features/ai-engine/gemini-client.ts"
+        comando: "git mv src/infrastructure/ai/gemini-client.ts src/features/ai-engine/"
+      - origen: "src/infrastructure/ai/gemini-embedding.adapter.ts"
+        destino: "src/features/ai-engine/gemini-embedding.adapter.ts"
+        comando: "git mv src/infrastructure/ai/gemini-embedding.adapter.ts src/features/ai-engine/"
+      - origen: "src/infrastructure/ai/jev/"
+        destino: "src/features/ai-engine/jev/"
+        comando: "git mv src/infrastructure/ai/jev/ src/features/ai-engine/jev/"
+      - origen: "src/infrastructure/ai/groq/"
+        destino: "src/features/ai-engine/groq/"
+        comando: "git mv src/infrastructure/ai/groq/ src/features/ai-engine/groq/"
+      - origen: "src/application/use-cases/audit-jev-health.use-case.ts"
+        destino: "src/features/ai-engine/audit-jev-health.use-case.ts"
+        comando: "git mv src/application/use-cases/audit-jev-health.use-case.ts src/features/ai-engine/"
+
+  # ── VERTICAL 6: PLANNER & TACTICAL ROUTES ──
+  vertical_planner:
+    fase: 6
+    directorio_destino: "src/features/planner/"
+    movimientos:
+      - origen: "src/domain/schemas/matrix.ts"
+        destino: "src/features/planner/matrix.ts"
+        comando: "git mv src/domain/schemas/matrix.ts src/features/planner/"
+      - origen: "src/domain/value-objects/geographic-scope.vo.ts"
+        destino: "src/features/planner/geographic-scope.vo.ts"
+        comando: "git mv src/domain/value-objects/geographic-scope.vo.ts src/features/planner/"
+      - origen: "src/application/ports/out/density-matrix-repository.port.ts"
+        destino: "src/features/planner/density-matrix-repository.port.ts"
+        comando: "git mv src/application/ports/out/density-matrix-repository.port.ts src/features/planner/"
+      - origen: "src/application/ports/out/geographic-decision-engine.port.ts"
+        destino: "src/features/planner/geographic-decision-engine.port.ts"
+        comando: "git mv src/application/ports/out/geographic-decision-engine.port.ts src/features/planner/"
+      - origen: "src/infrastructure/ai/rules/heuristic-geographic-decision-engine.ts"
+        destino: "src/features/planner/heuristic-geographic-decision-engine.ts"
+        comando: "git mv src/infrastructure/ai/rules/heuristic-geographic-decision-engine.ts src/features/planner/"
+      - origen: "src/application/use-cases/generate-tactical-route.use-case.ts"
+        destino: "src/features/planner/generate-tactical-route.use-case.ts"
+        comando: "git mv src/application/use-cases/generate-tactical-route.use-case.ts src/features/planner/"
+      - origen: "src/application/use-cases/validate-geographic-scope.use-case.ts"
+        destino: "src/features/planner/validate-geographic-scope.use-case.ts"
+        comando: "git mv src/application/use-cases/validate-geographic-scope.use-case.ts src/features/planner/"
+      - origen: "src/infrastructure/repositories/in-memory-density-matrix.repository.ts"
+        destino: "src/features/planner/in-memory-density-matrix.repository.ts"
+        comando: "git mv src/infrastructure/repositories/in-memory-density-matrix.repository.ts src/features/planner/"
+
+  # ── VERTICAL 7: TELEGRAM INTEGRATION ──
+  vertical_telegram:
+    fase: 7
+    directorio_destino: "src/features/telegram/"
+    movimientos:
+      - origen: "src/domain/schemas/telegram-webhook.schema.ts"
+        destino: "src/features/telegram/telegram-webhook.schema.ts"
+        comando: "git mv src/domain/schemas/telegram-webhook.schema.ts src/features/telegram/"
+      - origen: "src/infrastructure/gateways/telegram-bot-api.gateway.ts"
+        destino: "src/features/telegram/telegram-bot-api.gateway.ts"
+        comando: "git mv src/infrastructure/gateways/telegram-bot-api.gateway.ts src/features/telegram/"
+      - origen: "src/application/use-cases/audit-telegram-bot-health.use-case.ts"
+        destino: "src/features/telegram/audit-telegram-bot-health.use-case.ts"
+        comando: "git mv src/application/use-cases/audit-telegram-bot-health.use-case.ts src/features/telegram/"
+
+  # ── SHARED CORE (INFRAESTRUCTURA Y DOMINIO TRANSVERSAL) ──
+  shared_core:
+    fase: 8
+    directorio_destino: "src/shared/"
+    movimientos:
+      - origen: "src/domain/exceptions/"
+        destino: "src/shared/exceptions/"
+        comando: "git mv src/domain/exceptions/ src/shared/exceptions/"
+      - origen: "src/infrastructure/persistence/prisma.ts"
+        destino: "src/shared/persistence/prisma.ts"
+        comando: "git mv src/infrastructure/persistence/prisma.ts src/shared/persistence/"
+      - origen: "src/infrastructure/security/middleware.ts"
+        destino: "src/shared/security/middleware.ts"
+        comando: "git mv src/infrastructure/security/middleware.ts src/shared/security/"
 
 totales:
-  archivos_migrados: 0
-  archivos_preservados: 0
-  archivos_creados: 0
-  fases_completadas: 0
-  movimientos_git_mv: 0
-  movimientos_cp_rm: 0  # DEBE ser siempre 0
+  verticales_funcionales: 7
+  archivos_totales_a_migrar: 46
+  movimientos_git_mv: 46
+  movimientos_cp_rm: 0  # Innegociable Grado S+
 ```
 
 ---
@@ -368,12 +548,12 @@ Y la sonda de MySQL confirma "mysqld is alive" en el primer intento
 ## 7. Plan de Implementación Táctico
 
 ### Fase 0: Planificación Oficial (Antes de Mover un Solo Archivo)
-- [ ] **Tarea 1: Forjar el Documento Oficial de Planificación de Refactorización**  
-  Redactar el documento con: manifiesto completo de `git mv`, secuencia de fases, configuración de alias duales en `tsconfig.json`, y criterios de limpieza. Versionar bajo Git. **Obtener aprobación del Vértice Biológico antes de proceder.**
+- [x] **Tarea 1: Forjar el Documento Oficial de Planificación de Refactorización**  
+  Redactar el documento con: manifiesto completo de `git mv`, secuencia de fases, configuración de alias duales en `tsconfig.json`, y criterios de limpieza. Versionar bajo Git. Incorporado formalmente en la Sección 4 de este PBI con el Manifiesto YAML Oficial.
 
 ### Fase 1: Preparación sobre Rama de Laboratorio
 - [ ] **Tarea 2: Checkout de la rama de laboratorio ganadora**  
-  Posicionarse en la rama `feat/test-arch-[ganadora]` preservada del PBI-ARCH-TEST-001. Crear tag de referencia `pre-arch-refactor-v1`.
+  Posicionarse en la rama `feat/test-arch-localidad` preservada del PBI-ARCH-TEST-001 (Commit `74f1152`). Crear tag de referencia `pre-arch-refactor-v1`.
 
 - [ ] **Tarea 3: Verificar baseline de tests**  
   Ejecutar `npx tsc --noEmit` y `npm test` — registrar resultado baseline (archivos, tests, duración).
@@ -423,10 +603,10 @@ Y la sonda de MySQL confirma "mysqld is alive" en el primer intento
 
 ## 8. Definición de Hecho (DoD)
 
-- [ ] El Documento Oficial de Planificación de Refactorización ha sido forjado, versionado y aprobado por el Vértice Biológico antes de mover ningún archivo.
-- [ ] El veredicto del ADR (PBI-ARCH-TEST-001) está consolidado y referenciado.
-- [ ] La consolidación YAML (PBI-ARCH-YAML-001) está certificada e integrada.
-- [ ] La migración se ha ejecutado desde la rama de laboratorio ganadora del PBI-ARCH-TEST-001, no desde cero.
+- [x] El Documento Oficial de Planificación de Refactorización ha sido forjado, versionado y aprobado por el Vértice Biológico antes de mover ningún archivo.
+- [x] El veredicto del ADR (PBI-ARCH-TEST-001) está consolidado y referenciado ([ADR-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md)).
+- [x] La consolidación YAML (PBI-ARCH-YAML-001) está certificada e integrada.
+- [ ] La migración se ha ejecutado desde la rama de laboratorio ganadora del PBI-ARCH-TEST-001 (`feat/test-arch-localidad`), no desde cero.
 - [ ] **Todos** los movimientos de archivo se han ejecutado con `git mv`. El campo `movimientos_cp_rm` del manifiesto es exactamente **0**.
 - [ ] `git log --follow` y `git blame` preservan el historial completo de cada archivo migrado.
 - [ ] La fase de transición de alias duales en `tsconfig.json` se ha completado: los alias legacy han sido eliminados tras confirmar compilación exitosa sin ellos.
@@ -463,11 +643,11 @@ graph TD
     style HU1 fill:#1b4332,color:#fff
     style HU2 fill:#1b4332,color:#fff
     style PBI1 fill:#2d6a4f,color:#fff
-    style PBI2 fill:#e09f3e,color:#000
-    style PBI3 fill:#9d0208,color:#fff
+    style PBI2 fill:#2d6a4f,color:#fff
+    style PBI3 fill:#52b788,color:#000
 ```
 
 > **Leyenda:**  
-> 🟢 PBI-ARCH-YAML-001 — Ejecutable de inmediato  
-> 🟡 PBI-ARCH-TEST-001 — Ejecutable en paralelo con PBI-ARCH-YAML-001  
-> 🔴 PBI-ARCH-APPLY-001 — Bloqueado hasta certificación de los dos anteriores
+> 🟢 PBI-ARCH-YAML-001 — **Certificado y Completado**  
+> 🟢 PBI-ARCH-TEST-001 — **Certificado y Completado** (Veredicto ADR-001 emitido)  
+> 🚀 PBI-ARCH-APPLY-001 — **Desbloqueado y Listo para Ejecución Táctica** (Manifiesto YAML forjado)
