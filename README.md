@@ -1,24 +1,31 @@
 # BarcelonaXplorer
 
 > **Orquestador de Experiencias Híbrido, PWA y Conserjería Efímera impulsada por Inteligencia Artificial.**  
-> Diseñado bajo la **Táctica del Refugio**: soberanía financiera (Ingeniería de Ingresos Pasivos desatendida), arquitectura defensiva de código único (**La Vía del Yunque**) y orquestación en tiempo real sin fricción cognitiva (**La Vía de la Red**).
+> Diseñado bajo la **Táctica del Refugio**: soberanía financiera (Ingeniería de Ingresos Pasivos desatendida), arquitectura defensiva de código único (**La Vía del Yunque**), orquestación en tiempo real sin fricción cognitiva (**La Vía de la Red**) y gobernanza simbiótica Grado S+ (**Vertical Slicing Canónico**).
+
+[![Architecture](https://img.shields.io/badge/Architecture-Vertical%20Slicing%20Modular-blueviolet.svg)](#-arquitectura-del-sistema-vertical-slicing--monolito-modular)
+[![Version](https://img.shields.io/badge/Version-v2.0.0--arch--definitive-blue.svg)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md)
+[![Tests](https://img.shields.io/badge/Tests-302%20passing%20%7C%2061%20suites-success.svg)](#-instalación-y-ejecución-local)
+[![Constitution](https://img.shields.io/badge/Governance-CONSTITUTION.md-gold.svg)](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.md)
 
 ---
 
 ## 🧭 Índice de Contenidos
 
 1. [Visión y Propuesta de Valor](#-visión-y-propuesta-de-valor)
-2. [Ecosistema Tecnológico (Stack)](#-ecosistema-tecnológico-stack)
-3. [Arquitectura del Sistema (Clean Architecture & Monolito Modular)](#-arquitectura-del-sistema-clean-architecture--monolito-modular)
-4. [Motor de Interacción Dual y Respuesta Inmediata](#-motor-de-interacción-dual-y-respuesta-inmediata)
-5. [Blindaje Perimetral y Seguridad (`/Admin`)](#-blindaje-perimetral-y-seguridad-admin)
-6. [Órgano Sensorial y Telemetría Centralizada (`/Admin/System`)](#-órgano-sensorial-y-telemetría-centralizada-adminsystem)
-7. [Componentes Tácticos de Interfaz (UI)](#-componentes-tácticos-de-interfaz-ui)
-8. [Estructura del Proyecto](#-estructura-del-proyecto)
-9. [Configuración y Variables de Entorno](#-configuración-y-variables-de-entorno)
-10. [Instalación y Ejecución Local](#-instalación-y-ejecución-local)
-11. [Despliegue Continuo e Infraestructura (IaaC - Nodo 11)](#-despliegue-continuo-e-infraestructura-iaac---nodo-11)
-12. [Axiomas y Dogmas de Ingeniería (CONSTITUTION.MD)](#-axiomas-y-dogmas-de-ingeniería-constitutionmd)
+2. [Ecosistema Tecnológico (Stack v2.0)](#-ecosistema-tecnológico-stack-v20)
+3. [Arquitectura del Sistema (Vertical Slicing & Monolito Modular)](#-arquitectura-del-sistema-vertical-slicing--monolito-modular)
+4. [Motor Cognitivo Dual y Respuesta Inmediata (Groq + Gemini)](#-motor-cognitivo-dual-y-respuesta-inmediata-groq--gemini)
+5. [Memoria Cognitiva Vectorial y RAG Híbrido (LanceDB)](#-memoria-cognitiva-vectorial-y-rag-híbrido-lancedb)
+6. [Canal Conversacional Omnicanal (Bot de Telegram)](#-canal-conversacional-omnicanal-bot-de-telegram)
+7. [Blindaje Perimetral y Seguridad (`/Admin`)](#-blindaje-perimetral-y-seguridad-admin)
+8. [Observabilidad y Órgano Sensorial (`/Admin/System` & `/Admin/Cognitive`)](#-observabilidad-y-órgano-sensorial-adminsystem--admincognitive)
+9. [Componentes Tácticos de Interfaz (UI)](#-componentes-tácticos-de-interfaz-ui)
+10. [Estructura del Proyecto](#-estructura-del-proyecto)
+11. [Configuración y Variables de Entorno](#-configuración-y-variables-de-entorno)
+12. [Instalación y Ejecución Local](#-instalación-y-ejecución-local)
+13. [Despliegue Continuo e Infraestructura (IaaC - Nodo 11)](#-despliegue-continuo-e-infraestructura-iaac---nodo-11)
+14. [Axiomas y Dogmas de Ingeniería (CONSTITUTION.md)](#-axiomas-y-dogmas-de-ingeniería-constitutionmd)
 
 ---
 
@@ -37,7 +44,7 @@ BarcelonaXplorer no es un buscador estático ni un directorio clónico de "Top 1
 
 ---
 
-## ⚡ Ecosistema Tecnológico (Stack)
+## ⚡ Ecosistema Tecnológico (Stack v2.0)
 
 | Capa / Subsistema | Tecnologías | Propósito |
 | :--- | :--- | :--- |
@@ -45,47 +52,80 @@ BarcelonaXplorer no es un buscador estático ni un directorio clónico de "Top 1
 | **Núcleo Front-End** | **React 19, TypeScript 5, Tailwind CSS 4** | Tipado estricto, reactividad moderna y estilos fluidos mobile-first |
 | **Despliegue Universal** | **PWA (Progressive Web App)** | Manifiesto y Service Workers para experiencia nativa sin App Stores |
 | **Inferencia Dual** | **Google Gemini SDK + Groq Cloud API** | Razonamiento profundo estructurado (Gemini) + Inferencia ultrarrápida (Groq/Llama 3.1) |
-| **Validación de Datos** | **Zod** | Aduana estricta de esquemas y triaje entrópico contra alucinaciones LLM |
+| **Memoria Vectorial Embebida** | **LanceDB** *(Local & Hybrid Search)* | Persistencia vectorial local (`storage/lancedb`), RAG contextual, nodos urbanos y memoria episódica |
+| **Canal Conversacional** | **Telegram Bot API (Webhook + Polling)** | Interfaz conversacional omnicanal con streaming de respuestas y teclados dinámicos |
+| **Validación y Aduana** | **Zod** | Aduana estricta de esquemas y triaje entrópico contra alucinaciones LLM |
 | **Persistencia Relacional** | **MySQL 8 + Prisma ORM** | Logs polimórficos de telemetría, auditoría de IA y configuraciones del sistema |
-| **Memoria Vectorial** | **LanceDB** *(Roadmap v2)* | Nodos urbanos vectorizados por atributos multidimensionales |
 | **Seguridad de Borde** | **Edge Runtime + Web Crypto API** | HTTP Basic Auth RFC 7617, `constantTimeEqual`, HSTS y redirección canónica 308 |
+| **Gobernanza Declarativa** | **YAML Canónico + Safe Loading** | Ahorro del ~30% en tokens para agentes de IA y deserialización segura inmune a RCE |
 | **Infraestructura e IaaC** | **Docker, Ansible & Ansistrano** | Despliegue atómico inmutable Zero Downtime en Nodo 11 (`10.0.10.11`) |
-| **Suite de Pruebas** | **Vitest 4 + Testing Library** | Pruebas de dominio puro, adapters, middleware perimetral e integración |
+| **Suite de Pruebas** | **Vitest 4 + Testing Library** | 302 tests en 61 suites (features aisladas, dominio puro, adaptadores y perimetral) |
 
 ---
 
-## 🏗️ Arquitectura del Sistema (Clean Architecture & Monolito Modular)
+## 🏗️ Arquitectura del Sistema (Vertical Slicing & Monolito Modular)
 
-El sistema implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** bajo el patrón **BFF (Backend For Frontend)**. Todas las capas conviven en un único contenedor sin dispersión de repositorios:
+Tras el veredicto empírico de fricción algorítmica ([`ADR-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md) y [`PBI-ARCH-TEST-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Test%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20-%20Evaluaci%C3%B3n%20Emp%C3%ADrica%20de%20Opciones%20Arquitect%C3%B3nicas%20%28A%20vs%20B%29.md)), la base de código abandonó la fragmentación en capas globales y adoptó de forma canónica **Vertical Slicing por Features**.
+
+Cada módulo funcional es una cápsula autónoma y cohesionada en `src/features/`, mientras que los componentes y utilidades verdaderamente transversales residen en `src/shared/`:
 
 ```
 src/
-├── app/                  # Capa de Presentación, Páginas y Route Handlers (Next.js App Router)
-│   ├── Admin/            # Panel de control protegido (/Admin/System)
-│   ├── orchestrator/     # Interfaz inmersiva de orquestación dual
-│   ├── api/              # Route Handlers (/api/telemetry/log, /api/telemetry/prune, etc.)
-│   ├── error.tsx         # Sensor de excepciones de cliente (sendBeacon)
-│   └── layout.tsx        # Layout raíz PWA
-├── domain/               # Núcleo de Negocio Puro (Independiente de Frameworks y Librerías)
-│   ├── entities/         # Entidades de dominio puras (TacticalRoute, FastInsight)
-│   └── exceptions/       # Excepciones de dominio (DomainException, InvalidCoordinatesException)
-├── application/          # Lógica de Aplicación y Casos de Uso
-│   ├── ports/            # Puertos de Entrada y Salida (Interfaces TypeScript puras)
-│   │   └── out/          # FastInteractionAiPort, ItineraryPlannerAiPort, TelemetryRepositoryPort
-│   └── use-cases/        # Casos de uso de negocio (PruneTelemetryUseCase, etc.)
-├── infrastructure/       # Adaptadores Técnicos y Herramientas Externas
-│   ├── ai/               # Clientes LLM (GeminiClient, GroqFastAiAdapter) y esquemas Zod
-│   └── repositories/     # Adaptadores de persistencia (PrismaTelemetryRepository)
-├── components/           # Componentes UI reutilizables
-│   ├── ui/data-table/    # DataTable<T> genérico, reactivo y fuertemente tipado
-│   ├── OrchestratorBlock.tsx # Losa de mando asimétrica (bloque de diálogo)
-│   └── TacticalSpark.tsx     # Píldoras de micro-contexto y telemetría en tiempo real
-└── middleware.ts         # El Centinela Perimetral (Edge Runtime Security Interceptor)
+├── app/                          # Capa de Presentación, Páginas y Route Handlers (App Router)
+│   ├── Admin/                    # Paneles de Control Protegidos (/Admin/System, /Admin/Cognitive)
+│   ├── orchestrator/             # Interfaz inmersiva de orquestación dual
+│   ├── api/                      # Route Handlers (/api/telemetry, /api/telegram, /api/triage, etc.)
+│   ├── error.tsx                 # Sensor de excepciones de cliente (sendBeacon)
+│   └── layout.tsx                # Layout raíz PWA
+│
+├── features/                     # CÁPSULAS VERTICALES AUTÓNOMAS (Vertical Slices)
+│   ├── triage/                   # Triaje reactivo, validación Zod, scoring y aduana de entrada
+│   │   ├── domain/               # Entidades, Value Objects e invariantes de triaje
+│   │   ├── application/          # Casos de uso de triaje y puertos
+│   │   └── infrastructure/       # Adaptadores de entrada y validadores
+│   │
+│   ├── telemetry/                # Sensor termodinámico, métricas Prometheus y persistencia de logs
+│   │   ├── domain/               # Entidades de telemetría y tipos polimórficos
+│   │   ├── application/          # Casos de uso (RecordLog, PruneTelemetry)
+│   │   └── infrastructure/       # Adaptador Prisma y sensor de latencia
+│   │
+│   ├── auth/                     # Seguridad perimetral, tokens criptográficos, RBAC y guardias
+│   │   ├── domain/               # Value Objects de autenticación y credenciales
+│   │   ├── application/          # Casos de uso de validación de acceso
+│   │   └── infrastructure/       # Middleware perimetral y Web Crypto constant-time
+│   │
+│   ├── cognitive-memory/         # Memoria vectorial LanceDB, RAG híbrido y nodos urbanos
+│   │   ├── domain/               # Entidades de memoria semántica y embeddings
+│   │   ├── application/          # Casos de uso (StoreMemory, QuerySimilarNodes)
+│   │   └── infrastructure/       # Cliente LanceDB embebido y persistencia local
+│   │
+│   ├── ai-engine/                # JEV System One, dualidad Groq / Gemini y fallback termodinámico
+│   │   ├── domain/               # Puertos de inferencia y modelos abstractos
+│   │   ├── application/          # Casos de uso de inferencia rápida y profunda
+│   │   └── infrastructure/       # Adaptadores GroqFastAi y GeminiProAi
+│   │
+│   ├── planner/                  # Motor de itinerarios, optimización de grafos y rutas tácticas
+│   │   ├── domain/               # Entidades TacticalRoute, Waypoints, TimeSpans
+│   │   ├── application/          # Generación y curación de rutas
+│   │   └── infrastructure/       # Generadores de enlaces de afiliación y templates
+│   │
+│   └── telegram/                 # Bot conversacional, webhooks, streaming y comandos interactivos
+│       ├── domain/               # Sesiones de usuario, eventos de chat y teclados
+│       ├── application/          # Casos de uso (HandleTelegramMessage, StreamResponse)
+│       └── infrastructure/       # Cliente HTTP Telegram API y webhook handler
+│
+├── shared/                       # NÚCLEO TRANSVERSAL COMPARTIDO
+│   ├── config/                   # Gobernanza declarativa YAML y cargadores seguros
+│   ├── domain/                   # Excepciones de dominio base y contratos compartidos
+│   ├── infrastructure/           # Prisma Client compartido, utilidades criptográficas
+│   └── ui/                       # Design System, DataTable<T> y componentes tácticos
+│
+└── middleware.ts                 # Centinela Perimetral (Edge Runtime Security Interceptor)
 ```
 
 ---
 
-## ⚡ Motor de Interacción Dual y Respuesta Inmediata
+## ⚡ Motor Cognitivo Dual y Respuesta Inmediata (Groq + Gemini)
 
 Para eliminar la percepción de latencia inerte (3-8 segundos en la generación de rutas complejas), BarcelonaXplorer desacopla la carga cognitiva en **dos vías concurrentes**:
 
@@ -101,7 +141,7 @@ Para eliminar la percepción de latencia inerte (3-8 segundos en la generación 
                                  ▼                   ▼
                   ┌────────────────────────┐  ┌────────────────────────┐
                   │   Vía Rápida (Groq)    │  │  Vía Lenta (Gemini)    │
-                  │   Modelo: Llama 3.1 8B │  │  Modelo: Gemini 1.5    │
+                  │   Modelo: Llama 3.1 8B │  │  Modelo: Gemini 1.5/2.0│
                   ├────────────────────────┤  ├────────────────────────┤
                   │ • TTFT < 200 ms        │  │ • Latencia: 3 - 8 s    │
                   │ • Streaming (SSE)      │  │ • Consulta de Nodos    │
@@ -122,6 +162,26 @@ Para eliminar la percepción de latencia inerte (3-8 segundos en la generación 
 
 ---
 
+## 🧠 Memoria Cognitiva Vectorial y RAG Híbrido (LanceDB)
+
+La vertical `src/features/cognitive-memory/` incorpora un motor de persistencia vectorial embebido ultraligero impulsado por **LanceDB**:
+
+- **Almacenamiento Local Embebido:** Los vectores residen en el volumen local (`storage/lancedb`), eliminando la latencia de red de servicios vectoriales remotos y garantizando soberanía operativa.
+- **RAG Híbrido:** Cruce multidimensional de similitud semántica con filtros de proximidad geográfica, horario de apertura y presupuesto.
+- **Resiliencia Térmica:** Si el subsistema vectorial se encuentra en mantenimiento, el sistema activa un modo degradado no intrusivo sin interrumpir la experiencia de usuario.
+
+---
+
+## 🤖 Canal Conversacional Omnicanal (Bot de Telegram)
+
+La vertical `src/features/telegram/` amplía la presencia de BarcelonaXplorer al ecosistema móvil sin fricción de descarga en App Stores:
+
+- **Modo Dual (Webhook + Polling):** En producción responde vía Webhook criptográficamente autenticado (`POST /api/telegram/webhook`); en entornos de desarrollo local admite ejecución vía long-polling.
+- **Streaming y Teclados Tácticos:** Renderizado progresivo de chispas informativas, botones interactivos de confirmación de ruta y enlaces directos de geolocalización.
+- **Seguridad Perimetral:** Validación del secreto de webhook de Telegram (`X-Telegram-Bot-Api-Secret-Token`) y control de tasa de mensajes.
+
+---
+
 ## 🛡️ Blindaje Perimetral y Seguridad (`/Admin`)
 
 El acceso a `/Admin` y todas sus subrutas (`/Admin/:path*`) está custodiado en el borde por **`src/middleware.ts` (El Centinela del Yunque)**:
@@ -134,9 +194,9 @@ El acceso a `/Admin` y todas sus subrutas (`/Admin/:path*`) está custodiado en 
 
 ---
 
-## 👁️ Órgano Sensorial y Telemetría Centralizada (`/Admin/System`)
+## 👁️ Observabilidad y Órgano Sensorial (`/Admin/System` & `/Admin/Cognitive`)
 
-Sistema de trazabilidad desacoplado y polimórfico en el motor MySQL del Nodo 11:
+Sistema de trazabilidad desacoplado y polimórfico en el motor MySQL del Nodo 11 y métricas cognitivas en tiempo real:
 
 ```
 [ Borde: Edge Runtime ]       [ Cliente: React Browser ]       [ Servidor: App Router ]       [ IA: Gemini/Groq ]
@@ -166,16 +226,17 @@ Sistema de trazabilidad desacoplado y polimórfico en el motor MySQL del Nodo 11
   - `SECURITY_PERIMETER`: Despacho no bloqueante desde el middleware ante anomalías o accesos no autorizados.
   - `CLIENT_UI`: Error boundaries (`error.tsx`, `global-error.tsx`) con despacho resiliente vía `navigator.sendBeacon`.
   - `SERVER_API`: Errores técnicos y excepciones capturadas en los Route Handlers.
-  - `LLM_ENGINE`: Auditoría de tiempos de respuesta, modelos y conteo de tokens gobernada por el feature flag `TELEMETRY_LLM_ENABLED` (coste térmico nulo si está inactivo).
+  - `LLM_ENGINE`: Auditoría de tiempos de respuesta, modelos y conteo de tokens gobernada por el feature flag `TELEMETRY_LLM_ENABLED`.
+- **Panel Cognitivo (`/Admin/Cognitive`):** Muestra el estado del índice vectorial LanceDB, recuento de nodos vectorizados, latencia de embeddings y tasa de aciertos de memoria.
 - **Poda Ontológica Automatizada:** Endpoint `POST /api/telemetry/prune` protegido con `CRON_SECRET`. Purgado diario (03:00 AM) de registros operativos (`DEBUG`/`INFO` > 7 días) e incidencias (`WARN`/`ERROR` > 30 días) para blindar el volumen de almacenamiento del Nodo 11.
-- **Principio Fail-Safe:** Ningún fallo o congestión en MySQL colapsa la experiencia de usuario ni propaga excepciones al hilo principal.
+- **Principio Fail-Safe:** Ningún fallo o congestión en MySQL o LanceDB colapsa la experiencia de usuario ni propaga excepciones al hilo principal.
 
 ---
 
 ## 📊 Componentes Tácticos de Interfaz (UI)
 
 ### Componente Genérico de Tablas y Listas Tácticas (`DataTable<T>`)
-Ubicado en `src/components/ui/data-table/`, proporciona una solución completa, reutilizable y fuertemente tipada:
+Ubicado en `src/shared/ui/data-table/`, proporciona una solución completa, reutilizable y fuertemente tipada:
 - **Tolerancia Cero a `any`:** Basado en genéricos `<T>` y en el extractor `ComparableValue`.
 - **Ordenación Tridimensional:** Ciclo declarativo `asc` ➡️ `desc` ➡️ `null` con sincronización `aria-sort`.
 - **Filtrado Multidimensional:** Búsqueda rápida por múltiples claves y selectores facetados por columna.
@@ -197,30 +258,41 @@ BarcelonaXplorer/
 │   ├── deploy.yml                    # Playbook maestro de Ansistrano
 │   ├── inventory.ini                 # Nodo de producción (10.0.10.11)
 │   └── rollback.yml                  # Playbook de reversión instantánea
-├── Documentacion/                    # Acervo documental y arquitectura
-│   ├── HistoriasDeUsuario/           # Historias de usuario refinadas y Plan Maestro
-│   └── Fuentes/                      # Cuadernos de arquitectura, topologías y especificaciones
-├── src/                              # Código fuente de la aplicación (Monolito Next.js)
+│
+├── Documentacion/                    # Acervo documental y arquitectura de acero
+│   ├── ADR/                          # Decisiones Arquitectónicas (ADR-001 Vertical Slicing)
+│   ├── Auditorias/                   # Evaluaciones empíricas y benchmarks de fricción
+│   ├── Gobernanza/                   # Estándares YAML y políticas de configuración
+│   ├── HistoriasDeUsuario/           # Historias de Usuario y Axiomas Constitucionales S+
+│   └── PBI/                          # Product Backlog Items
+│       ├── Realizado/                # PBIs completados y certificados empíricamente
+│       └── Pendiente/                # PBIs en cola de ejecución
+│
+├── src/                              # Código fuente de la aplicación (Next.js Monolito Modular)
 │   ├── app/                          # App Router (Páginas públicas, Admin y APIs)
-│   ├── application/                  # Puertos y Casos de Uso
-│   ├── components/                   # Componentes UI (OrchestratorBlock, TacticalSpark, DataTable)
-│   ├── domain/                       # Entidades y Excepciones puras de Dominio
-│   ├── infrastructure/               # Clientes IA (Gemini/Groq), Repositorios Prisma y Esquemas Zod
+│   ├── features/                     # 7 Cápsulas Verticales Autónomas
+│   │   ├── triage/                   # Aduana de entrada, scoring y validación
+│   │   ├── telemetry/                # Sensor termodinámico y métricas
+│   │   ├── auth/                     # Autenticación perimetral y RBAC
+│   │   ├── cognitive-memory/         # LanceDB vectorial y RAG híbrido
+│   │   ├── ai-engine/                # Orquestador dual Groq / Gemini
+│   │   ├── planner/                  # Generador de itinerarios y waypoints
+│   │   └── telegram/                 # Bot conversacional omnicanal
+│   ├── shared/                       # Núcleo transversal (config, domain, infrastructure, ui)
 │   ├── prisma/
-│   │   └── schema.prisma             # Esquema de base de datos MySQL (TelemetryLog, SystemConfig)
+│   │   └── schema.prisma             # Esquema de persistencia relacional MySQL
 │   ├── deploy.sh                     # Script de verificación y disparo automatizado de despliegue
 │   ├── docker-compose.yml            # Orquestación de contenedores (Web + MySQL)
 │   ├── Dockerfile                    # Multi-stage build para contenedor Standalone Alpine
 │   ├── middleware.ts                 # Centinela de seguridad perimetral (/Admin)
 │   └── package.json                  # Dependencias y scripts del proyecto
-├── tests/                            # Suite completa de pruebas con Vitest
-│   ├── app/                          # Pruebas de Route Handlers y endpoints
-│   ├── application/                  # Pruebas de Casos de Uso
-│   ├── components/                   # Pruebas de componentes React y DataTable
-│   ├── infrastructure/               # Pruebas de adaptadores IA, Prisma y Middleware
-│   └── integration/                  # Pruebas de integración sensorial y telemetría
-├── CONSTITUTION.MD                   # Constitución Arquitectónica y Dogmas de Ingeniería
-└── README.md                         # Documento de referencia técnica del proyecto
+│
+├── tests/                            # Suite completa de pruebas con Vitest (302 tests)
+│   ├── features/                     # Pruebas unitarias y de integración por vertical
+│   └── shared/                       # Pruebas de utilidades compartidas y UI
+│
+├── CONSTITUTION.md                   # Constitución Arquitectónica y Dogmas de Ingeniería
+└── README.md                         # Documento maestro de referencia técnica del proyecto
 ```
 
 ---
@@ -245,8 +317,11 @@ cp src/.env.example src/.env.local
 | `GEMINI_API_KEY` | Clave API de Google AI Studio | `"AIzaSy..."` |
 | `GEMINI_MODELS` | Cadena de modelos Gemini con fallback | `"gemini-1.5-flash,gemini-1.5-pro"` |
 | `GROQ_API_KEY` | Clave API de Groq Cloud | `"gsk_..."` |
-| `GROQ_FAST_MODEL` | Modelo ligero para inferencia rápida | `"llama-3.1-8b-instant"` o `"qwen/qwen3.8-27b"` |
+| `GROQ_FAST_MODEL` | Modelo ligero para inferencia rápida | `"llama-3.1-8b-instant"` |
 | `GROQ_RADAR_SYSTEM_PROMPT` | Prompt de sistema para el Radar BX | Micro-consejos de logística y Escudo Anti-Trampas (< 250 tokens) |
+| `LANCEDB_DATA_DIR` | Directorio local de persistencia vectorial LanceDB | `./storage/lancedb` |
+| `TELEGRAM_BOT_TOKEN` | Token secreto del bot de Telegram | `"123456:ABC-DEF..."` |
+| `TELEGRAM_WEBHOOK_SECRET` | Token de verificación de webhook de Telegram | Token seguro alfanumérico |
 | `ADMIN_USER` | Usuario autorizado para `/Admin` | `admin` |
 | `ADMIN_PASSWORD_HASH` | Hash SHA-256 de la contraseña de `/Admin` | *(Ver comando de generación inferior)* |
 | `TELEMETRY_LLM_ENABLED` | Feature flag para auditar inferencias IA | `true` (auditar) / `false` (reposo térmico) |
@@ -291,12 +366,18 @@ La aplicación estará accesible en:
 - **Orquestador Táctico:** [http://localhost:3000/orchestrator](http://localhost:3000/orchestrator)
 - **Panel Administrativo:** [http://localhost:3000/Admin](http://localhost:3000/Admin) *(solicitará credenciales HTTP Basic Auth)*
 - **Telemetría del Sistema:** [http://localhost:3000/Admin/System](http://localhost:3000/Admin/System)
+- **Observabilidad Cognitiva (LanceDB):** [http://localhost:3000/Admin/Cognitive](http://localhost:3000/Admin/Cognitive)
+- **Webhook de Telegram:** [http://localhost:3000/api/telegram/webhook](http://localhost:3000/api/telegram/webhook)
 
-### 5. Ejecutar la suite de pruebas
+### 5. Verificación de Tipado y Pruebas
 ```bash
+# Comprobación de tipos estática
+npx tsc --noEmit
+
+# Ejecución de la suite completa de tests Vitest
 npm test
 ```
-*Vitest ejecutará los 57+ tests unitarios y de integración (cobertura en middleware, telemetría, adaptadores Groq/Gemini, DataTable y componentes UI).*
+*Vitest ejecutará los **302 tests** unitarios y de integración a lo largo de **61 suites** con cobertura en todas las verticales (`triage`, `telemetry`, `auth`, `cognitive-memory`, `ai-engine`, `planner`, `telegram`), middleware perimetral y componentes UI.*
 
 ---
 
@@ -313,14 +394,16 @@ El despliegue en producción hacia el **Nodo 11 (`10.0.10.11`)** se realiza medi
 ├── shared/
 │   └── .env.local             # Sincronizado atómicamente con permisos 0600
 ├── current ───► releases/20260922140000/ (Symlink activo)
+├── storage/
+│   └── lancedb/               # Volumen de persistencia vectorial LanceDB
 └── mysql_data/                # Volumen persistente de base de datos MySQL
 ```
 
 ### Despliegue Automatizado con Verificaciones Pre-Flight:
 El script `src/deploy.sh` orquesta las validaciones de seguridad antes de transferir código:
 1. Comprueba conectividad SSH con clave Ed25519 hacia `racso@10.0.10.11`.
-2. Ejecuta `tsc --noEmit` para garantizar compilación TypeScript limpia.
-3. Verifica la presencia de credenciales perimetrales en `src/.env.local` (`ADMIN_USER`, `ADMIN_PASSWORD_HASH`, `TELEMETRY_LLM_ENABLED`, `CRON_SECRET`).
+2. Ejecuta `tsc --noEmit` y `npm test` para garantizar compilación y tests limpios.
+3. Verifica la presencia de credenciales perimetrales en `src/.env.local`.
 4. Dispara el playbook de Ansistrano (`ansible-playbook -i ansible/inventory.ini ansible/deploy.yml`).
 5. Tras cambiar el symlink, el hook `after_symlink.yml` recarga los contenedores Docker (`docker compose down && docker compose up -d --remove-orphans`).
 
@@ -337,14 +420,14 @@ ansible-playbook -i ansible/inventory.ini ansible/rollback.yml
 
 ---
 
-## 📜 Axiomas y Dogmas de Ingeniería (CONSTITUTION.MD)
+## 📜 Axiomas y Dogmas de Ingeniería (CONSTITUTION.md)
 
-Todo el código de BarcelonaXplorer está blindado bajo las directivas de su **[Constitución Arquitectónica](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.MD)**:
+Todo el código de BarcelonaXplorer está blindado bajo las directivas de su **[Constitución Arquitectónica](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.md)**:
 
-1. **Aislamiento del Dominio:** Las dependencias fluyen estrictamente de fuera hacia adentro. El núcleo de negocio jamás conoce los detalles de su propia infraestructura (LLMs, MySQL, frameworks).
+1. **Aislamiento del Dominio:** Las dependencias fluyen estrictamente de fuera hacia adentro. El núcleo de negocio jamás conoce los detalles de su propia infraestructura (LLMs, MySQL, LanceDB, frameworks).
 2. **Sustitución de Entropía:** Sustituir un proveedor de IA o cambiar el motor de persistencia no alterará un solo token de la lógica de negocio ni de las entidades de dominio.
 3. **Prohibición de Primitivos (Value Objects):** Todo concepto (coordenadas, presupuestos, intervalos temporales) se encapsula en Objetos de Valor inmutables que autovalidan sus invariantes en el constructor. El estado inválido es físicamente imposible de instanciar en memoria.
-4. **Tolerancia Cero a `any`:** Proscripción del tipo `any`. Toda entropía externa entrante (especialmente JSONs de LLMs) pasa por el Triaje Entrópico de Zod antes de ingresar al sistema.
-5. **Filtro Empírico:** El código teórico es ruido; solo el código desplegado y testado es vitalidad. Toda funcionalidad se verifica empíricamente con suites de tests automatizados y pruebas de aislamiento.
+4. **Vertical Slicing Canónico (Axioma I):** Erradicación de capas globales dispersas. Todo el código de una vertical funcional vive encapsulado en `src/features/<feature>/`, reduciendo la dispersión a ≤ 3 archivos por operación atómica para modelos de IA.
+5. **Tolerancia Cero a `any`:** Proscripción absoluta del tipo `any`. Toda entropía externa entrante (especialmente JSONs de LLMs) pasa por el Triaje Entrópico de Zod antes de ingresar al sistema.
 6. **Consolidación Declarativa YAML (Axioma III):** Primacía de YAML sobre JSON para configuración estática e IaaC (~30% de ahorro en tokens para IA), habilitación de JSONC documentado (`tsconfig.json`, `components.json`) y blindaje P0 con deserialización segura (`yaml.safe_load`).
-7. **Axiomas de Forja S+ Grade (Optimización para IA):** Reglas innegociables para agentes de IA que norman la localidad de comportamiento (Axioma I: ≤ 3 archivos por operación atómica), la aduana de fricción con linter AST y la encapsulación estructural.
+7. **Filtro Empírico (Axioma IV):** El código teórico es ruido; solo el código desplegado y testado es vitalidad. Ningún cambio se valida por auto-aprobación del agente: la suite de tests (302 tests) y el linter AST son los únicos oráculos con potestad para conceder estado ejecutable.
