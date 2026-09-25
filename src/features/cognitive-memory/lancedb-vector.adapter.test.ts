@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { LanceDbVectorAdapter } from '@/infrastructure/vector/lancedb-vector.adapter';
-import { resetLanceDbConnection } from '@/infrastructure/vector/lancedb-client';
+import { LanceDbVectorAdapter } from './lancedb-vector.adapter';
+import { resetLanceDbConnection } from './lancedb-client';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';

@@ -8,7 +8,7 @@ import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-t
 import { GeminiClient } from '@/infrastructure/ai/gemini-client';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/infrastructure/ai/gemini-embedding.adapter';
-import { LanceDbCognitiveMemoryAdapter } from '@/infrastructure/vector/lancedb-cognitive-memory.adapter';
+import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
 
 export const runtime = 'nodejs';
 

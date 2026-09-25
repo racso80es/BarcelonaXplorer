@@ -4,8 +4,8 @@ import {
   AuditLanceDbHealthUseCasePort,
   AuditLanceDbHealthResult,
 } from '@/application/ports/in/audit-lancedb-health.use-case.port';
-import { AuditLanceDbHealthUseCase } from '@/application/use-cases/audit-lancedb-health.use-case';
-import { LanceDbVectorAdapter } from '@/infrastructure/vector/lancedb-vector.adapter';
+import { AuditLanceDbHealthUseCase } from '@/features/cognitive-memory';
+import { LanceDbVectorAdapter } from '@/features/cognitive-memory';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 
 export interface LanceDbTelemetryCardProps {

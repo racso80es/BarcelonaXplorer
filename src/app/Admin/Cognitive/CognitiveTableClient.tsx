@@ -14,7 +14,7 @@ import {
   Layers,
   FileCode,
 } from 'lucide-react';
-import { CognitiveMemoryItem } from '@/application/ports/out/cognitive-memory.port';
+import { CognitiveMemoryItem } from '@/features/cognitive-memory';
 
 export interface CognitiveTableClientProps {
   readonly sessions: CognitiveMemoryItem[];

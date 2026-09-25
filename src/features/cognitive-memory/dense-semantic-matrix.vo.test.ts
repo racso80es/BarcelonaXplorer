@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DenseSemanticMatrix } from '@/domain/value-objects/dense-semantic-matrix.vo';
+import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
 
 describe('DenseSemanticMatrix (Value Object)', () => {
   it('debe arrojar error si sessionId está vacío', () => {

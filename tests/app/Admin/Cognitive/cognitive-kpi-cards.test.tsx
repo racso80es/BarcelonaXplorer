@@ -6,7 +6,7 @@ import {
   CognitiveKpiCards,
   CognitiveKpiCardsSkeleton,
 } from '@/app/Admin/Cognitive/CognitiveKpiCards';
-import { ICognitiveMetricsPort } from '@/application/ports/out/cognitive-metrics.port';
+import { ICognitiveMetricsPort } from '@/features/cognitive-memory';
 import { IVectorStorePort } from '@/application/ports/out/vector-store.port';
 
 describe('CognitiveKpiCards (Tarjetas de Telemetría Cognitiva)', () => {

@@ -9,7 +9,7 @@ import {
 import {
   ICognitiveMemoryPort,
   CognitiveMemoryItem,
-} from '@/application/ports/out/cognitive-memory.port';
+} from '@/features/cognitive-memory';
 
 describe('CognitiveSessionsCard (Bounded Query Ingestion LanceDB)', () => {
   const sampleSessions: CognitiveMemoryItem[] = [

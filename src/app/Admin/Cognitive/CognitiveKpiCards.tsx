@@ -4,10 +4,10 @@ import { KpiMetricCard, KpiTrend } from '../_components/KpiMetricCard';
 import {
   ICognitiveMetricsPort,
   CognitiveMetricsSummary,
-} from '@/application/ports/out/cognitive-metrics.port';
-import { PrismaCognitiveMetricsRepository } from '@/infrastructure/repositories/prisma-cognitive-metrics.repository';
+} from '@/features/cognitive-memory';
+import { PrismaCognitiveMetricsRepository } from '@/features/cognitive-memory';
 import { IVectorStorePort, VectorStorePingResult } from '@/application/ports/out/vector-store.port';
-import { LanceDbVectorAdapter } from '@/infrastructure/vector/lancedb-vector.adapter';
+import { LanceDbVectorAdapter } from '@/features/cognitive-memory';
 
 export interface CognitiveKpiCardsProps {
   readonly metricsPort?: ICognitiveMetricsPort;

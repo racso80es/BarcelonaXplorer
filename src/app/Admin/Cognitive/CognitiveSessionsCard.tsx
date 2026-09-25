@@ -3,8 +3,8 @@ import { Brain, ShieldCheck, Database, Layers } from 'lucide-react';
 import {
   ICognitiveMemoryPort,
   CognitiveMemoryItem,
-} from '@/application/ports/out/cognitive-memory.port';
-import { LanceDbCognitiveMemoryAdapter } from '@/infrastructure/vector/lancedb-cognitive-memory.adapter';
+} from '@/features/cognitive-memory';
+import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
 import { CognitiveTableClient } from './CognitiveTableClient';
 
 export interface CognitiveSessionsCardProps {

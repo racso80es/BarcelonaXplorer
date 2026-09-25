@@ -1,4 +1,4 @@
-import { DenseSemanticMatrix } from '@/domain/value-objects/dense-semantic-matrix.vo';
+import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
 
 export interface CognitiveMemoryItem {
   readonly id: string;

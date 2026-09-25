@@ -411,7 +411,7 @@ describe('TriageInputUseCase (HU-CORE-TRIAGE-002: Orquestación del Triaje Entr�
     });
 
     it('PBI-COG-MEM-005: Recupera la memoria histórica previa desde LanceDB para refinamiento sin repreguntar', async () => {
-      const { DenseSemanticMatrix } = await import('@/domain/value-objects/dense-semantic-matrix.vo');
+      const { DenseSemanticMatrix } = await import('@/features/cognitive-memory');
       const priorMemory = DenseSemanticMatrix.create({
         sessionId: 'session-refine',
         matrixId: 'default',

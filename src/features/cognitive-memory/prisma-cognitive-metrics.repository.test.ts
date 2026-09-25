@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { PrismaCognitiveMetricsRepository } from '@/infrastructure/repositories/prisma-cognitive-metrics.repository';
+import { PrismaCognitiveMetricsRepository } from './prisma-cognitive-metrics.repository';
 import { PrismaClient } from '@prisma/client';
 
 describe('PrismaCognitiveMetricsRepository (MySQL Aggregations Anti-OOM)', () => {

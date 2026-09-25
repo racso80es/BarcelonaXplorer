@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CognitiveTableClient } from '@/app/Admin/Cognitive/CognitiveTableClient';
-import { CognitiveMemoryItem } from '@/application/ports/out/cognitive-memory.port';
+import { CognitiveMemoryItem } from '@/features/cognitive-memory';
 
 describe('CognitiveTableClient (Bitácora Tabular de Memoria Cognitiva)', () => {
   const sampleSessions: CognitiveMemoryItem[] = [

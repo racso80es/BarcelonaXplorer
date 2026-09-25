@@ -18,9 +18,9 @@ import { TriageOutcome } from '@/domain/value-objects/triage-outcome.vo';
 import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
 import { TelemetryEntry } from '@/features/telemetry';
 
-import { ICognitiveMemoryPort } from '@/application/ports/out/cognitive-memory.port';
+import { ICognitiveMemoryPort } from '@/features/cognitive-memory';
 import { IEmbeddingPort } from '@/application/ports/out/embedding.port';
-import { DenseSemanticMatrix } from '@/domain/value-objects/dense-semantic-matrix.vo';
+import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 
 /**
  * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-COG-MEM-005).

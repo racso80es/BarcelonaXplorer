@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { LanceDbCognitiveMemoryAdapter } from '@/infrastructure/vector/lancedb-cognitive-memory.adapter';
-import { LanceDbVectorAdapter } from '@/infrastructure/vector/lancedb-vector.adapter';
-import { resetLanceDbConnection } from '@/infrastructure/vector/lancedb-client';
-import { DenseSemanticMatrix } from '@/domain/value-objects/dense-semantic-matrix.vo';
+import { LanceDbCognitiveMemoryAdapter } from './lancedb-cognitive-memory.adapter';
+import { LanceDbVectorAdapter } from './lancedb-vector.adapter';
+import { resetLanceDbConnection } from './lancedb-client';
+import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';

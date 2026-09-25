@@ -1,9 +1,9 @@
 import {
   ICognitiveMemoryPort,
   CognitiveMemoryItem,
-} from '@/application/ports/out/cognitive-memory.port';
+} from './cognitive-memory.port';
 import { IVectorStorePort, VectorDocument } from '@/application/ports/out/vector-store.port';
-import { DenseSemanticMatrix } from '@/domain/value-objects/dense-semantic-matrix.vo';
+import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
 import { getLanceDbConnection } from './lancedb-client';
 import { LanceDbVectorAdapter } from './lancedb-vector.adapter';
 
@@ -150,7 +150,7 @@ export class LanceDbCognitiveMemoryAdapter implements ICognitiveMemoryPort {
         .offset(boundedOffset)
         .toArray();
 
-      return rows.map((row) => {
+      return rows.map((row: Record<string, any>) => {
         const meta = this.parseRowMetadata(row.metadata);
         const timestamp = meta.updatedAt ? new Date(String(meta.updatedAt)).getTime() : Date.now();
 

@@ -3,7 +3,7 @@ import { prisma } from '@/infrastructure/persistence/prisma';
 import {
   ICognitiveMetricsPort,
   CognitiveMetricsSummary,
-} from '@/application/ports/out/cognitive-metrics.port';
+} from './cognitive-metrics.port';
 
 /**
  * Adaptador de Infraestructura: Métricas Cognitivas sobre MySQL (Prisma).
