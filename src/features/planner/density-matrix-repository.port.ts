@@ -1,4 +1,4 @@
-import { DefaultDensityPayload } from '@/domain/schemas/matrix';
+import { DefaultDensityPayload } from './matrix';
 
 /**
  * Puerto de Salida Hexagonal (Driven Port) para la persistencia del estado
@@ -13,7 +13,7 @@ export interface DensityMatrixRepositoryPort {
   getMatrixPayload(
     sessionId: string,
     matrixId: string,
-  ): Promise<DefaultDensityPayload | null>;
+  ): Promise<Partial<DefaultDensityPayload> | null>;
 
   /**
    * Persiste o actualiza el estado acumulado de una matriz para la sesión dada.
@@ -21,7 +21,7 @@ export interface DensityMatrixRepositoryPort {
   saveMatrixPayload(
     sessionId: string,
     matrixId: string,
-    payload: DefaultDensityPayload,
+    payload: Partial<DefaultDensityPayload>,
   ): Promise<void>;
 
   /**

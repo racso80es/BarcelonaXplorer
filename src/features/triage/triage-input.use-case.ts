@@ -1,11 +1,11 @@
 import { ITriageInputUseCasePort } from './triage-input.use-case.port';
 import { ITypedDecisionEngine } from '@/features/ai-engine';
 import { IConversationalSLMPort } from '@/features/ai-engine';
-import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
+import { DensityMatrixRepositoryPort } from '@/features/planner';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
-import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
-import { HeuristicGeographicDecisionEngine } from '@/infrastructure/ai/rules/heuristic-geographic-decision-engine';
-import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
+import { GeographicDecisionEnginePort } from '@/features/planner';
+import { HeuristicGeographicDecisionEngine } from '@/features/planner';
+import { GenerateTacticalRouteUseCase } from '@/features/planner';
 import {
   TriageInputDto,
   TriageInputSchema,
@@ -13,9 +13,9 @@ import {
 import {
   calculateMatrixDensity,
   DefaultDensityPayload,
-} from '@/domain/schemas/matrix';
+} from '@/features/planner';
 import { TriageOutcome } from './triage-outcome.vo';
-import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
+import { GeographicScope } from '@/features/planner';
 import { TelemetryEntry } from '@/features/telemetry';
 
 import { ICognitiveMemoryPort } from '@/features/cognitive-memory';

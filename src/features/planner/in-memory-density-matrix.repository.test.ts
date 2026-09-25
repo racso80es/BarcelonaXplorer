@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
+import { InMemoryDensityMatrixRepository } from './in-memory-density-matrix.repository';
 
 describe('InMemoryDensityMatrixRepository (Laudo 2: Gobernanza del Estado)', () => {
   let repo: InMemoryDensityMatrixRepository;

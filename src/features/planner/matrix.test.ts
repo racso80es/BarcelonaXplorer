@@ -4,7 +4,7 @@ import {
   DensityMatrixEnvelopeSchema,
   DENSITY_MATRIX_REGISTRY,
   DefaultDensityPayloadSchema,
-} from '@/domain/schemas/matrix';
+} from './matrix';
 
 describe('Matriz de Densidad Polimórfica (HU 6 & HU-CORE-TRIAGE-002)', () => {
   it('TC-TRIAGE-01: Payload con time_window en matriz default alcanza el 60% y satisface el umbral', () => {

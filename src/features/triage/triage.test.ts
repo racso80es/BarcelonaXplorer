@@ -43,7 +43,7 @@ describe('Feature Triage (Vertical Slicing - Rama B)', () => {
   });
 
   it('debe admitir el campo mood en TriageInputSchema y participar con peso 10 en la Matriz de Densidad', async () => {
-    const { calculateMatrixDensity, DefaultDensityPayloadSchema } = await import('@/domain/schemas/matrix');
+    const { calculateMatrixDensity, DefaultDensityPayloadSchema } = await import('@/features/planner');
     const input = TriageInputSchema.parse({
       sessionId: 'sess-mood-vertical',
       prompt: 'Exploración relajada',

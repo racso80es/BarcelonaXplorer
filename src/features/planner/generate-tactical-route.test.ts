@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
+import { GenerateTacticalRouteUseCase } from './generate-tactical-route.use-case';
 import { AiGeneratorPort } from '@/application/ports/out/ai-generator.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TacticalRoute, TacticalWaypoint } from '@/domain/entities/tactical-route.entity';

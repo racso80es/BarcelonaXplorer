@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
-import { TriageInputUseCase } from '@/application/use-cases/triage-input.use-case';
+import { TriageInputUseCase } from '@/features/triage';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
-import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
-import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
+import { InMemoryDensityMatrixRepository } from '@/features/planner';
+import { GenerateTacticalRouteUseCase } from '@/features/planner';
 import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/features/ai-engine';

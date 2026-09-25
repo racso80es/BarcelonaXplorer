@@ -1,4 +1,4 @@
-import { OutOfScopeGeographicException } from '../exceptions/out-of-scope-geographic.exception';
+import { OutOfScopeGeographicException } from '@/domain/exceptions/out-of-scope-geographic.exception';
 
 export type CanonicalDistrict = (typeof GeographicScope.CANONICAL_DISTRICTS)[number];
 export type PeriurbanException = (typeof GeographicScope.PERIURBAN_EXCEPTIONS)[number];

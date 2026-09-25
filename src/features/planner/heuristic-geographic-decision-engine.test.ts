@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { HeuristicGeographicDecisionEngine } from '@/infrastructure/ai/rules/heuristic-geographic-decision-engine';
+import { HeuristicGeographicDecisionEngine } from './heuristic-geographic-decision-engine';
 
 describe('HeuristicGeographicDecisionEngine (System One)', () => {
   const engine = new HeuristicGeographicDecisionEngine();

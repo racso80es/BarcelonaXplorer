@@ -1,4 +1,4 @@
-import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
+import { GeographicScope } from '@/features/planner';
 import { ValidateGeographicScopeInputDto } from '@/domain/schemas/geographic-scope.schema';
 
 export type GeographicValidationOutcome =

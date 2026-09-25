@@ -1,6 +1,6 @@
 import { TriageOutcomeDto, TriageStatus } from './triage.schema';
-import { DefaultDensityPayload } from '@/domain/schemas/matrix';
-import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
+import { DefaultDensityPayload } from '@/features/planner';
+import { GeographicScope } from '@/features/planner';
 
 /**
  * Value Object inmutable que modela y encapsula el resultado de la Aduana Universal.

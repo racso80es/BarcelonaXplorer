@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import * as path from 'path';
 import * as fs from 'fs';
-import { TriageInputUseCase } from '@/application/use-cases/triage-input.use-case';
+import { TriageInputUseCase } from '@/features/triage';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
-import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
+import { InMemoryDensityMatrixRepository } from '@/features/planner';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('Aduana Universal y Triaje Entrópico Upstream Live E2E (HU-CORE-TRIAGE-002)', () => {

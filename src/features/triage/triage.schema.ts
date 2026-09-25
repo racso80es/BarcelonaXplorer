@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DefaultDensityPayloadSchema } from '@/domain/schemas/matrix';
+import { DefaultDensityPayloadSchema } from '@/features/planner';
 
 /**
  * Estados posibles del triaje entrópico en la Aduana Universal.

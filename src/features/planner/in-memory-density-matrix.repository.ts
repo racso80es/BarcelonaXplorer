@@ -1,5 +1,5 @@
-import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
-import { DefaultDensityPayload } from '@/domain/schemas/matrix';
+import { DensityMatrixRepositoryPort } from './density-matrix-repository.port';
+import { DefaultDensityPayload } from './matrix';
 
 /**
  * Adaptador de Infraestructura en Memoria para la persistencia del estado de la Matriz de Densidad.
@@ -8,12 +8,12 @@ import { DefaultDensityPayload } from '@/domain/schemas/matrix';
  * Utiliza un almacén estático en memoria persistente a nivel de proceso Node.js.
  */
 export class InMemoryDensityMatrixRepository implements DensityMatrixRepositoryPort {
-  private static readonly store = new Map<string, DefaultDensityPayload>();
+  private static readonly store = new Map<string, Partial<DefaultDensityPayload>>();
 
   async getMatrixPayload(
     sessionId: string,
     matrixId: string,
-  ): Promise<DefaultDensityPayload | null> {
+  ): Promise<Partial<DefaultDensityPayload> | null> {
     const key = `${sessionId}:${matrixId}`;
     const data = InMemoryDensityMatrixRepository.store.get(key);
     return data ? { ...data } : null;
@@ -22,10 +22,11 @@ export class InMemoryDensityMatrixRepository implements DensityMatrixRepositoryP
   async saveMatrixPayload(
     sessionId: string,
     matrixId: string,
-    payload: DefaultDensityPayload,
+    payload: Partial<DefaultDensityPayload>,
   ): Promise<void> {
     const key = `${sessionId}:${matrixId}`;
-    InMemoryDensityMatrixRepository.store.set(key, { ...payload });
+    const existing = InMemoryDensityMatrixRepository.store.get(key) ?? {};
+    InMemoryDensityMatrixRepository.store.set(key, { ...existing, ...payload });
   }
 
   async clearMatrixPayload(sessionId: string, matrixId?: string): Promise<void> {

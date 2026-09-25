@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
+import { GeographicScope } from './geographic-scope.vo';
 import { OutOfScopeGeographicException } from '@/domain/exceptions/out-of-scope-geographic.exception';
 
 describe('GeographicScope Value Object (HU-PERIM-GEO-001)', () => {

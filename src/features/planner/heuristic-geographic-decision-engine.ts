@@ -1,6 +1,6 @@
-import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
+import { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
 import { GeographicScopeResultDto } from '@/domain/schemas/geographic-scope.schema';
-import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
+import { GeographicScope } from './geographic-scope.vo';
 
 /**
  * Adaptador de Infraestructura: Motor Heurístico/Determinista de Decisión Geográfica (System One).

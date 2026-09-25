@@ -1,4 +1,4 @@
-import { DefaultDensityPayload } from '@/domain/schemas/matrix';
+import { DefaultDensityPayload } from '@/features/planner';
 
 export interface DenseSemanticMatrixProps {
   readonly sessionId: string;

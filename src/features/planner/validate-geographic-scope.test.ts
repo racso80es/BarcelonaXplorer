@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ValidateGeographicScopeUseCase } from '@/application/use-cases/validate-geographic-scope.use-case';
-import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
+import { ValidateGeographicScopeUseCase } from './validate-geographic-scope.use-case';
+import { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
 import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
