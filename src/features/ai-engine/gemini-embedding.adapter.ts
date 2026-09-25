@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { IEmbeddingPort } from '@/application/ports/out/embedding.port';
+import { IEmbeddingPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 

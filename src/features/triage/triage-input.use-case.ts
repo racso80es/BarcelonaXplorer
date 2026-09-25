@@ -1,6 +1,6 @@
 import { ITriageInputUseCasePort } from './triage-input.use-case.port';
-import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngine';
-import { IConversationalSLMPort } from '@/application/ports/out/conversational-slm.port';
+import { ITypedDecisionEngine } from '@/features/ai-engine';
+import { IConversationalSLMPort } from '@/features/ai-engine';
 import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { GeographicDecisionEnginePort } from '@/application/ports/out/geographic-decision-engine.port';
@@ -19,7 +19,7 @@ import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
 import { TelemetryEntry } from '@/features/telemetry';
 
 import { ICognitiveMemoryPort } from '@/features/cognitive-memory';
-import { IEmbeddingPort } from '@/application/ports/out/embedding.port';
+import { IEmbeddingPort } from '@/features/ai-engine';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 
 /**

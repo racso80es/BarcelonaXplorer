@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { JevClient } from '@/infrastructure/ai/jev/jevClient';
+import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('JevClient evaluateChoice (HU-CORE-TRIAGE-002: System One Choice)', () => {

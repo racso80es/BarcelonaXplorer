@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { IConversationalSLMPort } from '@/application/ports/out/conversational-slm.port';
+import { IConversationalSLMPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 import {

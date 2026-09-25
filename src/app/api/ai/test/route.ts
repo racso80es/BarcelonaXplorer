@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GeminiClient } from '@/infrastructure/ai/gemini-client';
+import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 
 export const dynamic = 'force-dynamic';

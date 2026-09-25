@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { TriageInputUseCase } from '@/application/use-cases/triage-input.use-case';
-import { JevClient } from '@/infrastructure/ai/jev/jevClient';
-import { GroqConversationalSlmAdapter } from '@/infrastructure/ai/groq/groq-conversational-slm.adapter';
+import { JevClient } from '@/features/ai-engine/jev/jevClient';
+import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
 import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
-import { GeminiClient } from '@/infrastructure/ai/gemini-client';
+import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
-import { GeminiEmbeddingAdapter } from '@/infrastructure/ai/gemini-embedding.adapter';
+import { GeminiEmbeddingAdapter } from '@/features/ai-engine';
 import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
 
 export const runtime = 'nodejs';

@@ -3,7 +3,7 @@ import {
   JevChoiceEvaluation,
   JevDecisionProbeResult,
   JevNoulEvaluation,
-} from '@/application/ports/out/ITypedDecisionEngine';
+} from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 import { getJevConfig, JevConfig } from './config';

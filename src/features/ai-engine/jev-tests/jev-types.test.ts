@@ -6,7 +6,7 @@ import {
   JevChoiceAnswerSchema,
   JevAnswerItemSchema,
   JevSystemOneResponseSchema,
-} from '@/infrastructure/ai/jev/types';
+} from '@/features/ai-engine/jev/types';
 
 describe('Jev Types & Zod Schemas (HU-INFRA-JEV-001)', () => {
   it('debe validar items individuales de modelo con y sin descripción', () => {

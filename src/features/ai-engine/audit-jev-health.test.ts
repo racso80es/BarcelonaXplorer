@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuditJevHealthUseCase } from '@/application/use-cases/audit-jev-health.use-case';
-import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngine';
+import { AuditJevHealthUseCase } from '@/features/ai-engine';
+import { ITypedDecisionEngine } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('AuditJevHealthUseCase (Principio DIP - Vía del Yunque)', () => {
@@ -11,6 +11,7 @@ describe('AuditJevHealthUseCase (Principio DIP - Vía del Yunque)', () => {
     mockEngine = {
       evaluateHealth: vi.fn(),
       evaluateNoul: vi.fn(),
+      evaluateChoice: vi.fn(),
     };
 
     mockTelemetryRepo = {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GroqFastAiAdapter } from '@/infrastructure/ai/groq/groq-fast-ai.adapter';
+import { GroqFastAiAdapter } from '@/features/ai-engine/groq/groq-fast-ai.adapter';
 
 /**
  * Helper: Consume un ReadableStream completo y devuelve el texto concatenado.

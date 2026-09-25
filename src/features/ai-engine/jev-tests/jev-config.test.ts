@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getJevConfig } from '@/infrastructure/ai/jev/config';
+import { getJevConfig } from '@/features/ai-engine/jev/config';
 
 describe('JevConfig (Lectura tipada de entorno y fallbacks)', () => {
   const originalEnv = process.env;

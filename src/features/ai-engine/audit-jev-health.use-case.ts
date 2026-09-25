@@ -3,7 +3,7 @@ import {
   AuditJevHealthResult,
   JevHealthState,
 } from '@/application/ports/in/audit-jev-health.use-case.port';
-import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngine';
+import { ITypedDecisionEngine } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 

@@ -5,7 +5,7 @@ import { TelemetryEntry } from '@/features/telemetry';
 import {
   GEOGRAPHIC_REBOUND_SYSTEM_PROMPT,
   buildGeographicReboundUserPrompt,
-} from '@/infrastructure/ai/groq/prompts/geographic-rebound.prompt';
+} from '@/features/ai-engine/groq/prompts/geographic-rebound.prompt';
 
 /**
  * Adaptador de Infraestructura para la generación de Rebotes Tácticos con Groq (SLM Ligero).

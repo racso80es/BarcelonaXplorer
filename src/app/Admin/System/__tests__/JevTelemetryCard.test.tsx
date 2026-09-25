@@ -9,9 +9,9 @@ import {
   JevTelemetryCardSkeleton,
 } from '@/app/Admin/System/JevTelemetryCard';
 import { AuditJevHealthUseCasePort } from '@/application/ports/in/audit-jev-health.use-case.port';
-import { AuditJevHealthUseCase } from '@/application/use-cases/audit-jev-health.use-case';
+import { AuditJevHealthUseCase } from '@/features/ai-engine';
 
-vi.mock('@/application/use-cases/audit-jev-health.use-case', () => {
+vi.mock('@/features/ai-engine', () => {
   return {
     AuditJevHealthUseCase: vi.fn(),
   };

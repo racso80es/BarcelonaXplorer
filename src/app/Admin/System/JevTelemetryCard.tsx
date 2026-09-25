@@ -4,8 +4,8 @@ import {
   AuditJevHealthUseCasePort,
   AuditJevHealthResult,
 } from '@/application/ports/in/audit-jev-health.use-case.port';
-import { AuditJevHealthUseCase } from '@/application/use-cases/audit-jev-health.use-case';
-import { JevClient } from '@/infrastructure/ai/jev/jevClient';
+import { AuditJevHealthUseCase } from '@/features/ai-engine';
+import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 
 export interface JevTelemetryCardProps {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GroqGeographicBounceGenerator } from '@/infrastructure/ai/groq/groq-geographic-bounce-generator';
+import { GroqGeographicBounceGenerator } from '@/features/ai-engine/groq/groq-geographic-bounce-generator';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 
@@ -11,6 +11,8 @@ describe('GroqGeographicBounceGenerator (Telemetría LLM_ENGINE e Inferencia SLM
     vi.clearAllMocks();
     mockTelemetryRepo = {
       log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
     };
     mockCreate = vi.fn();
     vi.stubEnv('GROQ_API_KEY', 'gsk_test_key_fake');

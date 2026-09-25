@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { JevClient } from '@/infrastructure/ai/jev/jevClient';
+import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 
@@ -276,6 +276,8 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
 
     const mockTelemetryRepo: TelemetryRepositoryPort = {
       log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
     };
 
     const client = new JevClient(undefined, mockTelemetryRepo);
@@ -309,6 +311,8 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
 
     const mockTelemetryRepo: TelemetryRepositoryPort = {
       log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
     };
 
     const client = new JevClient(undefined, mockTelemetryRepo);
@@ -344,6 +348,8 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
 
     const mockTelemetryRepo: TelemetryRepositoryPort = {
       log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
     };
 
     const client = new JevClient(undefined, mockTelemetryRepo);

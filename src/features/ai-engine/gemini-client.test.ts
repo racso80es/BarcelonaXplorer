@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GeminiClient } from '@/infrastructure/ai/gemini-client';
+import { GeminiClient } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 
@@ -26,6 +26,8 @@ describe('GeminiClient (Telemetría LLM_ENGINE e Inferencia)', () => {
     };
     mockTelemetryRepo = {
       log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
     };
     mockGenerateContent = vi.fn();
   });

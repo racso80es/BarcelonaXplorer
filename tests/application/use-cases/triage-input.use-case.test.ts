@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TriageInputUseCase } from '@/application/use-cases/triage-input.use-case';
-import { ITypedDecisionEngine } from '@/application/ports/out/ITypedDecisionEngine';
-import { IConversationalSLMPort } from '@/application/ports/out/conversational-slm.port';
+import { ITypedDecisionEngine } from '@/features/ai-engine';
+import { IConversationalSLMPort } from '@/features/ai-engine';
 import { DensityMatrixRepositoryPort } from '@/application/ports/out/density-matrix-repository.port';
 import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/in-memory-density-matrix.repository';
 import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
