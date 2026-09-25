@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { LanceDbVectorAdapter } from '@/infrastructure/vector/lancedb-vector.adapter';
 import { resetLanceDbConnection } from '@/infrastructure/vector/lancedb-client';
 import fs from 'fs';
@@ -115,5 +115,20 @@ describe('LanceDbVectorAdapter', () => {
     expect(pingResult.latencyMs).toBeGreaterThanOrEqual(0);
     expect(pingResult.path).toBe(testDir);
     expect(pingResult.tableCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('debe capturar y reportar fallo de permisos en la sonda ping ante error de I/O', async () => {
+    const accessSpy = vi.spyOn(fs, 'accessSync').mockImplementationOnce(() => {
+      const err = new Error('EACCES: permission denied, access /restricted_path');
+      (err as NodeJS.ErrnoException).code = 'EACCES';
+      throw err;
+    });
+
+    const pingResult = await adapter.ping();
+    expect(pingResult.ok).toBe(false);
+    expect(pingResult.error).toContain('EACCES: permission denied');
+    expect(pingResult.tableCount).toBe(0);
+
+    accessSpy.mockRestore();
   });
 });

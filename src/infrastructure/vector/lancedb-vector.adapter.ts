@@ -7,6 +7,7 @@ import {
 } from '@/application/ports/out/vector-store.port';
 import { getLanceDbConnection, resolveLanceDbUri } from './lancedb-client';
 import * as lancedb from '@lancedb/lancedb';
+import fs from 'fs';
 
 /**
  * Adaptador Hexagonal de Persistencia Vectorial sobre LanceDB (Apache Arrow).
@@ -131,6 +132,14 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
     const targetPath = this.customUri || resolveLanceDbUri();
 
     try {
+      // Auditoría proactiva de permisos POSIX sobre volumen local
+      if (!targetPath.startsWith('s3://') && !targetPath.startsWith('gs://')) {
+        if (!fs.existsSync(targetPath)) {
+          fs.mkdirSync(targetPath, { recursive: true });
+        }
+        fs.accessSync(targetPath, fs.constants.R_OK | fs.constants.W_OK);
+      }
+
       const db = await this.getDb();
       const tables = await db.tableNames();
       const latencyMs = Date.now() - startTime;
