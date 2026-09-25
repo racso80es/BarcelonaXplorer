@@ -7,11 +7,14 @@ import { InMemoryDensityMatrixRepository } from '@/infrastructure/repositories/i
 import { GenerateTacticalRouteUseCase } from '@/application/use-cases/generate-tactical-route.use-case';
 import { GeminiClient } from '@/infrastructure/ai/gemini-client';
 import { PrismaTelemetryRepository } from '@/infrastructure/repositories/prisma-telemetry.repository';
+import { GeminiEmbeddingAdapter } from '@/infrastructure/ai/gemini-embedding.adapter';
+import { LanceDbCognitiveMemoryAdapter } from '@/infrastructure/vector/lancedb-cognitive-memory.adapter';
 
 export const runtime = 'nodejs';
 
 // Instancia compartida del repositorio de persistencia de matriz de sesión (Laudo 2)
 const densityMatrixRepo = new InMemoryDensityMatrixRepository();
+const cognitiveMemory = new LanceDbCognitiveMemoryAdapter();
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,18 +47,22 @@ export async function POST(req: NextRequest) {
       telemetryRepo,
     );
     const geminiClient = new GeminiClient(telemetryRepo);
+    const embeddingPort = new GeminiEmbeddingAdapter(undefined, telemetryRepo);
     const routeUseCase = new GenerateTacticalRouteUseCase(
       geminiClient,
       telemetryRepo,
     );
 
-    // Laudo 1 & 2: Orquestador unificado con despacho interno y gobernanza backend del estado
+    // Laudo 1 & 2 + PBI-COG-MEM-005: Orquestador unificado con despacho interno y RAG cognitivo
     const useCase = new TriageInputUseCase(
       decisionEngine,
       conversationalSlm,
       densityMatrixRepo,
       routeUseCase,
       telemetryRepo,
+      undefined,
+      cognitiveMemory,
+      embeddingPort,
     );
 
     const outcome = await useCase.execute({

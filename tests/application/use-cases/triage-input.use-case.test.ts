@@ -364,5 +364,103 @@ describe('TriageInputUseCase (HU-CORE-TRIAGE-002: Orquestación del Triaje Entr�
       expect(outcome.geographicScope?.targetCity).toBe('Barcelona');
       expect(mockRouteUseCase.execute).toHaveBeenCalledTimes(1);
     });
+
+    it('PBI-COG-MEM-005: Al superar el umbral, genera embedding y persiste la memoria cognitiva densa en LanceDB', async () => {
+      const mockCognitiveMemory = {
+        persistMemory: vi.fn().mockResolvedValue(undefined),
+        getLatestSessionMemory: vi.fn().mockResolvedValue(null),
+        searchSimilarMemories: vi.fn().mockResolvedValue([]),
+        getRecentMemories: vi.fn().mockResolvedValue([]),
+        clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockEmbeddingPort = {
+        generateEmbedding: vi.fn().mockResolvedValue(new Array(768).fill(0.01)),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        mockCognitiveMemory,
+        mockEmbeddingPort,
+      );
+
+      const outcome = await useCase.execute({
+        sessionId: 'session-cog-persist',
+        prompt: 'Vamos con 4 personas durante 3 horas para comer tapas en Gràcia',
+        matrixId: 'default',
+      });
+
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(mockEmbeddingPort.generateEmbedding).toHaveBeenCalledWith(
+        expect.stringContaining('Grupo: 4 personas'),
+      );
+      expect(mockCognitiveMemory.persistMemory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          props: expect.objectContaining({
+            sessionId: 'session-cog-persist',
+            groupSize: 4,
+          }),
+        }),
+        expect.any(Array),
+      );
+    });
+
+    it('PBI-COG-MEM-005: Recupera la memoria histórica previa desde LanceDB para refinamiento sin repreguntar', async () => {
+      const { DenseSemanticMatrix } = await import('@/domain/value-objects/dense-semantic-matrix.vo');
+      const priorMemory = DenseSemanticMatrix.create({
+        sessionId: 'session-refine',
+        matrixId: 'default',
+        payload: {
+          group_size: 4,
+          vibe: 'cultural',
+          districts: ['Eixample'],
+        },
+        score: 65,
+        survivalThreshold: 60,
+      });
+
+      const mockCognitiveMemory = {
+        persistMemory: vi.fn().mockResolvedValue(undefined),
+        getLatestSessionMemory: vi.fn().mockResolvedValue(priorMemory),
+        searchSimilarMemories: vi.fn().mockResolvedValue([]),
+        getRecentMemories: vi.fn().mockResolvedValue([]),
+        clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+      };
+      const mockEmbeddingPort = {
+        generateEmbedding: vi.fn().mockResolvedValue(new Array(768).fill(0.02)),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        matrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        mockCognitiveMemory,
+        mockEmbeddingPort,
+      );
+
+      // El usuario solo pide cambiar el plan aportando tiempo: "Durante 2 horas"
+      const outcome = await useCase.execute({
+        sessionId: 'session-refine',
+        prompt: 'Tenemos 2 horas disponibles',
+        matrixId: 'default',
+      });
+
+      expect(mockCognitiveMemory.getLatestSessionMemory).toHaveBeenCalledWith(
+        'session-refine',
+        'default',
+      );
+      expect(outcome.status).toBe('DISPATCH_READY');
+      // Debe haber conservado el group_size: 4 de la memoria histórica previa
+      expect(outcome.payload?.group_size).toBe(4);
+    });
   });
 });

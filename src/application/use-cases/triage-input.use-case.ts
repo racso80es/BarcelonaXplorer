@@ -18,8 +18,12 @@ import { TriageOutcome } from '@/domain/value-objects/triage-outcome.vo';
 import { GeographicScope } from '@/domain/value-objects/geographic-scope.vo';
 import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
 
+import { ICognitiveMemoryPort } from '@/application/ports/out/cognitive-memory.port';
+import { IEmbeddingPort } from '@/application/ports/out/embedding.port';
+import { DenseSemanticMatrix } from '@/domain/value-objects/dense-semantic-matrix.vo';
+
 /**
- * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002).
+ * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-COG-MEM-005).
  *
  * Refactorizado bajo:
  * - Laudo 1 (Unificación de la Aduana): Si la matriz alcanza el umbral (>= 60%),
@@ -28,6 +32,8 @@ import { TelemetryEntry } from '@/domain/entities/telemetry-entry.entity';
  *   y persiste soberanamente en el backend vía DensityMatrixRepositoryPort ligado a bx_session_id.
  * - Anclaje Perimetral Barcelona (HU-PERIM-GEO-001): Validación de Bounding Box GPS,
  *   reconocimiento de los 10 distritos canónicos y excepciones logísticas periurbanas.
+ * - Memoria Cognitiva Vectorial (PBI-COG-MEM-005): Recuperación RAG silenciosa y
+ *   persistencia en LanceDB con formato hiper-denso (DenseSemanticMatrix).
  */
 export class TriageInputUseCase implements ITriageInputUseCasePort {
   constructor(
@@ -37,6 +43,8 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     private readonly routeUseCase?: GenerateTacticalRouteUseCase,
     private readonly telemetryRepo?: TelemetryRepositoryPort,
     private readonly geoEngine: GeographicDecisionEnginePort = new HeuristicGeographicDecisionEngine(),
+    private readonly cognitiveMemory?: ICognitiveMemoryPort,
+    private readonly embeddingPort?: IEmbeddingPort,
   ) {}
 
   async execute(rawInput: TriageInputDto): Promise<TriageOutcome> {
@@ -46,8 +54,23 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     const matrixId = input.matrixId || 'default';
 
     // 1. Laudo 2: Recuperación soberana del estado previo desde la persistencia del backend
-    const priorPayload =
+    let priorPayload =
       (await this.matrixRepo.getMatrixPayload(input.sessionId, matrixId)) ?? {};
+
+    // 1.1 Si el borrador de sesión está vacío, rescatar la memoria cognitiva consolidada desde LanceDB (RAG)
+    if (Object.keys(priorPayload).length === 0 && this.cognitiveMemory) {
+      try {
+        const historical = await this.cognitiveMemory.getLatestSessionMemory(
+          input.sessionId,
+          matrixId,
+        );
+        if (historical) {
+          priorPayload = historical.toPayload();
+        }
+      } catch {
+        // Fail-soft en lectura de memoria histórica LanceDB
+      }
+    }
 
     // 2. Preparar contexto inmutable para Jev AI (System One)
     const stateContext = JSON.stringify({
@@ -226,7 +249,35 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     }
 
     // FLUJO 2B: DESPACHO DIRECTO AL ORQUESTADOR PESADO (>= 60%)
-    // Laudo 1: Despacho interno unificado hacia el orquestador pesado (Gemini)
+    // PBI-COG-MEM-005: Transmutación semántica hiper-densa y consolidación en LanceDB
+    const denseMatrix = DenseSemanticMatrix.create({
+      sessionId: input.sessionId,
+      matrixId,
+      payload: mergedPayload,
+      score: density.score,
+      survivalThreshold: density.survivalThreshold,
+    });
+
+    if (this.cognitiveMemory && this.embeddingPort) {
+      try {
+        const vector = await this.embeddingPort.generateEmbedding(
+          denseMatrix.toDensePromptString(),
+        );
+        await this.cognitiveMemory.persistMemory(denseMatrix, vector);
+      } catch (err) {
+        // Fail-soft: la falla de persistencia vectorial no debe abortar la generación del itinerario
+        this.emitTelemetry({
+          level: 'WARN',
+          context: 'SECURITY_PERIMETER',
+          message: `[Triage Fail-Soft] No se pudo persistir memoria cognitiva en LanceDB: ${err instanceof Error ? err.message : String(err)}`,
+          statusCode: 500,
+          durationMs: Date.now() - startTime,
+          payload: { sessionId: input.sessionId, matrixId },
+        });
+      }
+    }
+
+    // Laudo 1: Despacho interno unificado hacia el orquestador pesado (Gemini) con inyección densa RAG
     let forgedRoute: unknown = undefined;
     if (this.routeUseCase) {
       const districtsLabel =
@@ -234,7 +285,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       const gpsLabel = input.userLocation
         ? ` | GPS: ${input.userLocation.lat},${input.userLocation.lng}`
         : '';
-      const enrichedPrompt = `[Geo: Barcelona | Distritos: ${districtsLabel}${gpsLabel}] ${trimmedPrompt} | Contexto de Matriz: ${JSON.stringify(mergedPayload)}`;
+      const enrichedPrompt = `[Geo: Barcelona | Distritos: ${districtsLabel}${gpsLabel}] ${trimmedPrompt} | Contexto Semántico: ${denseMatrix.toDensePromptString()}`;
       forgedRoute = await this.routeUseCase.execute({
         prompt: enrichedPrompt,
         environment: {
@@ -243,7 +294,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       });
     }
 
-    // Laudo 2: Limpieza de la matriz completada en la sesión
+    // Laudo 2: Limpieza del borrador efímero en la sesión (la memoria consolidada permanece en LanceDB)
     await this.matrixRepo.clearMatrixPayload(input.sessionId, matrixId);
 
     const durationMs = Date.now() - startTime;
