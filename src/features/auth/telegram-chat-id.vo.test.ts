@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TelegramChatId } from './telegram-chat-id.vo';
-import { InvalidTelegramChatIdException } from '@/domain/exceptions/invalid-telegram-chat-id.exception';
+import { InvalidTelegramChatIdException } from '@/shared/exceptions/invalid-telegram-chat-id.exception';
 
 describe('TelegramChatId Value Object', () => {
   it('instancia correctamente con identificadores numéricos positivos', () => {

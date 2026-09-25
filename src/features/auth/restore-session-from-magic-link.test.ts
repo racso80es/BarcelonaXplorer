@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RestoreSessionFromMagicLinkUseCase } from './restore-session-from-magic-link.use-case';
 import { MagicLinkSignerPort } from './magic-link-signer.port';
-import { MagicLinkNonceRepositoryPort } from '@/application/ports/out/magic-link-nonce-repository.port';
+import { MagicLinkNonceRepositoryPort } from '@/features/auth';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { UserAnchor } from './user-anchor.entity';
 import { TelegramChatId } from './telegram-chat-id.vo';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 
 describe('RestoreSessionFromMagicLinkUseCase', () => {
   const samplePayload = {

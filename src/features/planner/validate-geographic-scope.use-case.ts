@@ -1,15 +1,15 @@
 import {
   GeographicValidationOutcome,
   ValidateGeographicScopeUseCasePort,
-} from '@/application/ports/in/validate-geographic-scope.use-case.port';
+} from '@/features/planner';
 import { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
-import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
+import { GeographicBounceGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { GeographicScope } from './geographic-scope.vo';
 import {
   ValidateGeographicScopeInputDto,
   ValidateGeographicScopeInputSchema,
-} from '@/domain/schemas/geographic-scope.schema';
+} from '@/features/planner';
 import { TelemetryEntry } from '@/features/telemetry';
 
 /**

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { prisma } from '@/infrastructure/persistence/prisma';
+import { prisma } from '@/shared/persistence/prisma';
 import {
   Users,
   UserPlus,

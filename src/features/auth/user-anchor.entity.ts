@@ -1,5 +1,5 @@
 import { TelegramChatId } from './telegram-chat-id.vo';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 
 export interface UserAnchorProps {
   id: string;

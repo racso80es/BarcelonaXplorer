@@ -1,8 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
-import { AiGeneratorPort } from '@/application/ports/out/ai-generator.port';
-import { TacticalRoute, TacticalWaypoint, GeoCoordinates, TimeSpan } from '@/domain/entities/tactical-route.entity';
-import { TacticalRouteZodSchema } from '@/infrastructure/ai/schemas/tactical-route.schema';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { AiGeneratorPort } from '@/features/ai-engine';
+import { TacticalRoute, TacticalWaypoint, GeoCoordinates, TimeSpan } from '@/features/planner';
+import { TacticalRouteZodSchema } from '@/features/planner';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 

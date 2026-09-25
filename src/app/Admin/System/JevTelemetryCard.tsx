@@ -3,7 +3,7 @@ import { Cpu } from 'lucide-react';
 import {
   AuditJevHealthUseCasePort,
   AuditJevHealthResult,
-} from '@/application/ports/in/audit-jev-health.use-case.port';
+} from '@/features/ai-engine';
 import { AuditJevHealthUseCase } from '@/features/ai-engine';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { PrismaTelemetryRepository } from '@/features/telemetry';

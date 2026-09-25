@@ -2,12 +2,12 @@ import {
   RestoreSessionFromMagicLinkCommand,
   RestoreSessionFromMagicLinkResult,
   RestoreSessionFromMagicLinkUseCasePort,
-} from '@/application/ports/in/restore-session-from-magic-link.use-case.port';
+} from '@/features/auth';
 import { MagicLinkSignerPort } from './magic-link-signer.port';
-import { MagicLinkNonceRepositoryPort } from '@/application/ports/out/magic-link-nonce-repository.port';
+import { MagicLinkNonceRepositoryPort } from '@/features/auth';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { TelegramChatId } from './telegram-chat-id.vo';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 
 async function computeSha256Hex(value: string): Promise<string> {
   const encoder = new TextEncoder();

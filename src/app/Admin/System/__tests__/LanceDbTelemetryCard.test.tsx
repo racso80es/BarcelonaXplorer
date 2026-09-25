@@ -8,7 +8,7 @@ import {
   LanceDbTelemetryCard,
   LanceDbTelemetryCardSkeleton,
 } from '@/app/Admin/System/LanceDbTelemetryCard';
-import { AuditLanceDbHealthUseCasePort } from '@/application/ports/in/audit-lancedb-health.use-case.port';
+import { AuditLanceDbHealthUseCasePort } from '@/features/cognitive-memory';
 
 describe('LanceDbTelemetryCard UI', () => {
   beforeEach(() => {

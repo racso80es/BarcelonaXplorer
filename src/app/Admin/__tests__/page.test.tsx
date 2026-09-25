@@ -5,9 +5,9 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AdminDashboardPage from '../page';
-import { prisma } from '@/infrastructure/persistence/prisma';
+import { prisma } from '@/shared/persistence/prisma';
 
-vi.mock('@/infrastructure/persistence/prisma', () => ({
+vi.mock('@/shared/persistence/prisma', () => ({
   prisma: {
     userAnchor: {
       count: vi.fn(),

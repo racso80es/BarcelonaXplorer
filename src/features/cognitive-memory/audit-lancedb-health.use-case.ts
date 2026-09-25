@@ -2,8 +2,8 @@ import {
   AuditLanceDbHealthUseCasePort,
   AuditLanceDbHealthResult,
   LanceDbHealthState,
-} from '@/application/ports/in/audit-lancedb-health.use-case.port';
-import { IVectorStorePort } from '@/application/ports/out/vector-store.port';
+} from '@/features/cognitive-memory';
+import { IVectorStorePort } from '@/features/cognitive-memory';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 

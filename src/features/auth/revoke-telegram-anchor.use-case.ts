@@ -2,7 +2,7 @@ import {
   RevokeTelegramAnchorCommand,
   RevokeTelegramAnchorResult,
   RevokeTelegramAnchorUseCasePort,
-} from '@/application/ports/in/revoke-telegram-anchor.use-case.port';
+} from '@/features/auth';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { TelegramBotGatewayPort } from '@/features/telegram';
 import { TelegramChatId } from './telegram-chat-id.vo';

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuditLanceDbHealthUseCase } from './audit-lancedb-health.use-case';
-import { IVectorStorePort } from '@/application/ports/out/vector-store.port';
+import { IVectorStorePort } from '@/features/cognitive-memory';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('AuditLanceDbHealthUseCase', () => {

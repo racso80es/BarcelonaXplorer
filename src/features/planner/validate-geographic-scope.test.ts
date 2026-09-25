@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ValidateGeographicScopeUseCase } from './validate-geographic-scope.use-case';
 import { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
-import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
+import { GeographicBounceGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('ValidateGeographicScopeUseCase (HU-PERIM-GEO-001)', () => {

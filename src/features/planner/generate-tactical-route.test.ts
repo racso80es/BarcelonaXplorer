@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GenerateTacticalRouteUseCase } from './generate-tactical-route.use-case';
-import { AiGeneratorPort } from '@/application/ports/out/ai-generator.port';
+import { AiGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
-import { TacticalRoute, TacticalWaypoint } from '@/domain/entities/tactical-route.entity';
-import { TacticalRouteZodSchema } from '@/infrastructure/ai/schemas/tactical-route.schema';
+import { TacticalRoute, TacticalWaypoint } from '@/features/planner';
+import { TacticalRouteZodSchema } from '@/features/planner';
 import { TelemetryEntry } from '@/features/telemetry';
 import {
   LlmEnvironmentContext,
   LlmWarningTelemetryPayload,
   LlmTelemetryEvent,
-} from '@/domain/entities/llm-telemetry.types';
+} from '@/features/telemetry';
 
 describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => {
   let mockAiPort: AiGeneratorPort;

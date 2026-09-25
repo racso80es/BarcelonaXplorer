@@ -1,4 +1,4 @@
-import { InvalidFastInsightException } from '../exceptions/invalid-fast-insight.exception';
+import { InvalidFastInsightException } from '@/shared/exceptions/invalid-fast-insight.exception';
 
 export type FastInsightCategory = 'environmental' | 'security' | 'transit';
 export type FastInsightSeverity = 1 | 2 | 3;

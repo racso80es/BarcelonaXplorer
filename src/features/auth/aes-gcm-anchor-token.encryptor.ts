@@ -1,5 +1,5 @@
 import { AnchorTokenEncryptorPort } from './anchor-token-encryptor.port';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 
 /**
  * Adaptador de infraestructura para el cifrado simétrico autenticado (AES-256-GCM)

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { GroqFastAiAdapter } from '@/features/ai-engine/groq/groq-fast-ai.adapter';
-import { GenerateFastRadarUseCase } from '@/application/use-cases/generate-fast-radar.use-case';
+import { GenerateFastRadarUseCase } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
-import type { FastContextDto } from '@/application/ports/out/fast-interaction-ai.port';
+import type { FastContextDto } from '@/features/ai-engine';
 
 export const dynamic = 'force-dynamic';
 

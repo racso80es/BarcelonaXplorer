@@ -1,4 +1,4 @@
-import { InvalidTelegramChatIdException } from '@/domain/exceptions/invalid-telegram-chat-id.exception';
+import { InvalidTelegramChatIdException } from '@/shared/exceptions/invalid-telegram-chat-id.exception';
 
 /**
  * Objeto de Valor inmutable para validar y encapsular identificadores de chat de Telegram.

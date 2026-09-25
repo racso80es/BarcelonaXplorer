@@ -11,3 +11,5 @@ export * from './lancedb-cognitive-memory.adapter';
 export * from './lancedb-vector.adapter';
 export * from './lancedb-client';
 export * from './prisma-cognitive-metrics.repository';
+export * from './vector-store.port';
+export * from './audit-lancedb-health.use-case.port';

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { prisma } from '@/infrastructure/persistence/prisma';
+import { prisma } from '@/shared/persistence/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, Globe, Activity } from 'lucide-react';
 import { AdminPageHeader } from '../_components/AdminPageHeader';

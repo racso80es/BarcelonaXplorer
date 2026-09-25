@@ -2,7 +2,7 @@ import {
   MagicLinkPayload,
   MagicLinkSignerPort,
 } from './magic-link-signer.port';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 
 /**
  * Adaptador de infraestructura para firmar y verificar tokens de Enlace Mágico Cross-Device

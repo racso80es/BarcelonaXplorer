@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import {
   MagicLinkNonceRecord,
   MagicLinkNonceRepositoryPort,
-} from '@/application/ports/out/magic-link-nonce-repository.port';
+} from '@/features/auth';
 
 const globalForPrisma = globalThis as unknown as {
   prismaNonceClient?: PrismaClient;

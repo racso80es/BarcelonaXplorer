@@ -3,7 +3,7 @@ import { Send } from 'lucide-react';
 import {
   AuditTelegramBotHealthUseCasePort,
   AuditTelegramBotHealthResult,
-} from '@/application/ports/in/audit-telegram-bot-health.use-case.port';
+} from '@/features/telegram';
 import { AuditTelegramBotHealthUseCase } from '@/features/telegram';
 import { TelegramBotApiGateway } from '@/features/telegram';
 import { PrismaTelemetryRepository } from '@/features/telemetry';

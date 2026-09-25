@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AesGcmAnchorTokenEncryptor } from '@/features/auth';
-import { DomainException } from '@/domain/exceptions/domain.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
 
 /**
  * Route Handler para generar el Deep Link de anclaje a Telegram de forma segura.

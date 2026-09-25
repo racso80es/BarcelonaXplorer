@@ -1,12 +1,12 @@
-import { AiGeneratorPort } from '@/application/ports/out/ai-generator.port';
+import { AiGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
-import { TacticalRoute } from '@/domain/entities/tactical-route.entity';
+import { TacticalRoute } from '@/features/planner';
 import { TelemetryEntry } from '@/features/telemetry';
 import {
   LlmEnvironmentContext,
   LlmTelemetryEvent,
   LlmReturnedRouteData,
-} from '@/domain/entities/llm-telemetry.types';
+} from '@/features/telemetry';
 
 export interface GenerateTacticalRouteInput {
   prompt: string;

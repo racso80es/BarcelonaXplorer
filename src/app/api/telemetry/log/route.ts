@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TelemetryLogInputSchema } from '@/infrastructure/ai/schemas/telemetry.schema';
+import { TelemetryLogInputSchema } from '@/features/telemetry';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 

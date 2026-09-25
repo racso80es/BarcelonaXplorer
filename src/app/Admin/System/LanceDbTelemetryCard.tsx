@@ -3,7 +3,7 @@ import { Layers } from 'lucide-react';
 import {
   AuditLanceDbHealthUseCasePort,
   AuditLanceDbHealthResult,
-} from '@/application/ports/in/audit-lancedb-health.use-case.port';
+} from '@/features/cognitive-memory';
 import { AuditLanceDbHealthUseCase } from '@/features/cognitive-memory';
 import { LanceDbVectorAdapter } from '@/features/cognitive-memory';
 import { PrismaTelemetryRepository } from '@/features/telemetry';

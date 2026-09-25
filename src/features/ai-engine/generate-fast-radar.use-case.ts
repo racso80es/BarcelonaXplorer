@@ -1,7 +1,7 @@
 import type {
   FastContextDto,
   FastInteractionAiPort,
-} from '@/application/ports/out/fast-interaction-ai.port';
+} from '@/features/ai-engine';
 
 /**
  * Caso de Uso: Generar micro-tip del Radar BX en streaming.

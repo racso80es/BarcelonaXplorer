@@ -1,4 +1,4 @@
-import { prisma } from '@/infrastructure/persistence/prisma';
+import { prisma } from '@/shared/persistence/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Terminal, Trash2, Cpu } from 'lucide-react';
 import { TelemetryTableClient, TelemetryLogItem } from './TelemetryTableClient';

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { PruneTelemetryUseCase } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
-import { TelemetryLogInputSchema } from '@/infrastructure/ai/schemas/telemetry.schema';
+import { TelemetryLogInputSchema } from '@/features/telemetry';
 import * as fs from 'fs';
 import * as path from 'path';
 

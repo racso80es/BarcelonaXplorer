@@ -8,7 +8,7 @@ import {
   TelegramTelemetryCard,
   TelegramTelemetryCardSkeleton,
 } from '@/app/Admin/System/TelegramTelemetryCard';
-import { AuditTelegramBotHealthUseCasePort } from '@/application/ports/in/audit-telegram-bot-health.use-case.port';
+import { AuditTelegramBotHealthUseCasePort } from '@/features/telegram';
 import { AuditTelegramBotHealthUseCase } from '@/features/telegram';
 
 vi.mock('@/features/telegram', async (importOriginal) => {

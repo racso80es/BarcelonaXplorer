@@ -2,7 +2,7 @@ import {
   LinkTelegramSessionCommand,
   LinkTelegramSessionResult,
   LinkTelegramSessionUseCasePort,
-} from '@/application/ports/in/link-telegram-session.use-case.port';
+} from '@/features/auth';
 import { AnchorTokenEncryptorPort } from './anchor-token-encryptor.port';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { TelegramBotGatewayPort } from '@/features/telegram';

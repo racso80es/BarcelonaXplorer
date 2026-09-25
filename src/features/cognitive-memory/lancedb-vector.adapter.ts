@@ -4,7 +4,7 @@ import {
   VectorSearchResult,
   VectorStorePingResult,
   VectorDeleteFilter,
-} from '@/application/ports/out/vector-store.port';
+} from '@/features/cognitive-memory';
 import { getLanceDbConnection, resolveLanceDbUri } from './lancedb-client';
 import * as lancedb from '@lancedb/lancedb';
 import fs from 'fs';

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { prisma } from '@/infrastructure/persistence/prisma';
+import { prisma } from '@/shared/persistence/prisma';
 import {
   ICognitiveMetricsPort,
   CognitiveMetricsSummary,

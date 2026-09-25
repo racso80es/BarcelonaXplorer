@@ -2,7 +2,7 @@ import {
   ICognitiveMemoryPort,
   CognitiveMemoryItem,
 } from './cognitive-memory.port';
-import { IVectorStorePort, VectorDocument } from '@/application/ports/out/vector-store.port';
+import { IVectorStorePort, VectorDocument } from '@/features/cognitive-memory';
 import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
 import { getLanceDbConnection } from './lancedb-client';
 import { LanceDbVectorAdapter } from './lancedb-vector.adapter';

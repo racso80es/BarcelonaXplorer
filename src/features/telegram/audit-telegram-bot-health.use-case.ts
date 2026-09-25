@@ -2,7 +2,7 @@ import {
   AuditTelegramBotHealthUseCasePort,
   AuditTelegramBotHealthResult,
   TelegramBotHealthState,
-} from '@/application/ports/in/audit-telegram-bot-health.use-case.port';
+} from '@/features/telegram';
 import { TelegramBotGatewayPort } from './telegram-bot-gateway.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';

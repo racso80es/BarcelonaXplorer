@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GeographicScope } from './geographic-scope.vo';
-import { OutOfScopeGeographicException } from '@/domain/exceptions/out-of-scope-geographic.exception';
+import { OutOfScopeGeographicException } from '@/shared/exceptions/out-of-scope-geographic.exception';
 
 describe('GeographicScope Value Object (HU-PERIM-GEO-001)', () => {
   describe('Fábrica Implícita (Fricción Cero)', () => {

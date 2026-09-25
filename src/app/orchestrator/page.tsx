@@ -6,7 +6,7 @@ import { TacticalSpark, TacticalSparkProps } from '@/components/TacticalSpark';
 import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
 import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
-import { TacticalRoute } from '@/domain/entities/tactical-route.entity';
+import { TacticalRoute } from '@/features/planner';
 
 type Turn = {
   id: string;

@@ -6,7 +6,7 @@ import {
   CognitiveMetricsSummary,
 } from '@/features/cognitive-memory';
 import { PrismaCognitiveMetricsRepository } from '@/features/cognitive-memory';
-import { IVectorStorePort, VectorStorePingResult } from '@/application/ports/out/vector-store.port';
+import { IVectorStorePort, VectorStorePingResult } from '@/features/cognitive-memory';
 import { LanceDbVectorAdapter } from '@/features/cognitive-memory';
 
 export interface CognitiveKpiCardsProps {

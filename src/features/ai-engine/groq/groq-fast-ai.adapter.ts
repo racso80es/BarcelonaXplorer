@@ -2,9 +2,9 @@ import Groq from 'groq-sdk';
 import type {
   FastContextDto,
   FastInteractionAiPort,
-} from '@/application/ports/out/fast-interaction-ai.port';
-import { FastInsight } from '@/domain/entities/fast-insight.entity';
-import { FastInsightZodSchema } from '@/infrastructure/ai/schemas/fast-insight.schema';
+} from '@/features/ai-engine';
+import { FastInsight } from '@/features/ai-engine';
+import { FastInsightZodSchema } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';

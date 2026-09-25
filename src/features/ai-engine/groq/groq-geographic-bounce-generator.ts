@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { GeographicBounceGeneratorPort } from '@/application/ports/out/geographic-bounce-generator.port';
+import { GeographicBounceGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 import {

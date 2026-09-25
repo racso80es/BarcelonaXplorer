@@ -1,6 +1,6 @@
-import { DomainException } from '../exceptions/domain.exception';
-import { InvalidCoordinatesException } from '../exceptions/invalid-coordinates.exception';
-import { InvalidTimeSpanException } from '../exceptions/invalid-time-span.exception';
+import { DomainException } from '@/shared/exceptions/domain.exception';
+import { InvalidCoordinatesException } from '@/shared/exceptions/invalid-coordinates.exception';
+import { InvalidTimeSpanException } from '@/shared/exceptions/invalid-time-span.exception';
 
 export class GeoCoordinates {
   constructor(
