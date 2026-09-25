@@ -1,15 +1,15 @@
 # [ARQUITECTURA] Historia de Usuario: Auditoría de Fricción Algorítmica (Evaluación Arquitectónica A vs B)
 
 **Identificador:** HU-ARCH-FRIC-001  
-**Estatus:** En Curso / Fase 1 Realizada (PBI-ARCH-YAML-001 Certificado S+ Grade)  
+**Estatus:** En Curso / Fase 2 Realizada — Veredicto Consolidado en [ADR-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md) (PBI-ARCH-TEST-001 Certificado S+ Grade)  
 **Fecha de Revisión:** 2026-09-25  
 **Autor:** Vértice Biológico / Nodo de Control  
-**Ubicación:** `Documentacion/HistoriasDeUsuario/` (Permanece activa en backlog activo durante la ejecución de PBI-ARCH-TEST-001 y PBI-ARCH-APPLY-001)
+**Ubicación:** `Documentacion/HistoriasDeUsuario/` (Permanece activa en backlog activo durante la ejecución final de PBI-ARCH-APPLY-001)
 
 ### Trazabilidad de PBIs Vinculados:
 - [x] [PBI-ARCH-YAML-001: Consolidación Declarativa YML y Erradicación de Configuración JSON Redundante](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Consolidaci%C3%B3n%20Declarativa%20YML%20y%20Erradicaci%C3%B3n%20de%20Configuraci%C3%B3n%20JSON%20Redundante.md) — **Completado / Certificado S+ Grade**
-- [ ] [PBI-ARCH-TEST-001: Test de Fricción Algorítmica: Evaluación Empírica de Opciones Arquitectónicas (A vs B)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Test%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20-%20Evaluaci%C3%B3n%20Emp%C3%ADrica%20de%20Opciones%20Arquitect%C3%B3nicas%20%28A%20vs%20B%29.md) — **Pendiente de Forja en Ramas de Laboratorio**
-- [ ] [PBI-ARCH-APPLY-001: Aplicación Definitiva de Modificaciones Arquitectónicas Post-Veredicto](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Aplicaci%C3%B3n%20Definitiva%20de%20Modificaciones%20Arquitect%C3%B3nicas%20Post-Veredicto.md) — **Pendiente de Evaluación**
+- [x] [PBI-ARCH-TEST-001: Test de Fricción Algorítmica: Evaluación Empírica de Opciones Arquitectónicas (A vs B)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Test%20de%20Fricci%C3%B3n%20Algor%C3%ADtmica%20-%20Evaluaci%C3%B3n%20Emp%C3%ADrica%20de%20Opciones%20Arquitect%C3%B3nicas%20%28A%20vs%20B%29.md) — **Completado / Certificado S+ Grade (Ganador: Vertical Slicing en ADR-001)**
+- [ ] [PBI-ARCH-APPLY-001: Aplicación Definitiva de Modificaciones Arquitectónicas Post-Veredicto](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Aplicaci%C3%B3n%20Definitiva%20de%20Modificaciones%20Arquitect%C3%B3nicas%20Post-Veredicto.md) — **Listo para Forja Post-Veredicto**
 
 ---
 
