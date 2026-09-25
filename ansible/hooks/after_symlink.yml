@@ -1,18 +1,24 @@
 ---
 - name: Recargar orquestación Docker en la nueva versión
-  shell: docker compose --env-file .env.local -p barcelonaxplorer down && docker compose --env-file .env.local -p barcelonaxplorer up -d --build --remove-orphans
+  ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer down && docker compose --env-file .env.production -p barcelonaxplorer up -d --build --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
 
+- name: Pausa táctica para ignición y estabilización del socket InnoDB (MySQL)
+  ansible.builtin.pause:
+    seconds: 5
+    prompt: "Aguardando estabilización del socket de InnoDB en el Nodo 11..."
+
 - name: Esperar a que el motor MySQL esté saludable
-  shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -ubx_admin -pbx_secure_pass --silent
+  ansible.builtin.shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -ubx_admin -pbx_secure_pass --silent
   register: mysql_ping
   until: mysql_ping.rc == 0
   retries: 20
   delay: 2
+  changed_when: false
 
 - name: Sincronizar esquemas de MySQL (TelemetryLog, user_anchors, magic_link_nonces, SystemConfig)
-  shell: |
+  ansible.builtin.shell: |
     docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'
     CREATE TABLE IF NOT EXISTS `SystemConfig` (
         `id` INTEGER NOT NULL AUTO_INCREMENT,

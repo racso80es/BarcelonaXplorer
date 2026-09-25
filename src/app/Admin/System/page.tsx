@@ -10,6 +10,10 @@ import {
   TelegramTelemetryCard,
   TelegramTelemetryCardSkeleton,
 } from './TelegramTelemetryCard';
+import {
+  LanceDbTelemetryCard,
+  LanceDbTelemetryCardSkeleton,
+} from './LanceDbTelemetryCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,12 +43,12 @@ export default async function SystemAdmin() {
         icon={<Activity className="text-emerald-600 w-7 h-7 sm:w-8 sm:h-8" />}
         badge={
           <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
-            6 Sondas Activas
+            7 Sondas Activas
           </span>
         }
       />
 
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {/* Tarjeta MySQL */}
         <Card className="bg-surface-container border-layout-divider shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -119,6 +123,11 @@ export default async function SystemAdmin() {
         {/* Tarjeta Gateway Telegram Bot */}
         <Suspense fallback={<TelegramTelemetryCardSkeleton />}>
           <TelegramTelemetryCard />
+        </Suspense>
+
+        {/* Tarjeta Persistencia Vectorial Embebida (LanceDB) */}
+        <Suspense fallback={<LanceDbTelemetryCardSkeleton />}>
+          <LanceDbTelemetryCard />
         </Suspense>
       </div>
     </div>

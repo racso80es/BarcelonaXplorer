@@ -59,25 +59,34 @@ if [[ -d "${PROJECT_ROOT}/src" ]]; then
     echo -e "${GREEN}[OK] Compilación TypeScript validada sin errores.${NC}"
 fi
 
-# 5. Verificación de persistencia de credenciales de seguridad (/Admin) en .env.local
-echo -e "${YELLOW}>>> Verificando credenciales perimetrales en .env.local...${NC}"
-ENV_LOCAL="${PROJECT_ROOT}/src/.env.local"
-if [[ ! -f "${ENV_LOCAL}" ]]; then
-    echo -e "${RED}[ERROR] No se encuentra el archivo de configuración local en ${ENV_LOCAL}.${NC}"
+# 5. Verificación de persistencia de credenciales de seguridad en .env.production
+echo -e "${YELLOW}>>> Verificando configuración perimetral en .env.production...${NC}"
+ENV_PROD="${PROJECT_ROOT}/src/.env.production"
+if [[ ! -f "${ENV_PROD}" ]]; then
+    echo -e "${RED}[ERROR] No se encuentra el archivo de configuración de producción en ${ENV_PROD}.${NC}"
+    echo -e "${YELLOW}[TIP] Puedes generarlo copiando src/.env.example a src/.env.production y configurando los secretos reales.${NC}"
     exit 1
 fi
-if ! grep -q "^ADMIN_USER=" "${ENV_LOCAL}" || ! grep -q "^ADMIN_PASSWORD_HASH=" "${ENV_LOCAL}"; then
-    echo -e "${RED}[ERROR] ${ENV_LOCAL} debe definir ADMIN_USER y ADMIN_PASSWORD_HASH antes del despliegue al Nodo 11.${NC}"
+if ! grep -q "^ADMIN_USER=" "${ENV_PROD}" || ! grep -q "^ADMIN_PASSWORD_HASH=" "${ENV_PROD}"; then
+    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir ADMIN_USER y ADMIN_PASSWORD_HASH antes del despliegue al Nodo 11.${NC}"
     exit 1
 fi
-if ! grep -q "^TELEMETRY_LLM_ENABLED=" "${ENV_LOCAL}" || ! grep -q "^CRON_SECRET=" "${ENV_LOCAL}"; then
-    echo -e "${RED}[ERROR] ${ENV_LOCAL} debe definir TELEMETRY_LLM_ENABLED y CRON_SECRET antes del despliegue al Nodo 11.${NC}"
+if ! grep -q "^TELEMETRY_LLM_ENABLED=" "${ENV_PROD}" || ! grep -q "^CRON_SECRET=" "${ENV_PROD}"; then
+    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir TELEMETRY_LLM_ENABLED y CRON_SECRET antes del despliegue al Nodo 11.${NC}"
     exit 1
 fi
-echo -e "${GREEN}[OK] Variables críticas (/Admin, Telemetría y Poda) validadas y listas para sincronización con el Nodo 11.${NC}"
+if ! grep -q "^TELEGRAM_BOT_TOKEN=" "${ENV_PROD}"; then
+    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir TELEGRAM_BOT_TOKEN para la activación del canal Telegram.${NC}"
+    exit 1
+fi
+if ! grep -q "^TELEGRAM_ENABLED=true" "${ENV_PROD}"; then
+    echo -e "${YELLOW}[WARN] TELEGRAM_ENABLED no está definido como 'true' en ${ENV_PROD}.${NC}"
+fi
+echo -e "${GREEN}[OK] Variables críticas de producción (.env.production) validadas y listas para sincronización con el Nodo 11.${NC}"
 
 # 6. Ejecución del pipeline Ansistrano
 echo -e "${YELLOW}>>> Disparando Ansistrano hacia el Nodo 11...${NC}"
+export ANSIBLE_CONFIG="${ANSIBLE_CONFIG:-${ANSIBLE_DIR}/ansible.cfg}"
 ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@"
 
 echo -e "${GREEN}>>> Despliegue finalizado con éxito en release activa symlink.${NC}"

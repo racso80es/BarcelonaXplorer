@@ -7,13 +7,18 @@ services:
     ports:
       - "8080:3000"
     restart: unless-stopped
-    env_file: .env.local
+    env_file: .env.production
     environment:
       - NODE_ENV=production
+      - TELEGRAM_ENABLED=true
+      - TELEGRAM_WEBHOOK_URL=https://barcelonaxplorer.com/api/telegram/webhook
       - DATABASE_URL=mysql://bx_admin:bx_secure_pass@db:3306/barcelonaxplorer_db
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
       - NODE_OPTIONS=--dns-result-order=ipv4first
+      - LANCEDB_URI=${LANCEDB_URI:-/app/vector_storage}
+    volumes:
+      - ${LANCEDB_DATA_PATH:-./data/lancedb}:/app/vector_storage
     depends_on:
       - db
 
