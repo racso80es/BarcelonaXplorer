@@ -4,7 +4,7 @@ import {
   RevokeTelegramAnchorUseCasePort,
 } from '@/application/ports/in/revoke-telegram-anchor.use-case.port';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
-import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
+import { TelegramBotGatewayPort } from '@/features/telegram';
 import { TelegramChatId } from './telegram-chat-id.vo';
 
 export class RevokeTelegramAnchorUseCase implements RevokeTelegramAnchorUseCasePort {

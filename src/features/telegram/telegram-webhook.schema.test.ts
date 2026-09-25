@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TelegramUpdateSchema } from '@/domain/schemas/telegram-webhook.schema';
+import { TelegramUpdateSchema } from './telegram-webhook.schema';
 
 describe('TelegramWebhook Zod Schema', () => {
   it('valida exitosamente un update con comando /start', () => {

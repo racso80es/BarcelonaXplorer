@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RevokeTelegramAnchorUseCase } from './revoke-telegram-anchor.use-case';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
-import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
+import { TelegramBotGatewayPort } from '@/features/telegram';
 import { UserAnchor } from './user-anchor.entity';
 import { TelegramChatId } from './telegram-chat-id.vo';
 

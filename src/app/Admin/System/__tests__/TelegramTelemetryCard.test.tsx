@@ -9,10 +9,12 @@ import {
   TelegramTelemetryCardSkeleton,
 } from '@/app/Admin/System/TelegramTelemetryCard';
 import { AuditTelegramBotHealthUseCasePort } from '@/application/ports/in/audit-telegram-bot-health.use-case.port';
-import { AuditTelegramBotHealthUseCase } from '@/application/use-cases/audit-telegram-bot-health.use-case';
+import { AuditTelegramBotHealthUseCase } from '@/features/telegram';
 
-vi.mock('@/application/use-cases/audit-telegram-bot-health.use-case', () => {
+vi.mock('@/features/telegram', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/telegram')>();
   return {
+    ...actual,
     AuditTelegramBotHealthUseCase: vi.fn(),
   };
 });

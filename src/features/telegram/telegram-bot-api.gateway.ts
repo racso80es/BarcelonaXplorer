@@ -3,11 +3,11 @@ import {
   TelegramButton,
   TelegramBotInfo,
   TelegramWebhookInfo,
-} from '@/application/ports/out/telegram-bot-gateway.port';
+} from './telegram-bot-gateway.port';
 import {
   TelegramGetMeResponseSchema,
   TelegramGetWebhookInfoResponseSchema,
-} from '@/domain/schemas/telegram-webhook.schema';
+} from './telegram-webhook.schema';
 import { constantTimeEqualSync } from '@/features/auth';
 
 /**

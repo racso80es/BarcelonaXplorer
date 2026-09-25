@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TelegramBotApiGateway } from '@/infrastructure/gateways/telegram-bot-api.gateway';
+import { TelegramBotApiGateway } from './telegram-bot-api.gateway';
 
 describe('TelegramBotApiGateway', () => {
   const originalFetch = global.fetch;

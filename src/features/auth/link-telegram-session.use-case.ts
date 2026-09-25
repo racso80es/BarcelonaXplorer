@@ -5,7 +5,7 @@ import {
 } from '@/application/ports/in/link-telegram-session.use-case.port';
 import { AnchorTokenEncryptorPort } from './anchor-token-encryptor.port';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
-import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
+import { TelegramBotGatewayPort } from '@/features/telegram';
 import { TelegramChatId } from './telegram-chat-id.vo';
 import { UserAnchor } from './user-anchor.entity';
 

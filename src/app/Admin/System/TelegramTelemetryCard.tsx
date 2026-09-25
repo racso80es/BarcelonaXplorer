@@ -4,8 +4,8 @@ import {
   AuditTelegramBotHealthUseCasePort,
   AuditTelegramBotHealthResult,
 } from '@/application/ports/in/audit-telegram-bot-health.use-case.port';
-import { AuditTelegramBotHealthUseCase } from '@/application/use-cases/audit-telegram-bot-health.use-case';
-import { TelegramBotApiGateway } from '@/infrastructure/gateways/telegram-bot-api.gateway';
+import { AuditTelegramBotHealthUseCase } from '@/features/telegram';
+import { TelegramBotApiGateway } from '@/features/telegram';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 
 export interface TelegramTelemetryCardProps {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TelegramUpdateSchema } from '@/domain/schemas/telegram-webhook.schema';
-import { TelegramBotApiGateway } from '@/infrastructure/gateways/telegram-bot-api.gateway';
+import { TelegramUpdateSchema } from '@/features/telegram';
+import { TelegramBotApiGateway } from '@/features/telegram';
 import { AesGcmAnchorTokenEncryptor } from '@/features/auth';
 import { PrismaUserAnchorRepository } from '@/infrastructure/repositories/prisma-user-anchor.repository';
 import { PrismaMagicLinkNonceRepository } from '@/infrastructure/repositories/prisma-magic-link-nonce.repository';

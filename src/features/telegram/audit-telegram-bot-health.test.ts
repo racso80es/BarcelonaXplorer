@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuditTelegramBotHealthUseCase } from '@/application/use-cases/audit-telegram-bot-health.use-case';
-import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
+import { AuditTelegramBotHealthUseCase } from './audit-telegram-bot-health.use-case';
+import { TelegramBotGatewayPort } from './telegram-bot-gateway.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('AuditTelegramBotHealthUseCase', () => {

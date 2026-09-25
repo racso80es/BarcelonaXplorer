@@ -1,7 +1,7 @@
 import { UserAnchorRepositoryPort } from '@/features/auth';
 import { MagicLinkSignerPort } from '@/features/auth';
 import { MagicLinkNonceRepositoryPort } from '@/application/ports/out/magic-link-nonce-repository.port';
-import { TelegramBotGatewayPort } from '@/application/ports/out/telegram-bot-gateway.port';
+import { TelegramBotGatewayPort } from '@/features/telegram';
 import { TelegramChatId } from '@/features/auth';
 import { DomainException } from '@/domain/exceptions/domain.exception';
 
