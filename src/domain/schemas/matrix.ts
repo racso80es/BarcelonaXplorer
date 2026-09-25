@@ -18,6 +18,7 @@ export const DefaultDensityPayloadSchema = z.object({
   time_window: z.string().optional(),
   group_size: z.number().int().positive().optional(),
   vibe: z.string().optional(),
+  mood: z.enum(['relaxed', 'adventurous', 'cultural', 'gastronomic']).optional(),
   constraints: z.array(z.string()).optional().default([]),
   districts: z.array(z.string()).optional().default([]),
 });
@@ -110,6 +111,12 @@ export function calculateMatrixDensity(
     } else {
       missingVariables.push(key);
     }
+  }
+
+  // Participación de mood como variable adaptativa con peso 10 si está en el payload
+  if (payload.mood && !rules.weights['mood']) {
+    totalScore += 10;
+    presentVariables.push('mood');
   }
 
   // Normalizar score máximo a 100

@@ -23,14 +23,27 @@ export const UserGpsLocationSchema = z.object({
 export type UserGpsLocation = z.infer<typeof UserGpsLocationSchema>;
 
 /**
+ * Enum y esquema de estado anímico del explorador (mood) para triaje adaptativo.
+ */
+export const MoodSchema = z.enum([
+  'relaxed',
+  'adventurous',
+  'cultural',
+  'gastronomic',
+]);
+
+export type Mood = z.infer<typeof MoodSchema>;
+
+/**
  * DTO de entrada para la evaluación de triaje (Laudo 2: Gobernanza del Estado).
- * Acepta prompt, sessionId, opcionalmente matrixId y coordenadas GPS del dispositivo.
+ * Acepta prompt, sessionId, opcionalmente matrixId, coordenadas GPS y estado anímico.
  */
 export const TriageInputSchema = z.object({
   sessionId: z.string().min(1, 'sessionId es requerido'),
   prompt: z.string().min(1, 'El prompt no puede estar vacío'),
   matrixId: z.string().default('default'),
   userLocation: UserGpsLocationSchema.optional(),
+  mood: MoodSchema.optional(),
 });
 
 export type TriageInputDto = z.infer<typeof TriageInputSchema>;

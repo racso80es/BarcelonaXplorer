@@ -211,10 +211,27 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       stateContext,
       priorPayload,
       detectedDistricts,
+      input.mood,
     );
 
     // 5. Evaluación del Peaje Termodinámico (Reglas de Matriz HU 6)
     const density = calculateMatrixDensity(matrixId, mergedPayload);
+
+    // Registro de Telemetría Triage (incluyendo mood y densidad)
+    this.emitTelemetry({
+      level: 'INFO',
+      context: 'SECURITY_PERIMETER',
+      message: `[Aduana] Evaluación de triaje (Score: ${density.score}/${density.survivalThreshold}, Mood: ${mergedPayload.mood ?? 'none'})`,
+      statusCode: density.isThresholdSatisfied ? 200 : 422,
+      durationMs: Date.now() - startTime,
+      payload: {
+        sessionId: input.sessionId,
+        matrixId,
+        score: density.score,
+        mood: mergedPayload.mood,
+        isThresholdSatisfied: density.isThresholdSatisfied,
+      },
+    });
 
     // FLUJO 2A: REPREGUNTA ATÓMICA POR UMBRAL INSUFICIENTE (< 60%)
     if (!density.isThresholdSatisfied) {
@@ -316,6 +333,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     stateContext: string,
     priorPayload: Partial<DefaultDensityPayload>,
     detectedDistricts: readonly string[] = [],
+    inputMood?: 'relaxed' | 'adventurous' | 'cultural' | 'gastronomic',
   ): Promise<DefaultDensityPayload> {
     const combinedDistricts = Array.from(
       new Set([...(priorPayload.districts ?? []), ...detectedDistricts]),
@@ -380,11 +398,26 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       }
     }
 
+    // 4. mood (Vector de Personalidad 10%)
+    if (!payload.mood) {
+      if (inputMood) {
+        payload.mood = inputMood;
+      } else if (/\b(mood|ánimo|estado anímico)\s*(:|es)?\s*(relajad\w*|relax\w*|tranquil\w*)\b/i.test(prompt) || /\b(en plan|modo)\s+(relax|tranquil\w*)\b/i.test(prompt)) {
+        payload.mood = 'relaxed';
+      } else if (/\b(mood|ánimo|estado anímico)\s*(:|es)?\s*(aventur\w*|explore)\b/i.test(prompt) || /\b(en plan|modo)\s+aventur\w*\b/i.test(prompt)) {
+        payload.mood = 'adventurous';
+      } else if (/\b(mood|ánimo|estado anímico)\s*(:|es)?\s*(cultural\w*)\b/i.test(prompt) || /\b(en plan|modo)\s+cultural\w*\b/i.test(prompt)) {
+        payload.mood = 'cultural';
+      } else if (/\b(mood|ánimo|estado anímico)\s*(:|es)?\s*(gastron[oó]mic\w*|foodie)\b/i.test(prompt) || /\b(en plan|modo)\s+foodie\b/i.test(prompt)) {
+        payload.mood = 'gastronomic';
+      }
+    }
+
     return payload;
   }
 
   private emitTelemetry(params: {
-    level: 'WARN' | 'ERROR';
+    level: 'INFO' | 'WARN' | 'ERROR';
     context: 'SECURITY_PERIMETER';
     message: string;
     statusCode: number;

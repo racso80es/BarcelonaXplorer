@@ -32,4 +32,33 @@ describe('Feature Triage (Vertical Slicing - Rama B)', () => {
     const dto = outcome.toDto();
     expect(TriageOutcomeDtoSchema.parse(dto)).toBeDefined();
   });
+
+  it('debe validar y tipar el enum mood en la frontera de entrada de la feature', async () => {
+    const { MoodSchema } = await import('./triage.schema');
+    expect(MoodSchema.parse('relaxed')).toBe('relaxed');
+    expect(MoodSchema.parse('adventurous')).toBe('adventurous');
+    expect(MoodSchema.parse('cultural')).toBe('cultural');
+    expect(MoodSchema.parse('gastronomic')).toBe('gastronomic');
+    expect(() => MoodSchema.parse('chaotic')).toThrow();
+  });
+
+  it('debe admitir el campo mood en TriageInputSchema y participar con peso 10 en la Matriz de Densidad', async () => {
+    const { calculateMatrixDensity, DefaultDensityPayloadSchema } = await import('@/domain/schemas/matrix');
+    const input = TriageInputSchema.parse({
+      sessionId: 'sess-mood-vertical',
+      prompt: 'Exploración relajada',
+      mood: 'relaxed',
+    });
+    expect(input.mood).toBe('relaxed');
+
+    const payload = DefaultDensityPayloadSchema.parse({
+      time_window: '2 horas',
+      mood: input.mood,
+    });
+    const density = calculateMatrixDensity('default', payload);
+    // time_window (60) + mood (10) = 70
+    expect(density.score).toBe(70);
+    expect(density.isThresholdSatisfied).toBe(true);
+    expect(density.presentVariables).toContain('mood');
+  });
 });
