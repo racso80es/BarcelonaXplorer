@@ -3,8 +3,12 @@ import { randomUUID } from 'crypto';
 import { TriageInputUseCase } from '@/features/triage';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
-import { InMemoryDensityMatrixRepository } from '@/features/planner';
-import { GenerateTacticalRouteUseCase } from '@/features/planner';
+import {
+  InMemoryDensityMatrixRepository,
+  GenerateTacticalRouteUseCase,
+  PrismaItineraryRepository,
+  AffiliateEnricherService,
+} from '@/features/planner';
 import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/features/ai-engine';
@@ -52,8 +56,10 @@ export async function POST(req: NextRequest) {
       geminiClient,
       telemetryRepo,
     );
+    const itineraryRepo = new PrismaItineraryRepository();
+    const affiliateEnricher = new AffiliateEnricherService();
 
-    // Laudo 1 & 2 + PBI-COG-MEM-005: Orquestador unificado con despacho interno y RAG cognitivo
+    // Laudo 1 & 2 + PBI-COG-MEM-005 + PBI-ARCH-ORCH-001: Orquestador unificado
     const useCase = new TriageInputUseCase(
       decisionEngine,
       conversationalSlm,
@@ -63,6 +69,8 @@ export async function POST(req: NextRequest) {
       undefined,
       cognitiveMemory,
       embeddingPort,
+      affiliateEnricher,
+      itineraryRepo,
     );
 
     const outcome = await useCase.execute({

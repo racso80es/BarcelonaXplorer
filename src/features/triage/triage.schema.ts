@@ -8,6 +8,7 @@ export const TriageStatusSchema = z.enum([
   'REBOUND_OUT_OF_SCOPE',
   'INCOMPLETE_REPROMPT',
   'DISPATCH_READY',
+  'CASUAL_DIALOGUE',
 ]);
 
 export type TriageStatus = z.infer<typeof TriageStatusSchema>;
@@ -46,7 +47,7 @@ export const TriageInputSchema = z.object({
   mood: MoodSchema.optional(),
 });
 
-export type TriageInputDto = z.infer<typeof TriageInputSchema>;
+export type TriageInputDto = z.input<typeof TriageInputSchema>;
 
 /**
  * DTO de salida estructurada del resultado de la Aduana (Laudo 1: Endpoint Único).
@@ -60,11 +61,13 @@ export const TriageOutcomeDtoSchema = z.object({
   isThresholdSatisfied: z.boolean(),
   bounceMessage: z.string().optional(),
   repromptMessage: z.string().optional(),
+  dialogueMessage: z.string().optional(),
   missingVariable: z.string().optional(),
   rejectedEntity: z.string().optional(),
   detectedDistricts: z.array(z.string()).optional(),
-  payload: DefaultDensityPayloadSchema.optional(),
+  payload: DefaultDensityPayloadSchema.partial().optional(),
   route: z.unknown().optional(),
+  itinerary: z.unknown().optional(),
   durationMs: z.number(),
 });
 

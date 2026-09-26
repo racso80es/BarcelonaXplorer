@@ -16,10 +16,12 @@ export class TriageOutcome {
     public readonly isThresholdSatisfied: boolean,
     public readonly bounceMessage?: string,
     public readonly repromptMessage?: string,
+    public readonly dialogueMessage?: string,
     public readonly missingVariable?: string,
     public readonly rejectedEntity?: string,
-    public readonly payload?: DefaultDensityPayload,
+    public readonly payload?: DefaultDensityPayload | Partial<DefaultDensityPayload>,
     public readonly route?: unknown,
+    public readonly itinerary?: unknown,
     public readonly geographicScope?: GeographicScope,
     public readonly detectedDistricts?: readonly string[],
     public readonly durationMs: number = 0,
@@ -30,7 +32,7 @@ export class TriageOutcome {
     Object.freeze(this);
   }
 
-  public get partialPayload(): DefaultDensityPayload | undefined {
+  public get partialPayload(): DefaultDensityPayload | Partial<DefaultDensityPayload> | undefined {
     return this.payload;
   }
 
@@ -52,7 +54,9 @@ export class TriageOutcome {
       params.bounceMessage,
       undefined,
       undefined,
+      undefined,
       params.rejectedEntity,
+      undefined,
       undefined,
       undefined,
       params.geographicScope,
@@ -68,7 +72,7 @@ export class TriageOutcome {
     survivalThreshold: number;
     missingVariable: string;
     repromptMessage: string;
-    partialPayload?: DefaultDensityPayload;
+    partialPayload?: DefaultDensityPayload | Partial<DefaultDensityPayload>;
     geographicScope?: GeographicScope;
     detectedDistricts?: readonly string[];
     durationMs: number;
@@ -82,9 +86,43 @@ export class TriageOutcome {
       false,
       undefined,
       params.repromptMessage,
+      undefined,
       params.missingVariable,
       undefined,
       params.partialPayload,
+      undefined,
+      undefined,
+      params.geographicScope,
+      params.detectedDistricts,
+      params.durationMs,
+    );
+  }
+
+  public static createCasualDialogue(params: {
+    sessionId: string;
+    matrixId: string;
+    dialogueMessage: string;
+    score?: number;
+    survivalThreshold?: number;
+    partialPayload?: DefaultDensityPayload | Partial<DefaultDensityPayload>;
+    geographicScope?: GeographicScope;
+    detectedDistricts?: readonly string[];
+    durationMs: number;
+  }): TriageOutcome {
+    return new TriageOutcome(
+      'CASUAL_DIALOGUE',
+      params.sessionId,
+      params.matrixId,
+      params.score ?? 0,
+      params.survivalThreshold ?? 60,
+      false,
+      undefined,
+      undefined,
+      params.dialogueMessage,
+      undefined,
+      undefined,
+      params.partialPayload,
+      undefined,
       undefined,
       params.geographicScope,
       params.detectedDistricts,
@@ -99,6 +137,7 @@ export class TriageOutcome {
     survivalThreshold: number;
     payload: DefaultDensityPayload;
     route?: unknown;
+    itinerary?: unknown;
     geographicScope?: GeographicScope;
     detectedDistricts?: readonly string[];
     durationMs: number;
@@ -114,8 +153,10 @@ export class TriageOutcome {
       undefined,
       undefined,
       undefined,
+      undefined,
       params.payload,
       params.route,
+      params.itinerary,
       params.geographicScope,
       params.detectedDistricts,
       params.durationMs,
@@ -132,6 +173,7 @@ export class TriageOutcome {
       isThresholdSatisfied: this.isThresholdSatisfied,
       bounceMessage: this.bounceMessage,
       repromptMessage: this.repromptMessage,
+      dialogueMessage: this.dialogueMessage,
       missingVariable: this.missingVariable,
       rejectedEntity: this.rejectedEntity,
       detectedDistricts: this.detectedDistricts
@@ -139,6 +181,7 @@ export class TriageOutcome {
         : undefined,
       payload: this.payload,
       route: this.route,
+      itinerary: this.itinerary,
       durationMs: this.durationMs,
     };
   }

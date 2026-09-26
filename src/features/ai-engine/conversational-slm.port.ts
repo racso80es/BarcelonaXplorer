@@ -26,4 +26,16 @@ export interface IConversationalSLMPort {
     prompt: string,
     currentContext?: string,
   ): Promise<string>;
+
+  /**
+   * Genera una respuesta empática y cálida ante diálogo abierto, estados anímicos o comentarios casuales
+   * sin forzar la planificación de rutas ni rellenar la Matriz de Densidad.
+   *
+   * @param prompt Mensaje o comentario informal del usuario.
+   * @param currentContext Contexto acumulado previo o detalles conocidos.
+   */
+  generateEmpatheticDialogue(
+    prompt: string,
+    currentContext?: string,
+  ): Promise<string>;
 }

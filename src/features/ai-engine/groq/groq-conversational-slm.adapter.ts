@@ -10,6 +10,10 @@ import {
   CONVERSATIONAL_REPROMPT_SYSTEM_PROMPT,
   buildConversationalRepromptUserPrompt,
 } from './prompts/conversational-reprompt.prompt';
+import {
+  EMPATHETIC_DIALOGUE_SYSTEM_PROMPT,
+  buildEmpatheticDialogueUserPrompt,
+} from './prompts/empathetic-dialogue.prompt';
 
 /**
  * Adaptador de Infraestructura para el SLM Rápido Conversacional usando Groq (System Two Ligero).
@@ -208,6 +212,86 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
           ),
         ).catch((e) =>
           console.warn('[Telemetry Groq SLM Reprompt Fire-and-Forget Error]', e),
+        );
+      }
+
+      return fallbackMessage;
+    }
+  }
+
+  async generateEmpatheticDialogue(
+    prompt: string,
+    currentContext?: string,
+  ): Promise<string> {
+    const fallbackMessage =
+      'Te entiendo perfectamente. A veces el mejor plan en Barcelona es simplemente relajarse en una terracita y ver la vida pasar con calma. Avísame cuando te apetezca explorar.';
+
+    if (!this.client) {
+      return fallbackMessage;
+    }
+
+    const startTime = Date.now();
+
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          { role: 'system', content: EMPATHETIC_DIALOGUE_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: buildEmpatheticDialogueUserPrompt(prompt, currentContext),
+          },
+        ],
+        temperature: 0.5,
+        max_tokens: 80,
+      });
+
+      const durationMs = Date.now() - startTime;
+      const message = completion.choices[0]?.message?.content?.trim();
+      const finalMessage =
+        message && message.length > 0 ? message : fallbackMessage;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'INFO',
+            'LLM_ENGINE',
+            `[Groq Conversational SLM Dialogue] Respuesta empática generada`,
+            {
+              model: this.model,
+              prompt,
+              dialogueMessage: finalMessage,
+              durationMs,
+            },
+            200,
+            durationMs,
+          ),
+        ).catch((e) =>
+          console.warn('[Telemetry Groq SLM Dialogue Fire-and-Forget Error]', e),
+        );
+      }
+
+      return finalMessage;
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'WARN',
+            'LLM_ENGINE',
+            `[Groq Conversational SLM Dialogue] Fallo al generar diálogo empático: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+            {
+              model: this.model,
+              prompt,
+              error: err instanceof Error ? err.message : String(err),
+              durationMs,
+            },
+            500,
+            durationMs,
+          ),
+        ).catch((e) =>
+          console.warn('[Telemetry Groq SLM Dialogue Fire-and-Forget Error]', e),
         );
       }
 

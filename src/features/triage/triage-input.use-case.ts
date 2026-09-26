@@ -13,6 +13,10 @@ import {
 import {
   calculateMatrixDensity,
   DefaultDensityPayload,
+  TacticalRoute,
+  AffiliateEnricherService,
+  IAffiliateEnricherService,
+  ItineraryPersistencePort,
 } from '@/features/planner';
 import { TriageOutcome } from './triage-outcome.vo';
 import { GeographicScope } from '@/features/planner';
@@ -23,7 +27,7 @@ import { IEmbeddingPort } from '@/features/ai-engine';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 
 /**
- * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-COG-MEM-005).
+ * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-ARCH-ORCH-001).
  *
  * Refactorizado bajo:
  * - Laudo 1 (Unificación de la Aduana): Si la matriz alcanza el umbral (>= 60%),
@@ -34,6 +38,9 @@ import { DenseSemanticMatrix } from '@/features/cognitive-memory';
  *   reconocimiento de los 10 distritos canónicos y excepciones logísticas periurbanas.
  * - Memoria Cognitiva Vectorial (PBI-COG-MEM-005): Recuperación RAG silenciosa y
  *   persistencia en LanceDB con formato hiper-denso (DenseSemanticMatrix).
+ * - Enrutamiento Semántico y Empatía (CA-1): Diálogo casual interceptado por Jev AI
+ *   sin forzar la Matriz de Densidad ni preguntas logísticas.
+ * - Cruce con Afiliados y Persistencia MySQL (CA-3 & CA-4): TheFork / Civitatis y Prisma ORM.
  */
 export class TriageInputUseCase implements ITriageInputUseCasePort {
   constructor(
@@ -45,6 +52,8 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     private readonly geoEngine: GeographicDecisionEnginePort = new HeuristicGeographicDecisionEngine(),
     private readonly cognitiveMemory?: ICognitiveMemoryPort,
     private readonly embeddingPort?: IEmbeddingPort,
+    private readonly affiliateEnricher: IAffiliateEnricherService = new AffiliateEnricherService(),
+    private readonly itineraryRepo?: ItineraryPersistencePort,
   ) {}
 
   async execute(rawInput: TriageInputDto): Promise<TriageOutcome> {
@@ -205,6 +214,47 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       });
     }
 
+    // 3.3 Enrutamiento Semántico y Empatía Táctica (CA-1: Jev AI / Triaje de Intención)
+    const isCasualDialogue = await this.isCasualDialogueIntent(
+      trimmedPrompt,
+      stateContext,
+    );
+
+    if (isCasualDialogue) {
+      const dialogueMessage =
+        await this.conversationalSlm.generateEmpatheticDialogue(
+          trimmedPrompt,
+          stateContext,
+        );
+      const durationMs = Date.now() - startTime;
+
+      this.emitTelemetry({
+        level: 'INFO',
+        context: 'SECURITY_PERIMETER',
+        message: `[Aduana] Diálogo casual interceptado con empatía`,
+        statusCode: 200,
+        durationMs,
+        payload: {
+          tag: 'CASUAL_DIALOGUE',
+          prompt: trimmedPrompt,
+          sessionId: input.sessionId,
+          dialogueMessage,
+        },
+      });
+
+      return TriageOutcome.createCasualDialogue({
+        sessionId: input.sessionId,
+        matrixId,
+        dialogueMessage,
+        durationMs,
+        score: calculateMatrixDensity(matrixId, priorPayload).score,
+        survivalThreshold: 60,
+        partialPayload: priorPayload,
+        geographicScope,
+        detectedDistricts,
+      });
+    }
+
     // 4. Extracción de Variables y Fusión con el Estado Previo
     const mergedPayload = await this.extractMatrixVariables(
       trimmedPrompt,
@@ -311,6 +361,47 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       });
     }
 
+    // CA-3: Cruce asíncrono con Proveedores de Afiliados (TheFork / Civitatis)
+    let enrichedItinerary: unknown = undefined;
+    if (
+      forgedRoute &&
+      typeof forgedRoute !== 'string' &&
+      (forgedRoute as TacticalRoute).waypoints
+    ) {
+      try {
+        const enriched = await this.affiliateEnricher.enrichRoute(
+          forgedRoute as TacticalRoute,
+        );
+        enrichedItinerary = enriched;
+
+        // CA-4: Persistencia Relacional MySQL en Prisma
+        if (this.itineraryRepo) {
+          try {
+            await this.itineraryRepo.saveItinerary(input.sessionId, enriched);
+          } catch (dbErr) {
+            // Fail-soft en persistencia relacional
+            this.emitTelemetry({
+              level: 'WARN',
+              context: 'SECURITY_PERIMETER',
+              message: `[Persistencia MySQL] Fallo al almacenar itinerario: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`,
+              statusCode: 500,
+              durationMs: Date.now() - startTime,
+              payload: { sessionId: input.sessionId, matrixId },
+            });
+          }
+        }
+      } catch (enrichErr) {
+        this.emitTelemetry({
+          level: 'WARN',
+          context: 'SECURITY_PERIMETER',
+          message: `[Afiliados Enriquecimiento] Fallo al enriquecer ruta: ${enrichErr instanceof Error ? enrichErr.message : String(enrichErr)}`,
+          statusCode: 500,
+          durationMs: Date.now() - startTime,
+          payload: { sessionId: input.sessionId, matrixId },
+        });
+      }
+    }
+
     // Laudo 2: Limpieza del borrador efímero en la sesión (la memoria consolidada permanece en LanceDB)
     await this.matrixRepo.clearMatrixPayload(input.sessionId, matrixId);
 
@@ -322,6 +413,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       survivalThreshold: density.survivalThreshold,
       payload: mergedPayload,
       route: forgedRoute,
+      itinerary: enrichedItinerary,
       geographicScope,
       detectedDistricts,
       durationMs,
@@ -414,6 +506,48 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     }
 
     return payload;
+  }
+
+  private async isCasualDialogueIntent(
+    prompt: string,
+    stateContext: string,
+  ): Promise<boolean> {
+    const normalized = prompt.toLowerCase();
+
+    // Palabras clave inequívocas de planificación turística o logística
+    const hasLogisticsKeywords =
+      /\b(ruta|itinerario|plan|gu[ií]a|visitar?|conocer|pasear?|recorrer?|museo|sagrada|park|güell|guell|batll[oó]|pedrera|catedral|restaurante|comer|cenar?|almorzar?|tapas|barrio|distrito|g[oó]tico|born|raval|eixample|gr[aà]cia|barceloneta|hotel|cu[aá]nto|precio|coste|presupuesto|horario|\d+\s*(horas?|h|d[ií]as?))\b/i.test(
+        normalized,
+      );
+
+    if (hasLogisticsKeywords) {
+      return false;
+    }
+
+    // Saludos puros, expresiones de ánimo, cansancio o comentarios casuales
+    const isObviousCasual =
+      /^(hola|buenos d[ií]as|buenas tardes|buenas noches|buenas|hey|qu[eé] tal|c[oó]mo est[aá]s|qu[eé] pasa|qu[eé] hay)(\s*!|\s*\?|\s*\.)*$/i.test(
+        normalized,
+      ) ||
+      /\b(uf|estoy agotad[oa]|estoy cansad[oa]|qu[eé] cansancio|menudo d[ií]a|vaya d[ií]a|qu[eé] sue[ñn]o|hace calor|qu[eé] fr[ií]o|gracias|muchas gracias)\b/i.test(
+        normalized,
+      );
+
+    if (isObviousCasual) {
+      return true;
+    }
+
+    // Si hay ambigüedad y no contiene keywords de logística, consultar al motor determinista Jev AI
+    try {
+      const evalResult = await this.decisionEngine.evaluateNoul(
+        stateContext,
+        '¿El mensaje del usuario es únicamente un saludo, charla informal o una expresión emocional/personal sin petición de itinerario, visita turística o plan?',
+        0.6,
+      );
+      return evalResult.isAffirmative;
+    } catch {
+      return false;
+    }
   }
 
   private emitTelemetry(params: {

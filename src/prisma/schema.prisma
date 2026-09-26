@@ -76,3 +76,40 @@ model MagicLinkNonce {
   @@map("magic_link_nonces")
 }
 
+// Persistencia Relacional de Itinerarios y Parcelas Tácticas (PBI-ARCH-ORCH-001)
+model TacticalItinerary {
+  id          String                  @id @default(cuid())
+  sessionId   String                  @db.VarChar(64)
+  summary     String                  @db.VarChar(512)
+  status      String                  @default("ACTIVE") @db.VarChar(32)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  waypoints   TacticalItineraryNode[]
+
+  @@index([sessionId])
+  @@map("tactical_itineraries")
+}
+
+model TacticalItineraryNode {
+  id                String            @id @default(cuid())
+  itineraryId       String
+  itinerary         TacticalItinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  title             String            @db.VarChar(255)
+  description       String            @db.Text
+  category          String            @default("GENERAL") @db.VarChar(64)
+  startTime         String            @db.VarChar(8)
+  endTime           String?           @db.VarChar(8)
+  orderIndex        Int               @default(0)
+  coordinatesLat    Float?
+  coordinatesLng    Float?
+  affiliateProvider String?           @db.VarChar(32)
+  affiliateUrl      String?           @db.VarChar(512)
+  isSelected        Boolean           @default(true)
+  options           Json?             @db.Json
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([itineraryId, orderIndex])
+  @@map("tactical_itinerary_nodes")
+}
+

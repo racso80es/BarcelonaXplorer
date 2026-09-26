@@ -1,7 +1,7 @@
 # [OPERATIVO] Historia de Usuario: Estabilización Evolutiva, Saneamiento de Deuda Técnica y Proyección Táctica Post-Anclaje v2.0.1
 
 **Identificador:** HU-OPS-EVOL-002  
-**Estatus:** En Progreso (2/5 PBIs Certificados — 5/13 SP — Protocolo de Acero S+)  
+**Estatus:** En Progreso (3/5 PBIs Certificados — 10/13 SP — Protocolo de Acero S+)  
 **Fecha de Creación:** 2026-09-26  
 **Última Actualización:** 2026-09-26  
 **Naturaleza:** Protocolo de Estabilización, Refactorización de Calidad y Evolución Funcional  
@@ -79,6 +79,6 @@
 | :---: | :--- | :--- | :--- | :---: | :---: |
 | **P1** | `PBI-FEAT-UI-001` | [[OPERATIVO] Refactorización Táctica de DataTable y Prevención de Renders en Cascada](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Refactorizaci%C3%B3n%20T%C3%A1ctica%20de%20DataTable%20y%20Prevenci%C3%B3n%20de%20Renders%20en%20Cascada.md) | `src/components/ui/data-table/` | 2 SP | ✅ **Certificado** (S+ Grade) |
 | **P1** | `PBI-OPS-LINT-001` | [[OPERATIVO] Saneamiento Integral de Linter AST y Erradicación de Any](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Saneamiento%20Integral%20de%20Linter%20AST%20y%20Erradicaci%C3%B3n%20de%20Any.md) | `src/features/ai-engine/`, `src/features/planner/`, `src/features/cognitive-memory/`, `src/features/telemetry/` | 3 SP | ✅ **Certificado** (S+ Grade) |
-| **P1** | `PBI-ARCH-ORCH-001` | [[OPERATIVO] Orquestación Híbrida y Triaje Semántico con Persistencia MySQL](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Orquestaci%C3%B3n%20H%C3%ADbrida%20y%20Triaje%20Sem%C3%A1ntico%20con%20Persistencia%20MySQL%20%28P1%29.md) | `src/features/triage/`, `src/features/planner/`, `src/features/ai-engine/`, `src/infrastructure/` | 5 SP | ⏳ Pendiente |
+| **P1** | `PBI-ARCH-ORCH-001` | [[OPERATIVO] Orquestación Híbrida y Triaje Semántico con Persistencia MySQL](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Orquestaci%C3%B3n%20H%C3%ADbrida%20y%20Triaje%20Sem%C3%A1ntico%20con%20Persistencia%20MySQL.md) | `src/features/triage/`, `src/features/planner/`, `src/features/ai-engine/`, `src/components/tactical/`, `src/prisma/` | 5 SP | ✅ **Certificado** (S+ Grade) |
 | **P2** | `PBI-OPS-TELEM-002` | [[OPERATIVO] Ampliación Sensorial de Telemetría en Orquestación Híbrida](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Ampliaci%C3%B3n%20Sensorial%20de%20Telemetr%C3%ADa%20en%20Orquestaci%C3%B3n%20H%C3%ADbrida%20%28P2%29.md) | `src/features/telemetry/`, `src/app/Admin/System/`, `src/app/Admin/Cognitive/` | 2 SP | ⏳ Pendiente |
 | **P2** | `PBI-OPS-CI-001` | [[OPERATIVO] Automatización de la Aduana CI-CD y Sellado de Tag v2.0.1-doc-anchor](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Automatizaci%C3%B3n%20de%20Aduana%20CI-CD%20y%20Sellado%20de%20Tag%20v2.0.1-doc-anchor%20%28P2%29.md) | `scripts/audit-anchor.sh`, `.github/workflows/`, `README.md` | 1 SP | ⏳ Pendiente |

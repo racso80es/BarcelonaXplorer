@@ -4,9 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { OrchestratorBlock } from '@/components/OrchestratorBlock';
 import { TacticalSpark, TacticalSparkProps } from '@/components/TacticalSpark';
 import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
+import { HybridCanvas } from '@/components/tactical/hybrid-canvas';
 import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
-import { TacticalRoute } from '@/features/planner';
+import { TacticalRoute, EnrichedRoute, ChronologicalPropagator } from '@/features/planner';
 
 type Turn = {
   id: string;
@@ -19,6 +20,7 @@ type Turn = {
 export default function OrchestratorPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [activeItinerary, setActiveItinerary] = useState<EnrichedRoute | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -100,9 +102,11 @@ export default function OrchestratorPage() {
           insight:
             triageData.status === 'DISPATCH_READY'
               ? 'Matriz saturada (>= 60%). Itinerario forjado internamente.'
-              : triageData.status === 'INCOMPLETE_REPROMPT'
-                ? `Matriz incompleta (${triageData.score}%). Variable crítica: ${triageData.missingVariable}`
-                : 'Petición fuera de perímetro geográfico.',
+              : triageData.status === 'CASUAL_DIALOGUE'
+                ? 'Interacción casual interceptada. Modo empático activo.'
+                : triageData.status === 'INCOMPLETE_REPROMPT'
+                  ? `Matriz incompleta (${triageData.score}%). Variable crítica: ${triageData.missingVariable}`
+                  : 'Petición fuera de perímetro geográfico.',
           urgency: triageData.status === 'REBOUND_OUT_OF_SCOPE' ? 'high' : 'medium',
         };
 
@@ -136,6 +140,26 @@ export default function OrchestratorPage() {
           return;
         }
 
+        if (triageData.status === 'CASUAL_DIALOGUE') {
+          const dialogueMsg =
+            triageData.dialogueMessage ||
+            '¡Me alegra charlar contigo! Disfruta con calma de Barcelona.';
+          if (isSubscribed) {
+            setTurns((prev) =>
+              prev.map((t) =>
+                t.id === turnId
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: dialogueMsg,
+                    }
+                  : t,
+              ),
+            );
+          }
+          return;
+        }
+
         if (triageData.status === 'INCOMPLETE_REPROMPT') {
           const repromptMsg =
             triageData.repromptMessage ||
@@ -156,7 +180,11 @@ export default function OrchestratorPage() {
           return;
         }
 
-        // DISPATCH_READY: Ruta táctica completa
+        // DISPATCH_READY: Ruta táctica completa y Lienzo Híbrido
+        if (triageData.itinerary) {
+          setActiveItinerary(triageData.itinerary as EnrichedRoute);
+        }
+
         const routeData =
           triageData.route ||
           triageData.payload ||
@@ -210,14 +238,66 @@ export default function OrchestratorPage() {
     }
   };
 
+  const handleSelectOption = (nodeId: string, optionId: string) => {
+    setActiveItinerary((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        waypoints: prev.waypoints.map((wp) => {
+          if (wp.id !== nodeId) return wp;
+          return {
+            ...wp,
+            options: wp.options.map((opt) => ({
+              ...opt,
+              isSelected: opt.id === optionId,
+            })),
+          };
+        }),
+      };
+    });
+  };
+
+  const handleTimeShift = (
+    nodeId: string,
+    newStartTime: string,
+    newEndTime?: string,
+  ) => {
+    setActiveItinerary((prev) => {
+      if (!prev) return null;
+      try {
+        const recalculated = ChronologicalPropagator.propagate(
+          prev.waypoints,
+          nodeId,
+          newStartTime,
+          newEndTime,
+        );
+        setNotification({
+          type: 'success',
+          message: '⏱️ Horario actualizado. Eventos posteriores recalculados automáticamente.',
+        });
+        return {
+          ...prev,
+          waypoints: recalculated,
+        };
+      } catch (err) {
+        setNotification({
+          type: 'error',
+          message: err instanceof Error ? err.message : 'Error al recalcular horario.',
+        });
+        return prev;
+      }
+    });
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-surface-canvas text-content-primary">
+    <div className="flex flex-col lg:flex-row h-screen bg-surface-canvas text-content-primary overflow-hidden">
       
       {/* ZONA DE CONVERSACIÓN (Scroll iterativo) */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 pb-32 scroll-smooth"
-      >
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+        <div 
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8 pb-32 scroll-smooth"
+        >
         <div className="max-w-4xl mx-auto flex flex-col items-center gap-y-12 sm:gap-y-16">
           
           {notification && (
@@ -391,5 +471,17 @@ export default function OrchestratorPage() {
       </div>
 
     </div>
+
+    {/* LIENZO DE ORQUESTACIÓN HÍBRIDA LATERAL */}
+    {activeItinerary && (
+      <HybridCanvas
+        itinerary={activeItinerary}
+        onSelectOption={handleSelectOption}
+        onTimeShift={handleTimeShift}
+        onClose={() => setActiveItinerary(null)}
+      />
+    )}
+
+  </div>
   );
 }

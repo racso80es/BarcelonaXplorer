@@ -15,3 +15,8 @@ export * from './tactical-route.entity';
 export * from './geographic-scope.schema';
 export * from './tactical-route.schema';
 export * from './validate-geographic-scope.use-case.port';
+export * from './affiliate/affiliate-enricher.schema';
+export * from './affiliate/affiliate-enricher.service';
+export * from './chronological-propagator';
+export * from './itinerary-persistence.port';
+export * from './prisma-itinerary.repository';

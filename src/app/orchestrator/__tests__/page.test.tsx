@@ -29,6 +29,25 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
                 { id: 'wp1', title: 'Inicio Seguro', description: 'Comienza aquí', recommendations: [] },
               ],
             },
+            itinerary: {
+              id: 'itin-mock',
+              summary: 'Itinerario Híbrido Enriquecido',
+              waypoints: [
+                {
+                  id: 'wp1',
+                  title: 'Inicio Seguro',
+                  description: 'Comienza aquí',
+                  category: 'CULTURE',
+                  affiliateProvider: 'CIVITATIS',
+                  affiliateUrl: 'https://civitatis.com/test',
+                  timeSpan: { start: '10:00', end: '11:30' },
+                  options: [
+                    { id: 'opt-1', title: 'Entrada General', description: 'Acceso estándar', provider: 'CIVITATIS', isSelected: true },
+                    { id: 'opt-2', title: 'Tour Guiado', description: 'Con guía oficial', provider: 'CIVITATIS', isSelected: false },
+                  ],
+                },
+              ],
+            },
           }),
         } as unknown as Response;
       }
@@ -47,7 +66,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(screen.getByText(/SISTEMA EN ESPERA/i)).toBeDefined();
   });
 
-  it('transitions from Fase 0 to Fase 3 using unified /api/triage', async () => {
+  it('transitions from Fase 0 to Fase 3 and displays the Lateral HybridCanvas', async () => {
     render(<OrchestratorPage />);
     const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
     const button = screen.getByRole('button');
@@ -63,5 +82,36 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
 
     // Debe mostrar la resolución final (Fase 3)
     expect(await screen.findByText(/Ruta Táctica Consolidada/i, {}, { timeout: 4500 })).toBeDefined();
+
+    // Debe desplegar el Lienzo Lateral Híbrido
+    expect(await screen.findByText(/Lienzo de Orquestación Híbrida/i, {}, { timeout: 2000 })).toBeDefined();
+    expect(screen.getByText(/Itinerario Híbrido Enriquecido/i)).toBeDefined();
+    expect(screen.getByText(/Entrada General/i)).toBeDefined();
   }, 10000);
+
+  it('handles CASUAL_DIALOGUE empathetically without breaking the interface', async () => {
+    global.fetch = vi.fn(async () => {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: 'CASUAL_DIALOGUE',
+          dialogueMessage: '¡Hola! Qué bien tenerte por aquí. Tómate las cosas con calma en Barcelona.',
+          score: 0,
+          survivalThreshold: 60,
+          isThresholdSatisfied: false,
+        }),
+      } as unknown as Response;
+    });
+
+    render(<OrchestratorPage />);
+    const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
+    const button = screen.getByRole('button');
+
+    fireEvent.change(input, { target: { value: 'Hola qué tal' } });
+    fireEvent.submit(button);
+
+    expect(await screen.findByText(/Interacción casual interceptada/i, {}, { timeout: 2000 })).toBeDefined();
+    expect(await screen.findByText(/Tómate las cosas con calma en Barcelona/i, {}, { timeout: 2000 })).toBeDefined();
+  });
 });
