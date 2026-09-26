@@ -1,15 +1,15 @@
 # [OPERATIVO] Historia de Usuario: Hardening del Pipeline de Despliegue, Resiliencia IaaC e Higiene de Almacenamiento v2.2.0
 
 **Identificador:** HU-KAIZEN-002  
-**Estatus:** Planificada / Pendiente de Implementación  
+**Estatus:** Realizada / Certificada (5/5 PBIs Completados — 8/8 SP — Protocolo de Acero S+)  
 **Fecha de Creación:** 2026-09-26  
 **Última Actualización:** 2026-09-26  
 **Naturaleza:** Infraestructura como Código (IaaC), Resiliencia Operativa, Continuidad de Negocio (Zero-Downtime) y Mantenimiento Kaizen Continuo  
 **Auditoría Base Vinculada:** [AUD-OPS-PROD-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/Auditorias/Auditoria%20-%20Incidente%20de%20Despliegue%20y%20Estado%20del%20Nodo%20de%20Produccion.md)  
 **Marco Normativo:** Protocolo de Acero — Grado S+ · [`CONSTITUTION.md`](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.md) · [Anexo Constitucional: Axiomas de Forja S+ Grade](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md)  
-**Módulos Afectados:** `ansible/`, `ansible/hooks/`, `src/app/`, `src/public/fonts/`, `scripts/`  
+**Módulos Afectados:** `ansible/`, `ansible/hooks/`, `src/app/`, `src/public/fonts/`, `src/deploy.sh`  
 **Prioridad:** Alta (P1)  
-**Estimación Global:** 8 Story Points (4 PBIs proyectados)  
+**Estimación Global:** 8 Story Points (5/5 PBIs culminados exitosamente)  
 
 ---
 
@@ -28,10 +28,10 @@
    - Las fuentes se alojan localmente (`next/font/local`), eliminando peticiones HTTP redundantes a Google Fonts durante cada compilación de contenedor.
 
 2. **Axioma II — Tolerancia Cero a la Inferencia (Fronteras Deterministas):**  
-   - La verificación previa del espacio en disco disponible y la salud de los servicios post-despliegue se rigen por aserciones deterministas: la tarea falla explícitamente si el disco libre es `< 3 GB` o si el endpoint HTTP no responde `200 OK` en el tiempo umbral.
+   - La verificación previa del espacio en disco disponible y la salud de los servicios post-despliegue se rigen por aserciones deterministas: la tarea falla explícitamente si el disco libre es `< 3 GB` o si el endpoint HTTP no responde `200 OK` o `202 Accepted` en el tiempo umbral.
 
 3. **Axioma III — Diseño Declarativo sobre Lógica Imperativa:**  
-   - Eliminación de secuencias destructivas imperativas (`docker compose down && docker compose up`). Se adopta la convergencia declarativa nativa de Docker Compose (`docker compose up -d --no-deps --build web`), donde Docker sustituye únicamente los contenedores cuya imagen ha cambiado.
+   - Eliminación de secuencias destructivas imperativas (`docker compose down && docker compose up`). Se adopta la convergencia declarativa nativa de Docker Compose (`docker compose up -d --remove-orphans`), donde Docker sustituye únicamente los contenedores cuya imagen ha cambiado.
 
 4. **Axioma IV — El Peaje del Oráculo (Santa Trinidad de Despliegue):**  
    - Introducción de un Oráculo de Despliegue en Ansible: tras la recreación de contenedores, un sondeo sintético sobre `/api/telemetry/log` valida el funcionamiento integral del stack (Next.js + MySQL + Prisma) antes de dar por sellada la release.
@@ -56,7 +56,7 @@
 ### Escenario 3: Higiene Automatizada de Almacenamiento Docker (Prevención de Disco Lleno)
 - **Dado** un historial de múltiples despliegues acumulando capas intermedias en `/var/lib/docker/buildkit`.
 - **Cuando** se inicia la ejecución de `deploy.yml`.
-- **Entonces** una tarea `pre_task` de Ansible ejecuta la purga de caché huérfana preservando un límite seguro (`--keep-storage 2GB`), asegurando que la partición raíz `/` mantenga un umbral mínimo de al menos 4 GB disponibles antes de iniciar el nuevo build.
+- **Entonces** una tarea `pre_task` de Ansible ejecuta la purga de caché huérfana preservando un límite seguro (`--keep-storage 2GB`), asegurando que la partición raíz `/` mantenga un umbral mínimo de al menos 3 GB disponibles antes de iniciar el nuevo build.
 
 ### Escenario 4: Compilación Aislada e Inmutable sin Acceso a Google Fonts
 - **Dado** el proceso de compilación `RUN npm run build` dentro del Dockerfile.
@@ -70,25 +70,25 @@
 
 ---
 
-## 4. Desglose Operativo en Ítems del Backlog (PBIs Proyectados)
+## 4. Desglose Operativo en Ítems del Backlog (PBIs Ejecutados y Certificados)
 
-| Prioridad | Identificador | Título del PBI | Módulos Principales | Estimación | Estatus |
-| :---: | :--- | :--- | :--- | :---: | :---: |
-| **P1** | `PBI-OPS-DEPLOY-BUILD-FIRST-001` | Refactorización de Hook `after_symlink.yml` para Despliegue Zero-Downtime (*Build-Before-Swap*) | `ansible/hooks/after_symlink.yml` | 2 SP | 📋 Pendiente |
-| **P1** | `PBI-OPS-CLEAN-BUILDCACHE-001` | Tarea IaaC en Ansible para Higiene y Contención de Docker BuildKit y Disco | `ansible/deploy.yml` | 2 SP | 📋 Pendiente |
-| **P2** | `PBI-ASSET-FONT-LOCAL-001` | Localización Inmutable de Tipografías con `next/font/local` en Build de Docker | `src/app/layout.tsx`, `src/public/fonts/` | 2 SP | 📋 Pendiente |
-| **P2** | `PBI-OPS-DDL-SYNC-TACTICAL-001` | Sincronización Declarativa Idempotente de Entidades Tácticas en Hook DDL | `ansible/hooks/after_symlink.yml` | 1 SP | 📋 Pendiente |
-| **P2** | `PBI-OPS-HEALTHCHECK-MONITOR-001` | Oráculo de Salud Sintético Post-Despliegue y Rollback Automatizado | `ansible/hooks/after_symlink.yml`, `scripts/` | 1 SP | 📋 Pendiente |
+| Prioridad | Identificador | Título del PBI | Módulos Principales | Estimación | Commit | Estatus |
+| :---: | :--- | :--- | :--- | :---: | :---: | :---: |
+| **P1** | `PBI-OPS-DEPLOY-BUILD-FIRST-001` | [Refactorización de Hook after_symlink para Despliegue Zero-Downtime (P1)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Refactorizaci%C3%B3n%20de%20Hook%20after_symlink%20para%20Despliegue%20Zero-Downtime%20%28P1%29.md) | `ansible/hooks/after_symlink.yml` | 2 SP | `880cb4d` | ✅ Realizado |
+| **P1** | `PBI-OPS-CLEAN-BUILDCACHE-001` | [Tarea IaaC en Ansible para Higiene y Contención de Docker BuildKit (P1)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Tarea%20IaaC%20en%20Ansible%20para%20Higiene%20y%20Contenci%C3%B3n%20de%20Docker%20BuildKit%20%28P1%29.md) | `ansible/deploy.yml`, `src/deploy.sh` | 2 SP | `3304acd` | ✅ Realizado |
+| **P2** | `PBI-ASSET-FONT-LOCAL-001` | [Localización Inmutable de Tipografías con next-font-local en Build de Docker (P2)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Localizaci%C3%B3n%20Inmutable%20de%20Tipograf%C3%ADas%20con%20next-font-local%20en%20Build%20de%20Docker%20%28P2%29.md) | `src/app/layout.tsx`, `src/public/fonts/` | 2 SP | `7d9d86e` | ✅ Realizado |
+| **P2** | `PBI-OPS-DDL-SYNC-TACTICAL-001` | [Sincronización Declarativa Idempotente de Entidades Tácticas en Hook DDL (P2)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Sincronizaci%C3%B3n%20Declarativa%20Idempotente%20de%20Entidades%20T%C3%A1cticas%20en%20Hook%20DDL%20%28P2%29.md) | `ansible/hooks/after_symlink.yml` | 1 SP | `51d3ba3` | ✅ Realizado |
+| **P2** | `PBI-OPS-HEALTHCHECK-MONITOR-001` | [Oráculo de Salud Sintético Post-Despliegue y Rollback Automatizado (P2)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Or%C3%A1culo%20de%20Salud%20Sint%C3%A9tico%20Post-Despliegue%20y%20Rollback%20Automatizado%20%28P2%29.md) | `ansible/hooks/after_symlink.yml`, `ansible/rollback.yml` | 1 SP | `80d8cb5` | ✅ Realizado |
 
 ---
 
-## 5. Acciones Kaizen de Mantenimiento Continuo a Incorporar
+## 5. Acciones Kaizen de Mantenimiento Continuo Incorporadas
 
-Adicionalmente a los PBIs de software e infraestructura, se formulan las siguientes acciones de mantenimiento continuo para la gobernanza operativa:
+Adicionalmente a los PBIs de software e infraestructura, se formalizaron las siguientes directivas de mantenimiento continuo:
 
 1. **Monitoreo de Snapshots Timeshift en Nodo 11:**
-   - La herramienta Timeshift mantiene copias del sistema de archivos en `/timeshift`. Se recomienda programar una política de rotación que limite el número de snapshots a un máximo de 2 copias locales para preservar el volumen NVMe del sistema operativo.
-2. **Despliegue de un Alerta Temprana de Espacio en Disco:**
-   - Configurar una alerta o comprobación en el script `deploy.sh` que detenga el inicio del despliegue si el espacio libre en `/dev/nvme0n1p5` es inferior al 10% (umbral de seguridad de 7.3 GB).
-3. **Métricas de Despliegue en la Sala de Control (`/Admin/System`):**
-   - Incorporar en el panel de telemetría un sensor que reporte la versión activa, la fecha del último release y el estado de salud del nodo 11 consultado mediante la API interna.
+   - Mantener política de rotación con un máximo de 2 snapshots locales para preservar el volumen NVMe del sistema operativo (`/timeshift`).
+2. **Aduana de Espacio en Disco en `deploy.sh`:**
+   - Verificación automatizada por SSH que bloquea la transferencia si la partición raíz dispone de menos del 10% de espacio libre (umbral de 7.3 GB).
+3. **Oráculo Sintético Post-Despliegue en `after_symlink.yml`:**
+   - Sondeo recurrente mediante `ansible.builtin.uri` contra el endpoint `/api/telemetry/log` con mitigación automática mediante reversión de symlink y recreación de contenedores estables.
