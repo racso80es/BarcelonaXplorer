@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useId } from 'react';
-import { ColumnDef, DataTableProps, SortDirection, SortState } from './types';
+import React, { useState, useMemo, useId } from 'react';
+import { DataTableProps, SortState } from './types';
 import { extractCellValue, compareValues, useDebounce, normalizeString } from './utils';
 import { DataTableToolbar } from './data-table-toolbar';
 import { DataTableHeader } from './data-table-header';
@@ -60,17 +60,21 @@ export function DataTable<T>({
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageSize, setCurrentPageSize] = useState(pageSize);
 
-  // Sincronizar pageSize si cambia la prop
-  useEffect(() => {
-    if (pageSize !== undefined) {
-      setCurrentPageSize(pageSize);
-    }
-  }, [pageSize]);
+  // Sincronizar pageSize si cambia la prop en el componente padre (Ajuste idiomático en render)
+  const [prevPageSize, setPrevPageSize] = useState(pageSize);
+  if (pageSize !== prevPageSize) {
+    setPrevPageSize(pageSize);
+    setCurrentPageSize(pageSize);
+  }
 
-  // Reset a Página 1 ante cambios de filtro o búsqueda
-  useEffect(() => {
+  // Reset a Página 1 ante cambios de filtro o búsqueda (Ajuste idiomático en render)
+  const [prevSearchTerm, setPrevSearchTerm] = useState(debouncedSearchTerm);
+  const [prevFilterValues, setPrevFilterValues] = useState(filterValues);
+  if (debouncedSearchTerm !== prevSearchTerm || filterValues !== prevFilterValues) {
+    setPrevSearchTerm(debouncedSearchTerm);
+    setPrevFilterValues(filterValues);
     setCurrentPage(1);
-  }, [debouncedSearchTerm, filterValues]);
+  }
 
   // Manejador del Ciclo de Ordenación
   const handleSortToggle = (columnKey: keyof T | string) => {
