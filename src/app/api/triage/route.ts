@@ -13,12 +13,21 @@ import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/features/ai-engine';
 import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
+import { TokenBucketRateLimiter } from '@/features/auth';
+import { TelemetryEntry } from '@/features/telemetry';
 
 export const runtime = 'nodejs';
 
 // Instancia compartida del repositorio de persistencia de matriz de sesión (Laudo 2)
 const densityMatrixRepo = new InMemoryDensityMatrixRepository();
 const cognitiveMemory = new LanceDbCognitiveMemoryAdapter();
+
+// Instancia compartida del limitador de tasa Token Bucket (PBI-SEC-RATE-001)
+// 10 fichas de capacidad, recarga de 1 ficha cada 6 segundos (10 por minuto)
+const triageRateLimiter = new TokenBucketRateLimiter({
+  capacity: 10,
+  refillRatePerSecond: 10 / 60,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,6 +49,44 @@ export async function POST(req: NextRequest) {
       req.headers.get('x-session-id') ||
       body?.sessionId ||
       randomUUID();
+
+    // Verificación de Rate Limiting por Token Bucket (PBI-SEC-RATE-001)
+    const clientIp =
+      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      req.headers.get('x-real-ip') ||
+      'unknown-client';
+    const rateLimitKey = `${clientIp}:${existingCookie || 'anon'}`;
+
+    const rateLimitResult = triageRateLimiter.consume(rateLimitKey);
+    if (!rateLimitResult.allowed) {
+      const telemetryRepo = new PrismaTelemetryRepository();
+      await telemetryRepo.log(
+        new TelemetryEntry(
+          'WARN',
+          'SECURITY_PERIMETER',
+          '[Aduana /api/triage] Límite de tasa excedido por Token Bucket',
+          {
+            clientIp: clientIp.replace(/(\d+)\.(\d+)\.(\d+)\.(\d+)/, '$1.$2.xxx.xxx'),
+            retryAfterSeconds: rateLimitResult.retryAfterSeconds,
+          },
+          429,
+          0,
+        ),
+      );
+
+      return NextResponse.json(
+        {
+          error: 'Demasiadas peticiones. Límite de tasa excedido.',
+          retryAfterSeconds: rateLimitResult.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimitResult.retryAfterSeconds),
+          },
+        },
+      );
+    }
 
     const matrixId = body?.matrixId || 'default';
     const userLocation = body?.userLocation;
