@@ -105,7 +105,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
         generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
         generateEmpatheticDialogue: vi.fn().mockResolvedValue('Barcelona puede agotar; tómate un café.'),
+        generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días! Barcelona amanece en movimiento.'),
       };
+
 
       mockMatrixRepo = {
         getMatrixPayload: vi.fn().mockResolvedValue({}),

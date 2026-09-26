@@ -130,4 +130,54 @@ describe('GroqConversationalSlmAdapter (HU-CORE-TRIAGE-002: System Two Ligero)',
       }),
     );
   });
+
+  it('TC-TRIAGE-06: generateContextualGreeting sintetiza un saludo proactivo con telemetría INFO', async () => {
+    const mockCreate = vi.fn().mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: '¡Buenos días! Barcelona amanece radiante. ¿Arrancamos con una ruta por el Born?',
+          },
+        },
+      ],
+    });
+
+    const mockGroqClient = {
+      chat: {
+        completions: {
+          create: mockCreate,
+        },
+      },
+    } as unknown as Groq;
+
+    const mockTelemetry: TelemetryRepositoryPort = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+    };
+
+    const adapter = new GroqConversationalSlmAdapter(mockGroqClient, mockTelemetry);
+    const greeting = await adapter.generateContextualGreeting({
+      sessionId: '550e8400-e29b-41d4-a716-446655440000',
+      device: 'MOBILE',
+      language: 'es',
+      clientTimestamp: Date.now(),
+      serverTimestamp: Date.now(),
+      detectedHour: 10,
+      period: 'MORNING',
+      weatherSummary: 'Cielo despejado',
+      temperatureCelsius: 21,
+    });
+
+    expect(greeting).toBe('¡Buenos días! Barcelona amanece radiante. ¿Arrancamos con una ruta por el Born?');
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockTelemetry.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'INFO',
+        context: 'LLM_ENGINE',
+        statusCode: 200,
+      }),
+    );
+  });
 });
+

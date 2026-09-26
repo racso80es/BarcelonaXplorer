@@ -5,3 +5,4 @@ export * from './triage-input.use-case';
 export * from './ignition.schema';
 export * from './weather.port';
 export * from './open-meteo-weather.adapter';
+export * from './contextual-ignition.use-case';

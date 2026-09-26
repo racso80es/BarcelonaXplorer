@@ -14,6 +14,11 @@ import {
   EMPATHETIC_DIALOGUE_SYSTEM_PROMPT,
   buildEmpatheticDialogueUserPrompt,
 } from './prompts/empathetic-dialogue.prompt';
+import {
+  CONTEXTUAL_GREETING_SYSTEM_PROMPT,
+  buildContextualGreetingUserPrompt,
+} from './prompts/contextual-greeting.prompt';
+import type { IgnitionSensoryContextDto } from '@/features/triage/ignition.schema';
 
 /**
  * Adaptador de Infraestructura para el SLM Rápido Conversacional usando Groq (System Two Ligero).
@@ -298,4 +303,89 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
       return fallbackMessage;
     }
   }
+
+  async generateContextualGreeting(
+    sensoryContext: IgnitionSensoryContextDto,
+  ): Promise<string> {
+    const fallbackMessage = sensoryContext.period === 'DAWN'
+      ? '¡Buenas noches! Si estás planificando a deshoras, dime qué tienes en mente y dejamos lista tu ruta por Barcelona.'
+      : sensoryContext.period === 'MORNING'
+        ? '¡Buenos días! Barcelona amanece lista para ser explorada. ¿Qué plan te apetece trazar hoy?'
+        : sensoryContext.period === 'AFTERNOON'
+          ? '¡Buenas tardes! ¿Hacemos una pausa o exploramos nuevos rincones de la ciudad?'
+          : '¡Buenas noches! Barcelona ofrece infinitas opciones tras la caída del sol. ¿Qué te gustaría descubrir?';
+
+    if (!this.client) {
+      return fallbackMessage;
+    }
+
+    const startTime = Date.now();
+
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          { role: 'system', content: CONTEXTUAL_GREETING_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: buildContextualGreetingUserPrompt(sensoryContext),
+          },
+        ],
+        temperature: 0.4,
+        max_tokens: 80,
+      });
+
+      const durationMs = Date.now() - startTime;
+      const message = completion.choices[0]?.message?.content?.trim();
+      const finalMessage = message && message.length > 0 ? message : fallbackMessage;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'INFO',
+            'LLM_ENGINE',
+            `[Groq Conversational SLM Greeting] Saludo contextual generado exitosamente`,
+            {
+              model: this.model,
+              period: sensoryContext.period,
+              device: sensoryContext.device,
+              hasPriorMemory: Boolean(sensoryContext.priorMemoryExcerpt),
+              greeting: finalMessage,
+              durationMs,
+            },
+            200,
+            durationMs,
+          ),
+        ).catch((e) =>
+          console.warn('[Telemetry Groq SLM Greeting Fire-and-Forget Error]', e),
+        );
+      }
+
+      return finalMessage;
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo.log(
+          new TelemetryEntry(
+            'WARN',
+            'LLM_ENGINE',
+            `[Groq Conversational SLM Greeting] Fallo al generar saludo contextual: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+            {
+              model: this.model,
+              error: err instanceof Error ? err.message : String(err),
+              durationMs,
+            },
+            500,
+            durationMs,
+          ),
+        ).catch((e) =>
+          console.warn('[Telemetry Groq SLM Greeting Fire-and-Forget Error]', e),
+        );
+      }
+
+      return fallbackMessage;
+    }
+  }
 }
+
