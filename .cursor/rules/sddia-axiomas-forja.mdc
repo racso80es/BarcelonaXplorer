@@ -1,0 +1,22 @@
+---
+description: Axiomas Constitucionales de Forja S+ Grade y Gobernanza YAML
+globs: *
+alwaysApply: true
+---
+
+# JURISDICCIÓN DE FORJA PARA CURSOR (PROTOCOLO DE ACERO - GRADO S+)
+
+**Biblioteca Canónica de Normas:** [`/.SddIA/library/norms/`](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/)  
+**Constitución Superior:** [`CONSTITUTION.md`](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.md) (Capítulo VI)
+
+Toda modificación o generación de código ejecutada por Cursor está sometida incondicionalmente a los siguientes cinco axiomas:
+
+1. **Axioma I — Localidad de Comportamiento:** Código organizado por Vertical Slicing bajo `src/features/<modulo>/`. Tests unitarios e integración colocalizados (`<modulo>.test.ts`). Se prohíbe tocar o requerir más de 3 archivos dispersos para una operación atómica.
+2. **Axioma II — Cero Inferencia & Tipado Hermético:** Prohibición absoluta de `any` y `as any`. Todo dato de entrada entra como `unknown` y se parsea con Zod en la frontera. Erradicación de primitivos mediante *Value Objects* inmutables.
+3. **Axioma III — Diseño Declarativo & YAML Canónico:** Modelar reglas como matrices de datos o máquinas de estados. Toda configuración o IaaC se escribe en YAML comentado según [`Estandar-Formato-Configuracion.yml`](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/Estandar-Formato-Configuracion.yml). Parseo seguro con `yaml.safe_load()` o `YAML.parse()`.
+4. **Axioma IV — Peaje del Oráculo:** No auto-aprobar cambios. Obligatorio verificar compilación (`tsc --noEmit`), linter (`eslint`) y tests (`vitest run`). Bucle Kaizen guiado por el volcado del compilador ante errores.
+5. **Axioma V — Transparencia Estructural & Sobres Deterministas:** Cero reflexión o metaprogramación mágica. Inyección explícita por constructor (*Pure DI*). Comunicación inter-cápsula sometida a `OperationEnvelope<T>`.
+
+Consulte obligatoriamente los documentos canónicos en:
+- [Axiomas Detallados](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md)
+- [Gobernanza YAML](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/Estandar-Formato-Configuracion.yml)

@@ -79,15 +79,24 @@ Ratificado en el estándar canónico [`Documentacion/Gobernanza/Estandar-Formato
 
 ## VI. Axiomas Constitucionales de Forja S+ Grade (Optimización para IA)
 
-Para gobernar la simbiosis con agentes autónomos de desarrollo (Google Antigravity), rigen los **Cinco Axiomas de Forja Grado S+**, detallados en el [Anexo Constitucional](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md):
+Para gobernar la simbiosis con agentes autónomos de desarrollo (Google Antigravity, Cursor, Claude Code y pipelines CI/CD), la autoridad normativa reside centralizada de forma inmutable en la **Biblioteca Canónica de Normas** ([`/.SddIA/library/norms/`](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/)).
+
+Toda Entidad Productiva Digital queda sometida a los **Cinco Axiomas de Forja Grado S+** consagrados en el [Anexo Constitucional de Forja](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md) y al [Estándar de Gobernanza de Configuración YAML](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/Estandar-Formato-Configuracion.yml):
 
 - **Axioma I — Ley de Economía Termodinámica (Localidad de Comportamiento):**  
-  Se prohíbe la dispersión entrópica del código. Todo diseño que obligue a la IA a procesar más de tres archivos distribuidos para comprender o alterar una operación atómica debe refactorizarse para maximizar la localidad funcional (*Vertical Slicing*), protegiendo la ventana de contexto y previniendo alucinaciones estructurales.
+  Se prohíbe la dispersión entrópica del código. Todo diseño que obligue a la IA a procesar más de tres archivos distribuidos para comprender o alterar una operación atómica debe refactorizarse para maximizar la localidad funcional (*Vertical Slicing*), colocalizando esquemas, lógica y tests en `src/features/<modulo>/`, protegiendo la ventana de contexto y previniendo alucinaciones estructurales.
 - **Axioma II — Tolerancia Cero a la Inferencia (Fronteras Deterministas):**  
-  Tipado estricto sin excepciones. Proscripción de `any`. Intercepción de payloads mediante esquemas de autovalidación deterministas (Zod) y modelado de negocio mediante Value Objects inmutables.
+  Tipado estricto sin excepciones (*Parse, don't validate*). Proscripción absoluta de `any` y aserciones ciegas. Intercepción de payloads mediante esquemas de autovalidación deterministas (Zod) y modelado de negocio mediante *Value Objects* inmutables.
 - **Axioma III — Diseño Declarativo sobre Lógica Imperativa:**  
-  Priorizar configuraciones declarativas estructuradas (matrices de densidad, diccionarios YAML) frente a bifurcaciones imperativas complejas. Alterar una configuración declarativa es termodinámicamente superior a reescribir pipelines de código.
+  Priorizar configuraciones declarativas estructuradas (matrices de densidad, diccionarios YAML) frente a bifurcaciones imperativas complejas. Alterar una configuración declarativa autovalidada es termodinámicamente superior a reescribir pipelines de código.
 - **Axioma IV — El Peaje del Oráculo (Aduana de Fricción):**  
-  Ningún código es válido por auto-aprobación del agente. La suite de tests automatizados y el linter AST son los únicos oráculos con potestad para conceder estado ejecutable.
+  Ningún código es válido por auto-aprobación del agente. La suite de tests automatizados (`vitest run`), el compilador (`tsc --noEmit`) y el linter AST (`eslint`) son los únicos oráculos con potestad para conceder estado ejecutable. Todo error reportado debe subsanarse mediante desarrollo Kaizen iterativo guiado por compilador.
 - **Axioma V — Ejecución Encapsulada y Transparencia Estructural:**  
-  Prohibición de metaprogramación opaca o reflexión que ciegue el análisis estático. Todo protocolo de comunicación inter-cápsula responderá a sobres deterministas de entrada/salida tipados (`success`, `exitCode`, `result`, `feedback`).
+  Prohibición de metaprogramación opaca, reflexión en runtime o inyección mágica que ciegue el análisis estático. Todo protocolo de comunicación inter-cápsula y herramientas responderá a sobres deterministas tipados (`success`, `exitCode`, `result`, `feedback`).
+
+### 6.1. Mandato de Inyección en Entornos de Desarrollo (Harness Multi-IDE)
+Para asegurar el acatamiento incondicional de estas normas en tiempo de ejecución:
+1. **Google Antigravity:** Obligatoriedad de [`AGENTS.md`](file:///home/racso/Proyectos/BarcelonaXplorer/AGENTS.md) y [`.agents/rules/sddia-axiomas-forja.md`](file:///home/racso/Proyectos/BarcelonaXplorer/.agents/rules/sddia-axiomas-forja.md) en la raíz del workspace.
+2. **Cursor IDE:** Obligatoriedad de [`.cursor/rules/sddia-axiomas-forja.mdc`](file:///home/racso/Proyectos/BarcelonaXplorer/.cursor/rules/sddia-axiomas-forja.mdc) con directiva `alwaysApply: true` y [`.cursorrules`](file:///home/racso/Proyectos/BarcelonaXplorer/.cursorrules).
+3. **Claude Code / Otros Agentes:** Obligatoriedad de [`CLAUDE.md`](file:///home/racso/Proyectos/BarcelonaXplorer/CLAUDE.md) actuando como puntero vinculante hacia [`/.SddIA/library/norms/`](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/).
+

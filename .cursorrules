@@ -1,0 +1,14 @@
+# PROTOCOLO DE ACERO - CURSOR RULES (GRADO S+)
+# Biblioteca Canónica: /.SddIA/library/norms/
+# Constitución: CONSTITUTION.md (Capítulo VI)
+
+# AXIOMAS INNEGOCIABLES DE FORJA:
+# 1. Localidad de Comportamiento: Vertical Slicing en src/features/<modulo>/. Tests colocated (<modulo>.test.ts). Máximo ≤ 3 context hops por tarea.
+# 2. Tolerancia Cero a la Inferencia: Prohibido any y as any. Parsear con Zod en la frontera ("Parse, don't validate"). Value Objects inmutables.
+# 3. Diseño Declarativo: Matrices y esquemas sobre bifurcaciones if/else. YAML canónico comentado para configs e infraestructura (ver /.SddIA/library/norms/Estandar-Formato-Configuracion.yml).
+# 4. Peaje del Oráculo: Cero auto-aprobación. Ejecutar y validar tsc --noEmit, eslint y vitest run. Bucle Kaizen ante errores.
+# 5. Ejecución Encapsulada: Prohibida metaprogramación opaca y DI implícita. Sobres deterministas OperationEnvelope<T> para stdin/stdout.
+
+# Consulta canónica obligatoria:
+# - /.SddIA/library/norms/[ARQUITECTURA] Anexo Constitucional: Axiomas de Forja S+ Grade (Optimización para IA).md
+# - /.SddIA/library/norms/Estandar-Formato-Configuracion.yml
