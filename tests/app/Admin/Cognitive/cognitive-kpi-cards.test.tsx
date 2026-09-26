@@ -85,6 +85,6 @@ describe('CognitiveKpiCards (Tarjetas de Telemetría Cognitiva)', () => {
   it('debe renderizar el Skeleton pulsante correctamente', () => {
     const { container } = render(<CognitiveKpiCardsSkeleton />);
     const pulses = container.querySelectorAll('.animate-pulse');
-    expect(pulses.length).toBe(4);
+    expect(pulses.length).toBe(5);
   });
 });

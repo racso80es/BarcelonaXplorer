@@ -114,4 +114,83 @@ describe('PrismaTelemetryRepository (Vía del Yunque S+)', () => {
       expect(result.deletedCount).toBe(5);
     });
   });
+
+  describe('Eventos Sensorizados de Orquestación Híbrida (PBI-OPS-TELEM-002)', () => {
+    it('CA-1 & CA-2: debe validar determinísticamente los esquemas TRIAGE_ROUTED, DENSITY_THRESHOLD_CHECK y PROVIDER_AFFILIATE_FETCH', async () => {
+      const {
+        TriageRoutedEventSchema,
+        DensityThresholdCheckEventSchema,
+        ProviderAffiliateFetchEventSchema,
+        HybridOrchestrationEventSchema,
+      } = await import('./telemetry.schema');
+
+      const triageEvent = TriageRoutedEventSchema.parse({
+        eventType: 'TRIAGE_ROUTED',
+        sessionId: 'sess-123',
+        intent: 'dialogue',
+        decisionEngine: 'jev-ai',
+        model: 'groq/qwen3.8-27b',
+        promptLength: 25,
+        durationMs: 45,
+        statusCode: 200,
+        tokenEstimate: 50,
+        tokensSaved: 850,
+      });
+      expect(triageEvent.intent).toBe('dialogue');
+      expect(triageEvent.tokensSaved).toBe(850);
+
+      const densityEvent = DensityThresholdCheckEventSchema.parse({
+        eventType: 'DENSITY_THRESHOLD_CHECK',
+        sessionId: 'sess-123',
+        score: 75,
+        survivalThreshold: 60,
+        isSatisfied: true,
+        durationMs: 12,
+        statusCode: 200,
+      });
+      expect(densityEvent.isSatisfied).toBe(true);
+      expect(densityEvent.score).toBe(75);
+
+      const affiliateEvent = ProviderAffiliateFetchEventSchema.parse({
+        eventType: 'PROVIDER_AFFILIATE_FETCH',
+        sessionId: 'sess-123',
+        provider: 'THEFORK',
+        query: 'tapas el born',
+        optionsGenerated: 2,
+        durationMs: 85,
+        statusCode: 200,
+      });
+      expect(affiliateEvent.provider).toBe('THEFORK');
+      expect(affiliateEvent.optionsGenerated).toBe(2);
+
+      // Verificación mediante la unión discriminada
+      expect(HybridOrchestrationEventSchema.parse(triageEvent)).toBeDefined();
+      expect(HybridOrchestrationEventSchema.parse(densityEvent)).toBeDefined();
+      expect(HybridOrchestrationEventSchema.parse(affiliateEvent)).toBeDefined();
+    });
+
+    it('CA-4: debe persistir un evento de telemetría de orquestación híbrida en MySQL sanitizado', async () => {
+      const entry = new TelemetryEntry(
+        'INFO',
+        'SECURITY_PERIMETER',
+        '[Aduana] Diálogo casual interceptado con empatía',
+        {
+          eventType: 'TRIAGE_ROUTED',
+          sessionId: 'sess-abc',
+          intent: 'dialogue',
+          durationMs: 35,
+          tokensSaved: 850,
+        },
+        200,
+        35,
+      );
+
+      await repository.log(entry);
+
+      expect(mockPrisma.telemetryLog.create).toHaveBeenCalledTimes(1);
+      const callArgs = mockPrisma.telemetryLog.create.mock.calls[0][0];
+      expect(callArgs.data.payload.eventType).toBe('TRIAGE_ROUTED');
+      expect(callArgs.data.payload.tokensSaved).toBe(850);
+    });
+  });
 });

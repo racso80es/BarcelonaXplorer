@@ -52,11 +52,10 @@ export class TelemetryEntry {
       return null;
     }
 
-    const forbiddenKeys = [
+    const forbiddenSubstrings = [
       'password',
       'authorization',
       'cookie',
-      'token',
       'secret',
       'api_key',
       'apikey',
@@ -65,9 +64,38 @@ export class TelemetryEntry {
 
     const copy = JSON.parse(JSON.stringify(payload)) as Record<string, unknown>;
 
+    const isSensitiveKey = (key: string): boolean => {
+      const lower = key.toLowerCase();
+      if (forbiddenSubstrings.some((f) => lower.includes(f))) {
+        return true;
+      }
+      const isLlmMetric =
+        lower.includes('tokenssaved') ||
+        lower.includes('tokens_saved') ||
+        lower.includes('tokencount') ||
+        lower.includes('tokenscount') ||
+        lower.includes('prompttokens') ||
+        lower.includes('completiontokens');
+      if (
+        !isLlmMetric &&
+        (lower === 'token' ||
+          lower.includes('auth_token') ||
+          lower.includes('access_token') ||
+          lower.includes('refresh_token') ||
+          lower.includes('session_token') ||
+          lower.includes('authtoken') ||
+          lower.includes('accesstoken') ||
+          lower.endsWith('_token') ||
+          lower.endsWith('token'))
+      ) {
+        return true;
+      }
+      return false;
+    };
+
     const recursiveSanitize = (obj: Record<string, unknown>) => {
       for (const key of Object.keys(obj)) {
-        if (forbiddenKeys.some((f) => key.toLowerCase().includes(f))) {
+        if (isSensitiveKey(key)) {
           obj[key] = '[REDACTED]';
         } else if (typeof obj[key] === 'object' && obj[key] !== null) {
           recursiveSanitize(obj[key] as Record<string, unknown>);

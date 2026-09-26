@@ -14,6 +14,10 @@ import {
   LanceDbTelemetryCard,
   LanceDbTelemetryCardSkeleton,
 } from './LanceDbTelemetryCard';
+import {
+  HybridTelemetryCard,
+  HybridTelemetryCardSkeleton,
+} from './HybridTelemetryCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,12 +47,12 @@ export default async function SystemAdmin() {
         icon={<Activity className="text-emerald-600 w-7 h-7 sm:w-8 sm:h-8" />}
         badge={
           <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
-            7 Sondas Activas
+            8 Sondas Activas
           </span>
         }
       />
 
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
         {/* Tarjeta MySQL */}
         <Card className="bg-surface-container border-layout-divider shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -128,6 +132,11 @@ export default async function SystemAdmin() {
         {/* Tarjeta Persistencia Vectorial Embebida (LanceDB) */}
         <Suspense fallback={<LanceDbTelemetryCardSkeleton />}>
           <LanceDbTelemetryCard />
+        </Suspense>
+
+        {/* Tarjeta Orquestación Híbrida y Triaje Semántico (PBI-OPS-TELEM-002) */}
+        <Suspense fallback={<HybridTelemetryCardSkeleton />}>
+          <HybridTelemetryCard />
         </Suspense>
       </div>
     </div>

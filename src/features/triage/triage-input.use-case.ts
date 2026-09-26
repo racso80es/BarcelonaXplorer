@@ -235,9 +235,18 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         statusCode: 200,
         durationMs,
         payload: {
+          eventType: 'TRIAGE_ROUTED',
           tag: 'CASUAL_DIALOGUE',
-          prompt: trimmedPrompt,
           sessionId: input.sessionId,
+          intent: 'dialogue',
+          decisionEngine: 'jev-ai',
+          model: 'groq/qwen3.8-27b',
+          promptLength: trimmedPrompt.length,
+          durationMs,
+          statusCode: 200,
+          tokenEstimate: 45,
+          tokensSaved: 850,
+          prompt: trimmedPrompt,
           dialogueMessage,
         },
       });
@@ -275,11 +284,16 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       statusCode: density.isThresholdSatisfied ? 200 : 422,
       durationMs: Date.now() - startTime,
       payload: {
+        eventType: 'DENSITY_THRESHOLD_CHECK',
         sessionId: input.sessionId,
         matrixId,
         score: density.score,
+        survivalThreshold: density.survivalThreshold,
+        isSatisfied: density.isThresholdSatisfied,
+        missingVariable: density.highestMissingVariable,
         mood: mergedPayload.mood,
-        isThresholdSatisfied: density.isThresholdSatisfied,
+        durationMs: Date.now() - startTime,
+        statusCode: density.isThresholdSatisfied ? 200 : 422,
       },
     });
 
@@ -373,6 +387,32 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
           forgedRoute as TacticalRoute,
         );
         enrichedItinerary = enriched;
+
+        // Registro de Telemetría Sensorial de Afiliados (PBI-OPS-TELEM-002)
+        const totalOptions = enriched.waypoints.reduce(
+          (acc, w) => acc + (w.options?.length ?? 0),
+          0,
+        );
+        const primaryProvider =
+          enriched.waypoints.find((w) => w.affiliateProvider !== 'NONE')
+            ?.affiliateProvider ?? 'NONE';
+
+        this.emitTelemetry({
+          level: 'INFO',
+          context: 'SECURITY_PERIMETER',
+          message: `[Afiliados Enriquecimiento] ${enriched.waypoints.length} parcelas cruzadas`,
+          statusCode: 200,
+          durationMs: Date.now() - startTime,
+          payload: {
+            eventType: 'PROVIDER_AFFILIATE_FETCH',
+            sessionId: input.sessionId,
+            provider: primaryProvider,
+            query: trimmedPrompt.slice(0, 100),
+            optionsGenerated: totalOptions,
+            durationMs: Date.now() - startTime,
+            statusCode: 200,
+          },
+        });
 
         // CA-4: Persistencia Relacional MySQL en Prisma
         if (this.itineraryRepo) {
