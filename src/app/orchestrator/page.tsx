@@ -7,7 +7,7 @@ import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
 import { HybridCanvas } from '@/components/tactical/hybrid-canvas';
 import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
-import { TacticalRoute, EnrichedRoute, ChronologicalPropagator } from '@/features/planner';
+import { TacticalRoute, EnrichedRoute, ChronologicalPropagator, consumeOrchestratorStream } from '@/features/planner';
 
 type Turn = {
   id: string;
@@ -21,6 +21,7 @@ export default function OrchestratorPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [activeItinerary, setActiveItinerary] = useState<EnrichedRoute | null>(null);
+  const [isStreamingItinerary, setIsStreamingItinerary] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -79,6 +80,7 @@ export default function OrchestratorPage() {
   // Efecto de Orquestación (Vía Rápida y Lenta)
   useEffect(() => {
     let isSubscribed = true;
+    const abortController = new AbortController();
 
     const runOrchestration = async () => {
       if (!currentTurn || currentTurn.status !== 'orchestrating') return;
@@ -91,6 +93,7 @@ export default function OrchestratorPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: userPrompt }),
+          signal: abortController.signal,
         });
 
         const triageData = await triageRes.json().catch(() => ({}));
@@ -183,6 +186,61 @@ export default function OrchestratorPage() {
         // DISPATCH_READY: Ruta táctica completa y Lienzo Híbrido
         if (triageData.itinerary) {
           setActiveItinerary(triageData.itinerary as EnrichedRoute);
+        } else if (triageData.status === 'DISPATCH_READY') {
+          if (isSubscribed) setIsStreamingItinerary(true);
+          await consumeOrchestratorStream(
+            '/api/orchestrator/stream',
+            userPrompt,
+            {
+              onMetaInit: (meta) => {
+                if (!isSubscribed) return;
+                setActiveItinerary({
+                  id: meta.id,
+                  summary: meta.summary,
+                  waypoints: [],
+                });
+              },
+              onStopEmitted: (stop) => {
+                if (!isSubscribed) return;
+                setActiveItinerary((prev) => {
+                  if (!prev) return { id: 'streamed-route', summary: 'Ruta Táctica en Proceso', waypoints: [stop] };
+                  const exists = prev.waypoints.some((w) => w.id === stop.id);
+                  if (exists) return prev;
+                  return { ...prev, waypoints: [...prev.waypoints, stop] };
+                });
+              },
+              onAffiliateInjected: (aff) => {
+                if (!isSubscribed) return;
+                setActiveItinerary((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    waypoints: prev.waypoints.map((w) =>
+                      w.id === aff.waypointId
+                        ? {
+                            ...w,
+                            affiliateProvider: aff.affiliateProvider,
+                            affiliateUrl: aff.affiliateUrl,
+                            options: aff.options,
+                          }
+                        : w,
+                    ),
+                  };
+                });
+              },
+              onStreamComplete: (completeRoute) => {
+                if (!isSubscribed) return;
+                setActiveItinerary(completeRoute);
+              },
+              onError: (streamErr) => {
+                console.warn('[Stream Consumer Warning]', streamErr);
+              },
+            },
+            abortController.signal,
+          );
+          if (isSubscribed) {
+            setIsStreamingItinerary(false);
+          }
         }
 
         const routeData =
@@ -204,6 +262,9 @@ export default function OrchestratorPage() {
           );
         }
       } catch (error) {
+        if (abortController.signal.aborted) {
+          return;
+        }
         console.error('Orchestration Error:', error);
         if (isSubscribed) {
           setTurns((prev) =>
@@ -226,6 +287,7 @@ export default function OrchestratorPage() {
 
     return () => {
       isSubscribed = false;
+      abortController.abort();
     };
   }, [currentTurn]);
 
@@ -479,6 +541,7 @@ export default function OrchestratorPage() {
         onSelectOption={handleSelectOption}
         onTimeShift={handleTimeShift}
         onClose={() => setActiveItinerary(null)}
+        isStreaming={isStreamingItinerary}
       />
     )}
 
