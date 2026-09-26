@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════
+# Protocolo de Acero — Grado S+ · Hook Pre-Commit Determinista Local
+# BarcelonaXplorer
+# ═══════════════════════════════════════════════════════════════════
+set -e
+
+echo "⚔️ [Aduana Local Pre-Commit S+] Iniciando verificación del Oráculo..."
+
+# Obtener directorio raíz del repositorio git
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SRC_DIR="${REPO_ROOT}/src"
+
+if [ ! -d "${SRC_DIR}" ]; then
+  echo "❌ Error: Directorio src/ no encontrado en ${SRC_DIR}"
+  exit 1
+fi
+
+cd "${SRC_DIR}"
+
+# 1. Comprobación estricta de compilador TypeScript (Axioma II & IV)
+echo "🔍 [Oráculo 1/2] Verificando tipos con tsc --noEmit..."
+if ! npx tsc --noEmit; then
+  echo ""
+  echo "🚨 RECHAZO DETERMINISTA: El compilador de TypeScript ha detectado errores de tipo."
+  echo "   Corrija los tipos antes de realizar el commit (tolerancia cero a 'any' o aserciones inválidas)."
+  exit 1
+fi
+
+# 2. Análisis estático con ESLint (Axioma IV)
+echo "🔍 [Oráculo 2/2] Verificando linting AST con eslint..."
+if ! npm run lint; then
+  echo ""
+  echo "🚨 RECHAZO DETERMINISTA: ESLint ha detectado transgresiones de estilo o reglas."
+  echo "   Ejecute npm run lint para diagnosticar y corregir."
+  exit 1
+fi
+
+echo "✅ [Aduana Local Pre-Commit S+] Todos los oráculos locales en VERDE. Procediendo con el commit."
+exit 0
