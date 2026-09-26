@@ -84,4 +84,67 @@ describe('DenseSemanticMatrix (Value Object)', () => {
     expect(recoveredPayload.vibe).toBe('romántico');
     expect(recoveredPayload.districts).toEqual(['Gràcia']);
   });
+
+  it('debe truncar defensivamente cadenas largas y acotar colecciones extensas (PBI-COGN-MEM-006)', () => {
+    const longVibe =
+      'Quiero una experiencia sumamente exclusiva y bohemia recorriendo los callejones oscuros y secretos de la ciudad vieja sin prisas';
+    const longTime =
+      'Desde las 9 de la mañana hasta altas horas de la madrugada del día siguiente ininterrumpidamente';
+    const excessiveConstraints = [
+      'sin gluten estricto de grado celíaco certificado',
+      'presupuesto hiper bajo',
+      'accesibilidad para silla de ruedas',
+      'sin escaleras mecánicas',
+      'evitar trampas para turistas',
+      'opción vegana garantizada',
+      'cerca de estación de metro',
+    ];
+    const excessiveDistricts = [
+      'Ciutat Vella',
+      'Eixample',
+      'Gràcia',
+      'Sants-Montjuïc',
+      'Les Corts',
+      'Sarrià-Sant Gervasi',
+      'Horta-Guinardó',
+    ];
+
+    const matrix = DenseSemanticMatrix.create({
+      sessionId: 'session-oversized',
+      payload: {
+        vibe: longVibe,
+        time_window: longTime,
+        constraints: excessiveConstraints,
+        districts: excessiveDistricts,
+      },
+    });
+
+    const snapshot = matrix.propsSnapshot;
+
+    // Vibe debe estar truncado a 45 chars + '...'
+    expect(snapshot.vibe).toBeDefined();
+    expect(snapshot.vibe!.length).toBeLessThanOrEqual(48);
+    expect(snapshot.vibe!.endsWith('...')).toBe(true);
+
+    // TimeWindow debe estar truncado a 40 chars + '...'
+    expect(snapshot.timeWindow).toBeDefined();
+    expect(snapshot.timeWindow!.length).toBeLessThanOrEqual(43);
+    expect(snapshot.timeWindow!.endsWith('...')).toBe(true);
+
+    // Constraints acotadas a 3 elementos y cada uno <= 28 chars
+    expect(snapshot.constraints).toHaveLength(3);
+    for (const c of snapshot.constraints) {
+      expect(c.length).toBeLessThanOrEqual(28);
+    }
+
+    // Districts acotados a 3 elementos
+    expect(snapshot.districts).toHaveLength(3);
+
+    // toDensePromptString debe emitir una cadena acotada y canónica
+    const denseString = matrix.toDensePromptString();
+    expect(denseString.startsWith('[')).toBe(true);
+    expect(denseString.endsWith(']')).toBe(true);
+    // Verificar que la cadena resultante es estrictamente compacta (<= 280 caracteres, cota ~45 tokens)
+    expect(denseString.length).toBeLessThanOrEqual(280);
+  });
 });

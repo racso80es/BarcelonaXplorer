@@ -48,20 +48,50 @@ export class DenseSemanticMatrix {
         ? Math.max(0, Math.min(100, raw.survivalThreshold))
         : 60;
 
+    const rawTime = payload.time_window?.replace(/\s+/g, ' ').trim();
+    const timeWindow = rawTime
+      ? rawTime.length > 40
+        ? `${rawTime.slice(0, 40)}...`
+        : rawTime
+      : undefined;
+
+    const rawVibe = payload.vibe?.replace(/\s+/g, ' ').trim();
+    const vibe = rawVibe
+      ? rawVibe.length > 45
+        ? `${rawVibe.slice(0, 45)}...`
+        : rawVibe
+      : undefined;
+
     const constraints = Array.isArray(payload.constraints)
-      ? Array.from(new Set(payload.constraints.filter(Boolean).map(String)))
+      ? Array.from(
+          new Set(
+            payload.constraints
+              .filter(Boolean)
+              .map((c) => String(c).replace(/\s+/g, ' ').trim())
+              .filter((c) => c.length > 0)
+              .map((c) => (c.length > 25 ? `${c.slice(0, 25)}...` : c)),
+          ),
+        ).slice(0, 3)
       : [];
 
     const districts = Array.isArray(payload.districts)
-      ? Array.from(new Set(payload.districts.filter(Boolean).map(String)))
+      ? Array.from(
+          new Set(
+            payload.districts
+              .filter(Boolean)
+              .map((d) => String(d).replace(/\s+/g, ' ').trim())
+              .filter((d) => d.length > 0)
+              .map((d) => (d.length > 20 ? `${d.slice(0, 20)}...` : d)),
+          ),
+        ).slice(0, 3)
       : [];
 
     return new DenseSemanticMatrix({
       sessionId: raw.sessionId.trim(),
       matrixId,
-      timeWindow: payload.time_window?.trim() || undefined,
+      timeWindow,
       groupSize: typeof payload.group_size === 'number' && payload.group_size > 0 ? payload.group_size : undefined,
-      vibe: payload.vibe?.trim() || undefined,
+      vibe,
       constraints: Object.freeze(constraints),
       districts: Object.freeze(districts),
       score,
