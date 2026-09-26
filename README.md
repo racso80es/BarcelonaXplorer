@@ -4,8 +4,9 @@
 > Diseñado bajo la **Táctica del Refugio**: soberanía financiera (Ingeniería de Ingresos Pasivos desatendida), arquitectura defensiva de código único (**La Vía del Yunque**), orquestación en tiempo real sin fricción cognitiva (**La Vía de la Red**) y gobernanza simbiótica Grado S+ (**Vertical Slicing Canónico**).
 
 [![Architecture](https://img.shields.io/badge/Architecture-Vertical%20Slicing%20Modular-blueviolet.svg)](#-arquitectura-del-sistema-vertical-slicing--monolito-modular)
-[![Version](https://img.shields.io/badge/Version-v2.0.0--arch--definitive-blue.svg)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md)
-[![Tests](https://img.shields.io/badge/Tests-302%20passing%20%7C%2061%20suites-success.svg)](#-instalación-y-ejecución-local)
+[![Version](https://img.shields.io/badge/Version-v2.0.1--doc--anchor-blue.svg)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md)
+[![Tests](https://img.shields.io/badge/Tests-323%20passing%20%7C%2065%20suites-success.svg)](#-instalación-y-ejecución-local)
+[![Linter](https://img.shields.io/badge/Linter-0%20warnings%20%7C%20clean-success.svg)](#-instalación-y-ejecución-local)
 [![Constitution](https://img.shields.io/badge/Governance-CONSTITUTION.md-gold.svg)](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.md)
 
 ---
@@ -59,7 +60,7 @@ BarcelonaXplorer no es un buscador estático ni un directorio clónico de "Top 1
 | **Seguridad de Borde** | **Edge Runtime + Web Crypto API** | HTTP Basic Auth RFC 7617, `constantTimeEqual`, HSTS y redirección canónica 308 |
 | **Gobernanza Declarativa** | **YAML Canónico + Safe Loading** | Ahorro del ~30% en tokens para agentes de IA y deserialización segura inmune a RCE |
 | **Infraestructura e IaaC** | **Docker, Ansible & Ansistrano** | Despliegue atómico inmutable Zero Downtime en Nodo 11 (`10.0.10.11`) |
-| **Suite de Pruebas** | **Vitest 4 + Testing Library** | 302 tests en 61 suites (features aisladas, dominio puro, adaptadores y perimetral) |
+| **Suite de Pruebas** | **Vitest 4 + Testing Library** | 323 tests en 65 suites (features aisladas, dominio puro, adaptadores y perimetral) |
 
 ---
 
@@ -287,7 +288,7 @@ BarcelonaXplorer/
 │   ├── middleware.ts                 # Centinela de seguridad perimetral (/Admin)
 │   └── package.json                  # Dependencias y scripts del proyecto
 │
-├── tests/                            # Suite completa de pruebas con Vitest (302 tests)
+├── tests/                            # Suite completa de pruebas con Vitest (323 tests)
 │   ├── features/                     # Pruebas unitarias y de integración por vertical
 │   └── shared/                       # Pruebas de utilidades compartidas y UI
 │
@@ -377,7 +378,7 @@ npx tsc --noEmit
 # Ejecución de la suite completa de tests Vitest
 npm test
 ```
-*Vitest ejecutará los **302 tests** unitarios y de integración a lo largo de **61 suites** con cobertura en todas las verticales (`triage`, `telemetry`, `auth`, `cognitive-memory`, `ai-engine`, `planner`, `telegram`), middleware perimetral y componentes UI.*
+*Vitest ejecutará los **323 tests** unitarios y de integración a lo largo de **65 suites** con cobertura en todas las verticales (`triage`, `telemetry`, `auth`, `cognitive-memory`, `ai-engine`, `planner`, `telegram`), middleware perimetral y componentes UI.*
 
 ---
 
@@ -430,4 +431,4 @@ Todo el código de BarcelonaXplorer está blindado bajo las directivas de su **[
 4. **Vertical Slicing Canónico (Axioma I):** Erradicación de capas globales dispersas. Todo el código de una vertical funcional vive encapsulado en `src/features/<feature>/`, reduciendo la dispersión a ≤ 3 archivos por operación atómica para modelos de IA.
 5. **Tolerancia Cero a `any`:** Proscripción absoluta del tipo `any`. Toda entropía externa entrante (especialmente JSONs de LLMs) pasa por el Triaje Entrópico de Zod antes de ingresar al sistema.
 6. **Consolidación Declarativa YAML (Axioma III):** Primacía de YAML sobre JSON para configuración estática e IaaC (~30% de ahorro en tokens para IA), habilitación de JSONC documentado (`tsconfig.json`, `components.json`) y blindaje P0 con deserialización segura (`yaml.safe_load`).
-7. **Filtro Empírico (Axioma IV):** El código teórico es ruido; solo el código desplegado y testado es vitalidad. Ningún cambio se valida por auto-aprobación del agente: la suite de tests (302 tests) y el linter AST son los únicos oráculos con potestad para conceder estado ejecutable.
+7. **Filtro Empírico (Axioma IV):** El código teórico es ruido; solo el código desplegado y testado es vitalidad. Ningún cambio se valida por auto-aprobación del agente: la suite de tests (323 tests) y el linter AST (0 advertencias) son los únicos oráculos con potestad para conceder estado ejecutable.

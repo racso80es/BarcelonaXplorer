@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════
+# PIPELINE CI/CD: ADUANA DE FRICCIÓN Y ORÁCULOS S+ GRADE
+# Identificador: CI-ORACLE-GATE-001
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axiomas Vinculados:
+#   - Axioma III: Diseño Declarativo sobre Lógica Imperativa
+#   - Axioma IV: El Peaje del Oráculo (Santa Trinidad 100% Verde)
+# ═══════════════════════════════════════════════════════════════
+
+name: CI Aduana de Fricción
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  oracle-gate:
+    name: Santa Trinidad de Oráculos
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout del Repositorio (Historial Completo para Tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Node.js 20.x LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: src/package-lock.json
+
+      - name: Instalar Dependencias del Monolito Modular
+        working-directory: src
+        run: npm ci
+
+      - name: Generar Esquemas y Tipos de Prisma
+        working-directory: src
+        run: npx prisma generate
+
+      - name: Ejecutar Protocolo de Auditoría y Anclaje Documental
+        run: |
+          chmod +x ./scripts/audit-anchor.sh
+          ./scripts/audit-anchor.sh

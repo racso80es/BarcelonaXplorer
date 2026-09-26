@@ -60,7 +60,8 @@ echo "3/3 Linter AST (eslint)..."
 if npm run lint; then
   echo "✅ Linter: 0 problemas."
 else
-  echo "⚠️  Linter: Advertencias o deuda técnica detectada (Revisar log)."
+  echo "❌ Linter: Falló la aduana AST (Revisar log)."
+  exit 1
 fi
 
 echo ""
