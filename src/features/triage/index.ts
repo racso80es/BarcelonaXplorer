@@ -6,3 +6,4 @@ export * from './ignition.schema';
 export * from './weather.port';
 export * from './open-meteo-weather.adapter';
 export * from './contextual-ignition.use-case';
+export * from './components/thermal-meter';
