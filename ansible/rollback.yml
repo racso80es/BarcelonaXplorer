@@ -3,7 +3,9 @@
 # Pipeline IaaC: Rollback Atómico Ansistrano — BarcelonaXplorer
 # Marco Constitucional: Protocolo de Acero — Grado S+
 # Axioma I: Localidad de Comportamiento — Conmutación instantánea a release previo
-# Axioma III: Diseño Declarativo sobre Lógica Imperativa — Reversión determinista
+# Axioma II: Tolerancia Cero a la Inferencia — Reversión determinista a estado conocido
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa — Simetría de ciclo de vida
+# Axioma IV: El Peaje del Oráculo — Verificación de salud post-rollback
 # ═══════════════════════════════════════════════════════════════
 
 - name: Rollback PWA BarcelonaXplorer a la versión anterior
@@ -12,9 +14,8 @@
   vars:
     # Ruta base del despliegue en Nodo 11
     ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
-    # Axioma III: Reutilización simétrica del hook de ignición tras conmutar symlink
+    # Axioma III y IV: Reutilización simétrica del hook de ignición y oráculo de salud tras conmutar symlink
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
   roles:
     # Rol Ansistrano: revierte current al release previo y purga el release defectuoso
     - ansistrano.rollback
-

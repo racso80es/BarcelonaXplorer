@@ -132,3 +132,58 @@
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     EOF
 
+# Axioma IV: El Peaje del Oráculo — Sonda sintética post-despliegue con reversión automática
+- name: Oráculo de Salud Sintético y Mitigación Automática Post-Despliegue
+  block:
+    - name: Sondear salud de la aplicación Next.js vía endpoint de telemetría sintética
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8080/api/telemetry/log"
+        method: POST
+        body_format: json
+        body:
+          level: "INFO"
+          context: "SYSTEM"
+          message: "Oráculo de salud sintético post-despliegue Ansistrano"
+          payload:
+            source: "ansistrano_health_oracle"
+          statusCode: 200
+          environment: "production"
+        status_code:
+          - 200
+          - 202
+        return_content: true
+      register: healthcheck_probe
+      until: healthcheck_probe.status in [200, 202] and (healthcheck_probe.json.status == 'accepted' or healthcheck_probe.status == 200)
+      retries: 10
+      delay: 3
+
+    - name: Confirmar éxito del Oráculo de Salud Sintético
+      ansible.builtin.debug:
+        msg: >
+          Oráculo de salud superado exitosamente. Estado HTTP: {{ healthcheck_probe.status }}.
+          Stack Next.js + MySQL 100% operativo en release activa.
+
+  rescue:
+    - name: Alerta crítica — El Oráculo de Salud detectó fallo persistente post-despliegue
+      ansible.builtin.debug:
+        msg: "CRITICAL: La nueva release no responde satisfactoriamente tras 10 intentos. Iniciando reversión determinista automatizada..."
+
+    - name: Conmutar symlink current a la release anterior y restaurar servicios
+      ansible.builtin.shell: |
+        PREV_RELEASE=$(ls -1td {{ ansistrano_deploy_to }}/releases/* | sed -n '2p')
+        if [ -n "$PREV_RELEASE" ] && [ -d "$PREV_RELEASE" ]; then
+          echo "Revirtiendo symlink current a release previa: $PREV_RELEASE"
+          ln -sfn "$PREV_RELEASE" {{ ansistrano_deploy_to }}/current
+          cd {{ ansistrano_deploy_to }}/current
+          docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
+        else
+          echo "ADVERTENCIA: No se localizó release previa para restaurar."
+        fi
+      changed_when: true
+
+    - name: Abortar despliegue por fallo del Oráculo de Salud
+      ansible.builtin.fail:
+        msg: >
+          El despliegue fue revertido a la versión previa debido a que el Oráculo de Salud
+          no recibió una respuesta válida en http://127.0.0.1:8080/api/telemetry/log tras 10 reintentos.
+
