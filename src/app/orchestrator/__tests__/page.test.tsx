@@ -114,4 +114,42 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(await screen.findByText(/Interacción casual interceptada/i, {}, { timeout: 2000 })).toBeDefined();
     expect(await screen.findByText(/Tómate las cosas con calma en Barcelona/i, {}, { timeout: 2000 })).toBeDefined();
   });
+
+  it('activa la ignición contextual proactiva y muestra el saludo del conserje táctico', async () => {
+    global.fetch = vi.fn(async (url) => {
+      if (url === '/api/triage/ignition') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            exitCode: 0,
+            result: {
+              greeting: '¡Buenos días! Amanece con lluvia en Barcelona. ¿Buscamos actividades cubiertas?',
+              isFallback: false,
+              period: 'MORNING',
+              device: 'DESKTOP',
+              sparks: [
+                {
+                  id: 'spark-weather-test',
+                  type: 'weather',
+                  insight: 'Lluvia en Barcelona (17ºC). Considera actividades bajo cubierto.',
+                  urgency: 'high',
+                },
+              ],
+              contextSummary: 'Hora: 10:00 (MORNING) | Dispositivo: DESKTOP',
+            },
+          }),
+        } as unknown as Response;
+      }
+      return {} as unknown as Response;
+    });
+
+    render(<OrchestratorPage />);
+
+    // El saludo y la chispa del conserje deben aparecer de forma asíncrona
+    expect(await screen.findByText(/Amanece con lluvia en Barcelona/i, {}, { timeout: 2000 })).toBeDefined();
+    expect(screen.getByText(/Lluvia en Barcelona \(17ºC\)/i)).toBeDefined();
+  });
 });
+

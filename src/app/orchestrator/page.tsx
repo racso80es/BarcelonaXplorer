@@ -5,7 +5,7 @@ import { OrchestratorBlock } from '@/components/OrchestratorBlock';
 import { TacticalSpark, TacticalSparkProps } from '@/components/TacticalSpark';
 import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
 import { HybridCanvas } from '@/components/tactical/hybrid-canvas';
-import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X, Compass } from 'lucide-react';
 
 import { TacticalRoute, EnrichedRoute, ChronologicalPropagator, consumeOrchestratorStream } from '@/features/planner';
 
@@ -39,7 +39,57 @@ export default function OrchestratorPage() {
     }
     return null;
   });
+  const [ignitionState, setIgnitionState] = useState<{
+    greeting: string;
+    sparks: Omit<TacticalSparkProps, 'icon'>[];
+    status: 'idle' | 'igniting' | 'ignited';
+  }>({
+    greeting: '',
+    sparks: [],
+    status: 'idle',
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Ignición Contextual proactiva al montar la página (PBI-TRIAGE-IGN-003)
+  useEffect(() => {
+    let isSubscribed = true;
+    const triggerIgnition = async () => {
+      try {
+        setIgnitionState((prev) => ({ ...prev, status: 'igniting' }));
+        const res = await fetch('/api/triage/ignition');
+        if (!res.ok) return;
+        const envelope = await res.json().catch(() => ({}));
+        if (isSubscribed && envelope?.success && envelope?.result) {
+          const outcome = envelope.result;
+          setIgnitionState({
+            greeting: outcome.greeting,
+            sparks: (outcome.sparks || []).map(
+              (s: {
+                id: string;
+                type: 'weather' | 'logistics' | 'system';
+                insight: string;
+                urgency?: 'low' | 'medium' | 'high';
+              }) => ({
+                id: s.id,
+                type: s.type,
+                insight: s.insight,
+                urgency: s.urgency || 'medium',
+              }),
+            ),
+            status: 'ignited',
+          });
+        }
+      } catch {
+        // Fail-soft: no rompe la interfaz si hay problemas de red
+      }
+    };
+
+    void triggerIgnition();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
 
   // Derivamos si la UI está bloqueada en base al último turno
   const currentTurn = turns[turns.length - 1];
@@ -388,7 +438,39 @@ export default function OrchestratorPage() {
             </div>
           )}
 
-          {turns.length === 0 && (
+          {turns.length === 0 && ignitionState.status === 'ignited' && (
+            <div className="w-full flex flex-col items-center relative animate-fade-in my-auto py-8">
+              {ignitionState.sparks.length > 0 && (
+                <div className="w-full max-w-3xl flex flex-col mb-4">
+                  {ignitionState.sparks.map((spark) => (
+                    <TacticalSpark
+                      key={spark.id}
+                      id={spark.id}
+                      type={spark.type}
+                      insight={spark.insight}
+                      urgency={spark.urgency}
+                      icon={getIconForType(spark.type)}
+                    />
+                  ))}
+                </div>
+              )}
+              <div className="w-full max-w-3xl">
+                <OrchestratorBlock
+                  role="ai"
+                  status="completed"
+                  content={
+                    <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-emerald-950 font-sans text-base leading-relaxed shadow-xs flex items-start gap-3">
+                      <Compass className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>{ignitionState.greeting}</span>
+                    </div>
+                  }
+                  timestamp={new Date()}
+                />
+              </div>
+            </div>
+          )}
+
+          {turns.length === 0 && ignitionState.status !== 'ignited' && (
             <div className="h-full w-full flex items-center justify-center min-h-[50vh] text-zinc-400 font-mono text-xs sm:text-sm">
               [ SISTEMA EN ESPERA DE INPUT TÁCTICO ]
             </div>
