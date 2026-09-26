@@ -7,11 +7,16 @@ import {
   WaypointOption,
 } from './affiliate-enricher.schema';
 
+import { CircuitBreaker } from './circuit-breaker';
+import { STATIC_AFFILIATE_CATALOG } from './static-affiliate-catalog';
+
 export interface IAffiliateEnricherService {
   enrichRoute(route: TacticalRoute): Promise<EnrichedRoute>;
 }
 
 export class AffiliateEnricherService implements IAffiliateEnricherService {
+  constructor(private readonly circuitBreaker: CircuitBreaker = new CircuitBreaker()) {}
+
   private readonly gastronomyKeywords = [
     'restaurante',
     'restauran',
@@ -56,18 +61,62 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     'acuari',
   ];
 
+  public getCircuitBreaker(): CircuitBreaker {
+    return this.circuitBreaker;
+  }
+
   async enrichRoute(route: TacticalRoute): Promise<EnrichedRoute> {
-    const enrichedWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp, index) =>
-      this.enrichWaypoint(wp, index),
+    const execution = await this.circuitBreaker.execute(
+      async () => {
+        const enrichedWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp, index) =>
+          this.enrichWaypoint(wp, index),
+        );
+        return {
+          id: route.id,
+          summary: route.summary,
+          waypoints: enrichedWaypoints,
+        };
+      },
+      () => {
+        const fallbackWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp) =>
+          this.fallbackWaypoint(wp),
+        );
+        return {
+          id: route.id,
+          summary: `${route.summary} (Catálogo Resiliente)`,
+          waypoints: fallbackWaypoints,
+        };
+      },
     );
 
-    const enrichedData = {
-      id: route.id,
-      summary: route.summary,
-      waypoints: enrichedWaypoints,
-    };
+    return EnrichedRouteSchema.parse(execution.result);
+  }
 
-    return EnrichedRouteSchema.parse(enrichedData);
+  private fallbackWaypoint(wp: TacticalWaypoint): EnrichedWaypoint {
+    const textToAnalyze = `${wp.title} ${wp.description}`.toLowerCase();
+    const isGastronomy = this.gastronomyKeywords.some((kw) => textToAnalyze.includes(kw));
+    const isCultural = this.culturalKeywords.some((kw) => textToAnalyze.includes(kw));
+
+    const category = isGastronomy ? 'GASTRONOMY' : isCultural ? 'CULTURE' : 'ACTIVITY';
+    const fallbackOptions = STATIC_AFFILIATE_CATALOG[category];
+    const primaryOption = fallbackOptions[0];
+
+    return {
+      id: wp.id,
+      title: wp.title,
+      description: wp.description,
+      category,
+      coordinates: wp.coordinates
+        ? { lat: wp.coordinates.lat, lng: wp.coordinates.lng }
+        : undefined,
+      timeSpan: wp.timeSpan
+        ? { start: wp.timeSpan.start, end: wp.timeSpan.end }
+        : undefined,
+      recommendations: wp.recommendations ?? [],
+      affiliateProvider: primaryOption.provider,
+      affiliateUrl: primaryOption.affiliateUrl,
+      options: fallbackOptions,
+    };
   }
 
   private enrichWaypoint(wp: TacticalWaypoint, index: number): EnrichedWaypoint {
