@@ -12,7 +12,10 @@ import {
 import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/features/ai-engine';
-import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
+import {
+  LanceDbCognitiveMemoryAdapter,
+  LanceDbSemanticCacheAdapter,
+} from '@/features/cognitive-memory';
 import { TokenBucketRateLimiter } from '@/features/auth';
 import { TelemetryEntry } from '@/features/telemetry';
 
@@ -21,6 +24,7 @@ export const runtime = 'nodejs';
 // Instancia compartida del repositorio de persistencia de matriz de sesión (Laudo 2)
 const densityMatrixRepo = new InMemoryDensityMatrixRepository();
 const cognitiveMemory = new LanceDbCognitiveMemoryAdapter();
+const semanticCache = new LanceDbSemanticCacheAdapter();
 
 // Instancia compartida del limitador de tasa Token Bucket (PBI-SEC-RATE-001)
 // 10 fichas de capacidad, recarga de 1 ficha cada 6 segundos (10 por minuto)
@@ -118,6 +122,7 @@ export async function POST(req: NextRequest) {
       embeddingPort,
       affiliateEnricher,
       itineraryRepo,
+      semanticCache,
     );
 
     const outcome = await useCase.execute({

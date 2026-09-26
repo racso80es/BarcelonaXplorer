@@ -212,5 +212,71 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         'default',
       );
     });
+
+    it('CA-3 (PBI-COGN-CACHE-001): debe interceptar por caché semántica vectorial si similitud >= 0.95 y emitir telemetría con tokensSaved', async () => {
+      const mockTelemetry = {
+        log: vi.fn().mockResolvedValue(undefined),
+        getRecentLogs: vi.fn().mockResolvedValue([]),
+        prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+      };
+
+      const mockSemanticCache = {
+        get: vi.fn().mockResolvedValue({
+          prompt: 'Hola, estoy cansado',
+          result: {
+            status: 'CASUAL_DIALOGUE',
+            sessionId: 'sess-cached',
+            matrixId: 'default',
+            score: 0,
+            survivalThreshold: 60,
+            isThresholdSatisfied: false,
+            dialogueMessage: '¡Hola! Qué bien que te tomes un descanso.',
+            durationMs: 12,
+          },
+          similarity: 0.98,
+          tokensSaved: 850,
+          createdAt: new Date(),
+        }),
+        set: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const cachedUseCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetry,
+        undefined,
+        undefined,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+        mockSemanticCache,
+      );
+
+      const result = await cachedUseCase.execute({
+        sessionId: 'sess-cached',
+        prompt: 'Hola, estoy cansado',
+      });
+
+      expect(result.status).toBe('CASUAL_DIALOGUE');
+      expect(result.dialogueMessage).toBe('¡Hola! Qué bien que te tomes un descanso.');
+      expect(mockDecisionEngine.evaluateNoul).not.toHaveBeenCalled();
+      expect(mockConversationalSlm.generateEmpatheticDialogue).not.toHaveBeenCalled();
+      expect(mockTelemetry.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('Caché Semántica Vectorial'),
+          payload: expect.objectContaining({
+            cacheHit: true,
+            tokensSaved: 850,
+          }),
+        }),
+      );
+    });
   });
 });

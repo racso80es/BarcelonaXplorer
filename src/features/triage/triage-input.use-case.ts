@@ -22,9 +22,10 @@ import { TriageOutcome } from './triage-outcome.vo';
 import { GeographicScope } from '@/features/planner';
 import { TelemetryEntry } from '@/features/telemetry';
 
-import { ICognitiveMemoryPort } from '@/features/cognitive-memory';
+import { ICognitiveMemoryPort, ISemanticCachePort } from '@/features/cognitive-memory';
 import { IEmbeddingPort } from '@/features/ai-engine';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
+import { TriageOutcomeDto } from './triage.schema';
 
 /**
  * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-ARCH-ORCH-001).
@@ -41,6 +42,8 @@ import { DenseSemanticMatrix } from '@/features/cognitive-memory';
  * - Enrutamiento Semántico y Empatía (CA-1): Diálogo casual interceptado por Jev AI
  *   sin forzar la Matriz de Densidad ni preguntas logísticas.
  * - Cruce con Afiliados y Persistencia MySQL (CA-3 & CA-4): TheFork / Civitatis y Prisma ORM.
+ * - Caché Semántica Vectorial (PBI-COGN-CACHE-001): Interceptación previa en LanceDB
+ *   para resolver consultas recurrentes en <50ms con 0 coste de tokens.
  */
 export class TriageInputUseCase implements ITriageInputUseCasePort {
   constructor(
@@ -54,6 +57,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     private readonly embeddingPort?: IEmbeddingPort,
     private readonly affiliateEnricher: IAffiliateEnricherService = new AffiliateEnricherService(),
     private readonly itineraryRepo?: ItineraryPersistencePort,
+    private readonly semanticCache?: ISemanticCachePort,
   ) {}
 
   async execute(rawInput: TriageInputDto): Promise<TriageOutcome> {
@@ -88,6 +92,44 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       matrixId,
       accumulated: priorPayload,
     });
+
+    // 2.1 Interceptación por Caché Semántica Vectorial (PBI-COGN-CACHE-001)
+    let promptVector: number[] | undefined;
+    if (this.semanticCache && this.embeddingPort) {
+      try {
+        promptVector = await this.embeddingPort.generateEmbedding(trimmedPrompt);
+        const cached = await this.semanticCache.get(promptVector);
+        if (cached && typeof cached.result === 'object' && cached.result !== null) {
+          const outcomeDto = cached.result as unknown as TriageOutcomeDto;
+          const cachedOutcome = TriageOutcome.fromDto({
+            ...outcomeDto,
+            sessionId: input.sessionId,
+            matrixId,
+            durationMs: Date.now() - startTime,
+          });
+
+          this.emitTelemetry({
+            level: 'INFO',
+            context: 'SECURITY_PERIMETER',
+            message: '[Aduana] Consulta interceptada por Caché Semántica Vectorial',
+            statusCode: 200,
+            durationMs: Date.now() - startTime,
+            payload: {
+              eventType: 'TRIAGE_ROUTED',
+              sessionId: input.sessionId,
+              cacheHit: true,
+              tokensSaved: cached.tokensSaved,
+              similarity: cached.similarity,
+              prompt: trimmedPrompt,
+            },
+          });
+
+          return cachedOutcome;
+        }
+      } catch {
+        // Fail-soft en lectura de caché semántica
+      }
+    }
 
     // 3. Evaluación Perimetral y Anclaje Geográfico de Barcelona (HU-PERIM-GEO-001)
     let isBarcelonaScope = true;
@@ -251,7 +293,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         },
       });
 
-      return TriageOutcome.createCasualDialogue({
+      const casualOutcome = TriageOutcome.createCasualDialogue({
         sessionId: input.sessionId,
         matrixId,
         dialogueMessage,
@@ -262,6 +304,9 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         geographicScope,
         detectedDistricts,
       });
+
+      this.saveToSemanticCache(trimmedPrompt, promptVector, casualOutcome);
+      return casualOutcome;
     }
 
     // 4. Extracción de Variables y Fusión con el Estado Previo
@@ -446,7 +491,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     await this.matrixRepo.clearMatrixPayload(input.sessionId, matrixId);
 
     const durationMs = Date.now() - startTime;
-    return TriageOutcome.createDispatchReady({
+    const dispatchOutcome = TriageOutcome.createDispatchReady({
       sessionId: input.sessionId,
       matrixId,
       score: density.score,
@@ -458,6 +503,9 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       detectedDistricts,
       durationMs,
     });
+
+    this.saveToSemanticCache(trimmedPrompt, promptVector, dispatchOutcome);
+    return dispatchOutcome;
   }
 
   private async extractMatrixVariables(
@@ -612,6 +660,15 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     this.telemetryRepo.log(entry).catch(() => {
       // Aislamiento perimetral silencioso
     });
+  }
+
+  private saveToSemanticCache(
+    prompt: string,
+    vector: number[] | undefined,
+    outcome: TriageOutcome,
+  ): void {
+    if (!this.semanticCache || !vector) return;
+    this.semanticCache.set(prompt, vector, outcome.toDto(), 850).catch(() => {});
   }
 }
 

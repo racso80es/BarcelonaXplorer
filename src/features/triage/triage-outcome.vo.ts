@@ -163,6 +163,28 @@ export class TriageOutcome {
     );
   }
 
+  public static fromDto(dto: TriageOutcomeDto): TriageOutcome {
+    return new TriageOutcome(
+      dto.status,
+      dto.sessionId,
+      dto.matrixId,
+      dto.score,
+      dto.survivalThreshold,
+      dto.isThresholdSatisfied,
+      dto.bounceMessage,
+      dto.repromptMessage,
+      dto.dialogueMessage,
+      dto.missingVariable,
+      dto.rejectedEntity,
+      dto.payload,
+      dto.route,
+      dto.itinerary,
+      undefined,
+      dto.detectedDistricts,
+      dto.durationMs,
+    );
+  }
+
   public toDto(): TriageOutcomeDto {
     return {
       status: this.status,
