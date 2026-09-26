@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { HmacMagicLinkSigner } from './hmac-magic-link-signer';
-import { DomainException } from '@/shared/exceptions/domain.exception';
 
 describe('HmacMagicLinkSigner', () => {
   const signer = new HmacMagicLinkSigner('secret_test_key_for_hmac_2026');

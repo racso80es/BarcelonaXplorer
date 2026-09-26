@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type Groq from 'groq-sdk';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
@@ -37,7 +38,7 @@ describe('GroqConversationalSlmAdapter (HU-CORE-TRIAGE-002: System Two Ligero)',
           create: mockCreate,
         },
       },
-    } as any;
+    } as unknown as Groq;
 
     const mockTelemetry: TelemetryRepositoryPort = {
       log: vi.fn().mockResolvedValue(undefined),
@@ -82,7 +83,7 @@ describe('GroqConversationalSlmAdapter (HU-CORE-TRIAGE-002: System Two Ligero)',
           create: mockCreate,
         },
       },
-    } as any;
+    } as unknown as Groq;
 
     const adapter = new GroqConversationalSlmAdapter(mockGroqClient);
     const message = await adapter.generateBounceMessage('Girona', 'Restaurantes en Girona');
@@ -108,7 +109,7 @@ describe('GroqConversationalSlmAdapter (HU-CORE-TRIAGE-002: System Two Ligero)',
           create: mockCreate,
         },
       },
-    } as any;
+    } as unknown as Groq;
 
     const mockTelemetry: TelemetryRepositoryPort = {
       log: vi.fn().mockResolvedValue(undefined),

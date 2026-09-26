@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, ShieldCheck, Database, Layers } from 'lucide-react';
+import { Brain, ShieldCheck, Layers } from 'lucide-react';
 import {
   ICognitiveMemoryPort,
   CognitiveMemoryItem,

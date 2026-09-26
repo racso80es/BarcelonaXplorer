@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import { Brain, Sparkles, Send, Database } from 'lucide-react';
 import { KpiMetricCard, KpiTrend } from '../_components/KpiMetricCard';
 import {

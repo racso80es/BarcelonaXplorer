@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { GenerateTacticalRouteUseCase } from './generate-tactical-route.use-case';
 import { AiGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
@@ -11,9 +11,19 @@ import {
   LlmTelemetryEvent,
 } from '@/features/telemetry';
 
+interface MockAiPort extends AiGeneratorPort {
+  generateTacticalRoute: Mock<(prompt: string) => Promise<TacticalRoute>>;
+}
+
+interface MockTelemetryRepo extends TelemetryRepositoryPort {
+  log: Mock<(entry: TelemetryEntry) => Promise<void>>;
+  getRecentLogs: Mock<TelemetryRepositoryPort['getRecentLogs']>;
+  prune: Mock<TelemetryRepositoryPort['prune']>;
+}
+
 describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => {
-  let mockAiPort: AiGeneratorPort;
-  let mockTelemetryRepo: TelemetryRepositoryPort;
+  let mockAiPort: MockAiPort;
+  let mockTelemetryRepo: MockTelemetryRepo;
   const originalEnv = process.env.TELEMETRY_LLM_ENABLED;
 
   beforeEach(() => {
@@ -39,7 +49,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
       new TacticalWaypoint('wp-2', 'La Pedrera', 'Cantera de formas ondulantes'),
     ]);
 
-    (mockAiPort.generateTacticalRoute as any).mockResolvedValue(mockRoute);
+    mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
 
     const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
     const context: LlmEnvironmentContext = {
@@ -61,7 +71,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     await new Promise((r) => setTimeout(r, 10));
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const loggedEntry = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(loggedEntry.level).toBe('INFO');
     expect(loggedEntry.context).toBe('LLM_ENGINE');
     expect(loggedEntry.statusCode).toBe(200);
@@ -103,7 +113,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
       [],
     );
 
-    (mockAiPort.generateTacticalRoute as any).mockResolvedValue(claudicatedRoute);
+    mockAiPort.generateTacticalRoute.mockResolvedValue(claudicatedRoute);
 
     const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
     const context: LlmEnvironmentContext = {
@@ -122,7 +132,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     await new Promise((r) => setTimeout(r, 10));
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const loggedEntry = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(loggedEntry.level).toBe('WARN');
     expect(loggedEntry.context).toBe('LLM_ENGINE');
     expect(loggedEntry.statusCode).toBe(422);
@@ -130,21 +140,22 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     
     // Verificación de invariante forense: environmentVariables NO es undefined
     expect(loggedEntry.payload).toBeDefined();
-    expect((loggedEntry.payload as any).reason).toBe('NO_ROUTE_FORGED');
-    expect((loggedEntry.payload as any).environmentVariables).toEqual(context);
-    expect((loggedEntry.payload as any).request).toEqual({
+    const payload = loggedEntry.payload as Record<string, unknown>;
+    expect(payload.reason).toBe('NO_ROUTE_FORGED');
+    expect(payload.environmentVariables).toEqual(context);
+    expect(payload.request).toEqual({
       prompt: 'Quiero visitar 15 museos en 10 minutos a pie',
       promptLength: 'Quiero visitar 15 museos en 10 minutos a pie'.length,
       environmentVariables: context,
     });
-    expect((loggedEntry.payload as any).response).toMatchObject({
+    expect(payload.response).toMatchObject({
       status: 'CLAUDICATION',
       message: 'No se pudo forjar la ruta.',
     });
   });
 
   it('Escenario 2b: Intercepción de excepción con "No se pudo forjar la ruta." como WARN', async () => {
-    (mockAiPort.generateTacticalRoute as any).mockRejectedValue(
+    mockAiPort.generateTacticalRoute.mockRejectedValue(
       new Error('El modelo claudicó: No se pudo forjar la ruta.'),
     );
 
@@ -164,17 +175,18 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     await new Promise((r) => setTimeout(r, 10));
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const loggedEntry = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(loggedEntry.level).toBe('WARN');
     expect(loggedEntry.context).toBe('LLM_ENGINE');
     expect(loggedEntry.statusCode).toBe(422);
-    expect((loggedEntry.payload as any).environmentVariables).toEqual(context);
-    expect((loggedEntry.payload as any).request).toEqual({
+    const payload2b = loggedEntry.payload as Record<string, unknown>;
+    expect(payload2b.environmentVariables).toEqual(context);
+    expect(payload2b.request).toEqual({
       prompt: 'Ruta imposible',
       promptLength: 'Ruta imposible'.length,
       environmentVariables: context,
     });
-    expect((loggedEntry.payload as any).response).toMatchObject({
+    expect(payload2b.response).toMatchObject({
       status: 'CLAUDICATION',
       message: 'No se pudo forjar la ruta.',
     });
@@ -182,7 +194,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
 
   it('Escenario 3: Resiliencia ante Fallos de Red Periféricos o Cuota Excedida (ERROR)', async () => {
     const quotaError = new Error('429 RESOURCE_EXHAUSTED: Quota exceeded for Gemini API');
-    (mockAiPort.generateTacticalRoute as any).mockRejectedValue(quotaError);
+    mockAiPort.generateTacticalRoute.mockRejectedValue(quotaError);
 
     const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
     const context: LlmEnvironmentContext = {
@@ -199,16 +211,17 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     await new Promise((r) => setTimeout(r, 10));
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const loggedEntry = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(loggedEntry.level).toBe('ERROR');
     expect(loggedEntry.context).toBe('LLM_ENGINE');
     expect(loggedEntry.statusCode).toBe(429);
     expect(loggedEntry.message).toContain('[LLM ERROR]');
-    expect((loggedEntry.payload as any).request).toMatchObject({
+    const payload3 = loggedEntry.payload as Record<string, unknown>;
+    expect(payload3.request).toMatchObject({
       prompt: 'Ruta nocturna',
       environmentVariables: context,
     });
-    expect((loggedEntry.payload as any).response).toMatchObject({
+    expect(payload3.response).toMatchObject({
       statusCode: 429,
       error: expect.stringContaining('429 RESOURCE_EXHAUSTED'),
     });
@@ -220,7 +233,7 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     const mockRoute = new TacticalRoute('route-debug-off', 'Ruta rápida', [
       new TacticalWaypoint('wp-1', 'Parc de la Ciutadella', 'Paseo verde'),
     ]);
-    (mockAiPort.generateTacticalRoute as any).mockResolvedValue(mockRoute);
+    mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
 
     const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
     const result = await useCase.execute({
@@ -239,10 +252,10 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     const mockRoute = new TacticalRoute('route-safe', 'Ruta segura', [
       new TacticalWaypoint('wp-1', 'Montjuïc', 'Vistas panorámicas'),
     ]);
-    (mockAiPort.generateTacticalRoute as any).mockResolvedValue(mockRoute);
+    mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
 
     // Repositorio arroja fallo simulado de base de datos
-    (mockTelemetryRepo.log as any).mockRejectedValue(new Error('MySQL Deadlock / Timeout'));
+    mockTelemetryRepo.log.mockRejectedValue(new Error('MySQL Deadlock / Timeout'));
 
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

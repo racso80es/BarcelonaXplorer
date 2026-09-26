@@ -150,16 +150,16 @@ export class LanceDbCognitiveMemoryAdapter implements ICognitiveMemoryPort {
         .offset(boundedOffset)
         .toArray();
 
-      return rows.map((row: Record<string, any>) => {
+      return rows.map((row: Record<string, unknown>) => {
         const meta = this.parseRowMetadata(row.metadata);
         const timestamp = meta.updatedAt ? new Date(String(meta.updatedAt)).getTime() : Date.now();
 
         return {
           id: String(row.id),
-          sessionId: String(meta.sessionId || row.id.split(':')[0]),
+          sessionId: String(meta.sessionId || String(row.id).split(':')[0]),
           matrixId: String(meta.matrixId || 'default'),
           denseText: String(row.text ?? ''),
-          payload: (meta as Record<string, unknown>) ?? {},
+          payload: meta,
           score: typeof meta.score === 'number' ? meta.score : 0,
           timestamp,
         };

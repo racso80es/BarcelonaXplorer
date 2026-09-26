@@ -5,7 +5,6 @@ import { MagicLinkNonceRepositoryPort } from '@/features/auth';
 import { UserAnchorRepositoryPort } from './user-anchor-repository.port';
 import { UserAnchor } from './user-anchor.entity';
 import { TelegramChatId } from './telegram-chat-id.vo';
-import { DomainException } from '@/shared/exceptions/domain.exception';
 
 describe('RestoreSessionFromMagicLinkUseCase', () => {
   const samplePayload = {

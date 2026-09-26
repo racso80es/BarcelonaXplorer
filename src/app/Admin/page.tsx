@@ -25,57 +25,71 @@ async function safeCount(queryFn: () => Promise<number>, metricName: string): Pr
   }
 }
 
-export default async function AdminDashboardPage() {
+async function getDashboardMetrics() {
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
+  return Promise.all([
+    // 1. Fuerza Operativa Total (Usuarios Registrados en Telegram)
+    safeCount(() => prisma.userAnchor.count(), 'totalUsers'),
+
+    // 2. Tracción de Umbral (Nuevos Anclajes registrados en las últimas 24h)
+    safeCount(
+      () => prisma.userAnchor.count({ where: { createdAt: { gte: last24h } } }),
+      'recentUsers'
+    ),
+
+    // 3. Densidad de Fricción (Alertas WARN o ERROR en 24h)
+    safeCount(
+      () =>
+        prisma.telemetryLog.count({
+          where: {
+            level: { in: ['ERROR', 'WARN'] },
+            createdAt: { gte: last24h },
+          },
+        }),
+      'frictionAlerts'
+    ),
+
+    // 4. Actividad Sensorial Global (Total de Logs de Telemetría en 24h)
+    safeCount(
+      () => prisma.telemetryLog.count({ where: { createdAt: { gte: last24h } } }),
+      'totalTelemetry24h'
+    ),
+
+    // 5. Total acumulado de Errores Críticos
+    safeCount(
+      () => prisma.telemetryLog.count({ where: { level: 'ERROR' } }),
+      'errorLogsCount'
+    ),
+  ]);
+}
+
+export default async function AdminDashboardPage() {
+  let totalUsers = 0;
+  let recentUsers = 0;
+  let frictionAlerts = 0;
+  let totalTelemetry24h = 0;
+  let errorLogsCount = 0;
+
   try {
-    const [
+    [
       totalUsers,
       recentUsers,
       frictionAlerts,
       totalTelemetry24h,
       errorLogsCount,
-    ] = await Promise.all([
-      // 1. Fuerza Operativa Total (Usuarios Registrados en Telegram)
-      safeCount(() => prisma.userAnchor.count(), 'totalUsers'),
+    ] = await getDashboardMetrics();
+  } catch (error) {
+    console.error('[CRITICAL] Error de extracción en AdminDashboardPage:', error);
+    throw error; // Delegación al Error Boundary src/app/Admin/error.tsx
+  }
 
-      // 2. Tracción de Umbral (Nuevos Anclajes registrados en las últimas 24h)
-      safeCount(
-        () => prisma.userAnchor.count({ where: { createdAt: { gte: last24h } } }),
-        'recentUsers'
-      ),
+  const frictionRate =
+    totalTelemetry24h > 0
+      ? ((frictionAlerts / totalTelemetry24h) * 100).toFixed(1)
+      : '0.0';
 
-      // 3. Densidad de Fricción (Alertas WARN o ERROR en 24h)
-      safeCount(
-        () =>
-          prisma.telemetryLog.count({
-            where: {
-              level: { in: ['ERROR', 'WARN'] },
-              createdAt: { gte: last24h },
-            },
-          }),
-        'frictionAlerts'
-      ),
-
-      // 4. Actividad Sensorial Global (Total de Logs de Telemetría en 24h)
-      safeCount(
-        () => prisma.telemetryLog.count({ where: { createdAt: { gte: last24h } } }),
-        'totalTelemetry24h'
-      ),
-
-      // 5. Total acumulado de Errores Críticos
-      safeCount(
-        () => prisma.telemetryLog.count({ where: { level: 'ERROR' } }),
-        'errorLogsCount'
-      ),
-    ]);
-
-    const frictionRate =
-      totalTelemetry24h > 0
-        ? ((frictionAlerts / totalTelemetry24h) * 100).toFixed(1)
-        : '0.0';
-
-    return (
+  return (
       <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
         <AdminPageHeader
           title="Sala de Control: Dashboard Táctico"
@@ -183,8 +197,4 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
     );
-  } catch (error) {
-    console.error('[CRITICAL] Error de extracción en AdminDashboardPage:', error);
-    throw error; // Delegación al Error Boundary src/app/Admin/error.tsx
-  }
 }

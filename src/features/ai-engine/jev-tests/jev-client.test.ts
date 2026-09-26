@@ -1,7 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
+
+interface MockTelemetryRepo extends TelemetryRepositoryPort {
+  log: Mock<(entry: TelemetryEntry) => Promise<void>>;
+  getRecentLogs: Mock<TelemetryRepositoryPort['getRecentLogs']>;
+  prune: Mock<TelemetryRepositoryPort['prune']>;
+}
 
 describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () => {
   const originalEnv = process.env;
@@ -274,7 +280,7 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
       }),
     );
 
-    const mockTelemetryRepo: TelemetryRepositoryPort = {
+    const mockTelemetryRepo: MockTelemetryRepo = {
       log: vi.fn().mockResolvedValue(undefined),
       getRecentLogs: vi.fn().mockResolvedValue([]),
       prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
@@ -286,7 +292,7 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
     expect(result.isAffirmative).toBe(true);
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
 
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('INFO');
     expect(logged.context).toBe('LLM_ENGINE');
     expect(logged.statusCode).toBe(200);
@@ -309,7 +315,7 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
       }),
     );
 
-    const mockTelemetryRepo: TelemetryRepositoryPort = {
+    const mockTelemetryRepo: MockTelemetryRepo = {
       log: vi.fn().mockResolvedValue(undefined),
       getRecentLogs: vi.fn().mockResolvedValue([]),
       prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
@@ -319,7 +325,7 @@ describe('JevClient (HU-INFRA-JEV-001: Infraestructura y Sonda Térmica)', () =>
     await expect(client.evaluateNoul('Park Güell', '¿Es Barcelona?')).rejects.toThrow();
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('ERROR');
     expect(logged.context).toBe('LLM_ENGINE');
     expect(logged.statusCode).toBe(500);

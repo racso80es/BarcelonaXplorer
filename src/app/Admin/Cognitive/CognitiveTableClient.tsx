@@ -11,7 +11,6 @@ import {
   Hash,
   Clock,
   Sparkles,
-  Layers,
   FileCode,
 } from 'lucide-react';
 import { CognitiveMemoryItem } from '@/features/cognitive-memory';

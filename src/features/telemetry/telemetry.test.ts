@@ -4,7 +4,13 @@ import { TelemetryEntry } from './telemetry-entry.entity';
 import { PrismaClient } from '@prisma/client';
 
 describe('PrismaTelemetryRepository (Vía del Yunque S+)', () => {
-  let mockPrisma: any;
+  let mockPrisma: {
+    telemetryLog: {
+      create: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+      deleteMany: ReturnType<typeof vi.fn>;
+    };
+  };
   let repository: PrismaTelemetryRepository;
 
   beforeEach(() => {

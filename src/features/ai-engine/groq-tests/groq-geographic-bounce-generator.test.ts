@@ -1,10 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { GroqGeographicBounceGenerator } from '@/features/ai-engine/groq/groq-geographic-bounce-generator';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 
+interface MockTelemetryRepo extends TelemetryRepositoryPort {
+  log: Mock<(entry: TelemetryEntry) => Promise<void>>;
+  getRecentLogs: Mock<TelemetryRepositoryPort['getRecentLogs']>;
+  prune: Mock<TelemetryRepositoryPort['prune']>;
+}
+
 describe('GroqGeographicBounceGenerator (Telemetría LLM_ENGINE e Inferencia SLM)', () => {
-  let mockTelemetryRepo: TelemetryRepositoryPort;
+  let mockTelemetryRepo: MockTelemetryRepo;
   let mockCreate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -27,8 +33,7 @@ describe('GroqGeographicBounceGenerator (Telemetría LLM_ENGINE e Inferencia SLM
           create: createFn,
         },
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+    } as unknown as import('groq-sdk').default;
   };
 
   it('TC-BOUNCE-01: Genera rebote táctico exitosamente y registra INFO en telemetría LLM_ENGINE', async () => {
@@ -50,7 +55,7 @@ describe('GroqGeographicBounceGenerator (Telemetría LLM_ENGINE e Inferencia SLM
     expect(message).toBe('Ese destino queda fuera de nuestro radar barcelonés. Barcelona te espera con otras rutas.');
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
 
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('INFO');
     expect(logged.context).toBe('LLM_ENGINE');
     expect(logged.statusCode).toBe(200);
@@ -84,7 +89,7 @@ describe('GroqGeographicBounceGenerator (Telemetría LLM_ENGINE e Inferencia SLM
     expect(message).toContain('Mi radar táctico está calibrado exclusivamente para el asfalto de Barcelona');
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
 
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('WARN');
     expect(logged.context).toBe('LLM_ENGINE');
     expect(logged.statusCode).toBe(500);
@@ -113,7 +118,7 @@ describe('GroqGeographicBounceGenerator (Telemetría LLM_ENGINE e Inferencia SLM
 
     expect(message).toContain('Mi radar táctico está calibrado exclusivamente para el asfalto de Barcelona');
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('INFO');
   });
 

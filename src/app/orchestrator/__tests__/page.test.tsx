@@ -30,10 +30,10 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
               ],
             },
           }),
-        } as any;
+        } as unknown as Response;
       }
 
-      return {} as any;
+      return {} as unknown as Response;
     });
   });
 

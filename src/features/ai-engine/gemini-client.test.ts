@@ -1,11 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { GeminiClient } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 
+interface MockTelemetryRepo extends TelemetryRepositoryPort {
+  log: Mock<(entry: TelemetryEntry) => Promise<void>>;
+  getRecentLogs: Mock<TelemetryRepositoryPort['getRecentLogs']>;
+  prune: Mock<TelemetryRepositoryPort['prune']>;
+}
+
 describe('GeminiClient (Telemetría LLM_ENGINE e Inferencia)', () => {
   const originalEnv = process.env;
-  let mockTelemetryRepo: TelemetryRepositoryPort;
+  let mockTelemetryRepo: MockTelemetryRepo;
   let mockGenerateContent: ReturnType<typeof vi.fn>;
 
   const createMockAiClient = (generateContentFn: ReturnType<typeof vi.fn>) =>
@@ -13,8 +19,7 @@ describe('GeminiClient (Telemetría LLM_ENGINE e Inferencia)', () => {
       models: {
         generateContent: generateContentFn,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as unknown as import('@google/genai').GoogleGenAI);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,7 +61,7 @@ describe('GeminiClient (Telemetría LLM_ENGINE e Inferencia)', () => {
     expect(result).toBe('Barcelona es una ciudad cosmopolita del Mediterráneo.');
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
 
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('INFO');
     expect(logged.context).toBe('LLM_ENGINE');
     expect(logged.statusCode).toBe(200);
@@ -78,7 +83,7 @@ describe('GeminiClient (Telemetría LLM_ENGINE e Inferencia)', () => {
     );
 
     expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
-    const logged = (mockTelemetryRepo.log as any).mock.calls[0][0] as TelemetryEntry;
+    const logged = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
     expect(logged.level).toBe('WARN');
     expect(logged.context).toBe('LLM_ENGINE');
     expect(logged.statusCode).toBe(500);

@@ -19,25 +19,24 @@ type Turn = {
 export default function OrchestratorPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('session_restored') === 'true') {
-        setNotification({
+        return {
           type: 'success',
           message: '🛡️ ¡Sesión restaurada con éxito desde Telegram! Tu itinerario ha sido recuperado.',
-        });
+        };
       } else if (params.get('auth_error')) {
-        setNotification({
+        return {
           type: 'error',
           message: '⚠️ El enlace de acceso no es válido o ha expirado. Solicita uno nuevo en Telegram.',
-        });
+        };
       }
     }
-  }, []);
+    return null;
+  });
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Derivamos si la UI está bloqueada en base al último turno
   const currentTurn = turns[turns.length - 1];
@@ -200,7 +199,7 @@ export default function OrchestratorPage() {
     return () => {
       isSubscribed = false;
     };
-  }, [currentTurn?.status, currentTurn?.id, currentTurn?.userPrompt]);
+  }, [currentTurn]);
 
   const getIconForType = (type: string) => {
     switch (type) {
@@ -269,7 +268,7 @@ export default function OrchestratorPage() {
                     <TacticalSpark
                       key={spark.id}
                       id={spark.id}
-                      type={spark.type as any}
+                      type={spark.type}
                       insight={spark.insight}
                       urgency={spark.urgency}
                       icon={getIconForType(spark.type)}
