@@ -38,7 +38,7 @@
   changed_when: false
 
 # Axioma I: Migración DDL idempotente ejecutada in-situ para garantizar consistencia relacional
-- name: Sincronizar esquemas de MySQL (TelemetryLog, user_anchors, magic_link_nonces, SystemConfig)
+- name: Sincronizar esquemas de MySQL (SystemConfig, TelemetryLog, user_anchors, magic_link_nonces, tactical_itineraries)
   ansible.builtin.shell: |
     docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'
     CREATE TABLE IF NOT EXISTS `SystemConfig` (
@@ -94,6 +94,41 @@
         UNIQUE INDEX `magic_link_nonces_tokenHash_key`(`tokenHash`),
         INDEX `magic_link_nonces_tokenHash_expiresAt_idx`(`tokenHash`, `expiresAt`),
         PRIMARY KEY (`id`)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    CREATE TABLE IF NOT EXISTS `tactical_itineraries` (
+        `id` VARCHAR(191) NOT NULL,
+        `sessionId` VARCHAR(64) NOT NULL,
+        `summary` VARCHAR(512) NOT NULL,
+        `status` VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+        `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+
+        INDEX `tactical_itineraries_sessionId_idx`(`sessionId`),
+        PRIMARY KEY (`id`)
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    CREATE TABLE IF NOT EXISTS `tactical_itinerary_nodes` (
+        `id` VARCHAR(191) NOT NULL,
+        `itineraryId` VARCHAR(191) NOT NULL,
+        `title` VARCHAR(255) NOT NULL,
+        `description` TEXT NOT NULL,
+        `category` VARCHAR(64) NOT NULL DEFAULT 'GENERAL',
+        `startTime` VARCHAR(8) NOT NULL,
+        `endTime` VARCHAR(8) NULL,
+        `orderIndex` INTEGER NOT NULL DEFAULT 0,
+        `coordinatesLat` DOUBLE NULL,
+        `coordinatesLng` DOUBLE NULL,
+        `affiliateProvider` VARCHAR(32) NULL,
+        `affiliateUrl` VARCHAR(512) NULL,
+        `isSelected` BOOLEAN NOT NULL DEFAULT true,
+        `options` JSON NULL,
+        `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+
+        INDEX `tactical_itinerary_nodes_itineraryId_orderIndex_idx`(`itineraryId`, `orderIndex`),
+        PRIMARY KEY (`id`),
+        CONSTRAINT `tactical_itinerary_nodes_itineraryId_fkey` FOREIGN KEY (`itineraryId`) REFERENCES `tactical_itineraries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     EOF
 
