@@ -74,12 +74,29 @@ La ejecución física sobre el árbol de trabajo arrojó los siguientes veredict
 
 ---
 
-## 5. Matriz de Anclaje y Coordenadas Futuras
+## 5. Matriz de Anclaje y Coordenadas de Cierre
 
-- **Frontera Inmutable de Cierre:** `c82b741b5170a8b7f27d41e6a2a3fbcc8c51cdff` (Commit: `c82b741`).
-- **Propuesta de Tag Canónico:** `v2.0.1-doc-anchor`.
+- **Frontera Inmutable de Auditoría:** `c82b741b5170a8b7f27d41e6a2a3fbcc8c51cdff` (Commit: `c82b741`).
+- **Sellado Canónico Git Ratificado:** Tag anotado [`v2.0.1-doc-anchor`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Automatizaci%C3%B3n%20de%20Aduana%20CI-CD%20y%20Sellado%20de%20Tag%20v2.0.1-doc-anchor%20%28P2%29.md) consolidado en commit `210d415`.
 - **Garantía Histórica:** Ninguna auditoría futura retrocederá más allá del commit `c82b741`.
-- **Vectores de Proyección Táctica (Backlog Inmediato):**
-  1. **Saneamiento de Linter (P1):** Tipado estricto sin `any` en los mocks de tests de `src/features/ai-engine/` y `src/features/planner/`, y corrección de efectos en `components/ui/data-table/data-table.tsx`.
-  2. **Refinamiento de Historias de Usuario Pendientes (P1):** Procesar `[ARQUITECTURA] Historia de Usuario: Lienzo de Orquestación Híbrida y Triaje Semántico.md` hacia PBI.
-  3. **Ampliación de Cobertura Sensorial (P2):** Extender telemetría a las nuevas rutas de orquestación híbrida.
+- **Resolución de Vectores Inmediatos (Historia de Usuario `HU-OPS-EVOL-002`):**
+  1. **Saneamiento de Linter (P1):** ✅ Resuelto integralmente en `PBI-OPS-LINT-001` (85 advertencias erradicadas; cero `any`; 0 advertencias ESLint).
+  2. **Refactorización Reactiva de DataTable (P1):** ✅ Resuelta en `PBI-FEAT-UI-001` (eliminados re-renders en cascada mediante estado derivado).
+  3. **Orquestación Híbrida y Triaje Semántico (P1):** ✅ Forjado y certificado en `PBI-ARCH-ORCH-001` (`triage-input.use-case.ts`, `OrchestratorBlock` y persistencia MySQL).
+  4. **Ampliación Sensorial de Telemetría (P2):** ✅ Implementado en `PBI-OPS-TELEM-002` (esquemas Zod, `HybridTelemetryCard` y KPI de tokens SLM).
+  5. **Automatización de Aduana CI-CD (P2):** ✅ Implementado en `PBI-OPS-CI-001` (`.github/workflows/ci.yml`, `audit-anchor.sh` bloqueante y sincronización de `README.md`).
+
+---
+
+## 6. Transición Kaizen y Siguiente Horizonte Evolutivo (`HU-KAIZEN-001` - v2.1.0 Roadmap)
+
+Tras alcanzar la estabilidad absoluta de la Santa Trinidad de Oráculos (323 tests / 65 suites, 0 warnings de linter y 0 errores de compilador), la evaluación post-anclaje identificó **5 vectores de mejora continua (Kaizen)** que han sido formalizados en la Historia de Usuario [[OPERATIVO] Historia de Usuario: Optimización Kaizen, Resiliencia Perimetral y Eficiencia Cognitiva v2.1.0](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/%5BOPERATIVO%5D%20Historia%20de%20Usuario:%20Optimizaci%C3%B3n%20Kaizen,%20Resiliencia%20Perimetral%20y%20Eficiencia%20Cognitiva%20v2.1.0.md) y desgranados en sus respectivos PBIs:
+
+| ID del PBI | Título del PBI | Módulos Principales | Estimación | Enlace al Documento |
+| :---: | :--- | :--- | :---: | :--- |
+| `PBI-SEC-RATE-001` | **Rate Limiting Defensivo por Token Bucket en Endpoints de Triaje (P1)** | `src/features/auth/`, `/api/triage` | 2 SP | [PBI-SEC-RATE-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Rate%20Limiting%20Defensivo%20por%20Token%20Bucket%20en%20Endpoints%20de%20Triaje%20%28P1%29.md) |
+| `PBI-COGN-CACHE-001` | **Caché Semántica Vectorial en LanceDB para Inferencia Dual (P1)** | `src/features/cognitive-memory/`, `src/features/triage/` | 3 SP | [PBI-COGN-CACHE-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Cach%C3%A9%20Sem%C3%A1ntica%20Vectorial%20en%20LanceDB%20para%20Inferencia%20Dual%20%28P1%29.md) |
+| `PBI-RESIL-CIRCUIT-001` | **Circuit Breaker y Fallback Resiliente para Proveedores de Afiliación (P2)** | `src/features/planner/affiliate/` | 2 SP | [PBI-RESIL-CIRCUIT-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Circuit%20Breaker%20y%20Fallback%20Resiliente%20para%20Proveedores%20de%20Afiliaci%C3%B3n%20%28P2%29.md) |
+| `PBI-FEAT-STREAM-001` | **Streaming Progresivo SSE en Lienzo Lateral HybridCanvas (P2)** | `src/app/orchestrator/`, `src/components/tactical/` | 3 SP | [PBI-FEAT-STREAM-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Streaming%20Progresivo%20SSE%20en%20Lienzo%20Lateral%20HybridCanvas%20%28P2%29.md) |
+| `PBI-OPS-HOOK-001` | **Hook Pre-commit Determinista Local y Purga Programada de Telemetría (P2)** | `.githooks/`, `scripts/`, `src/features/telemetry/` | 1 SP | [PBI-OPS-HOOK-001](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Hook%20Pre-commit%20Determinista%20Local%20y%20Purga%20Programada%20de%20Telemetr%C3%ADa%20%28P2%29.md) |
+
