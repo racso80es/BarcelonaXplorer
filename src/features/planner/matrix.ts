@@ -63,6 +63,20 @@ export const DENSITY_MATRIX_REGISTRY: Record<
       },
     },
   },
+  gastronomy: {
+    name: 'Exploración Gastronómica',
+    description:
+      'Matriz especializada en rutas culinarias, tapas y restaurantes de Barcelona.',
+    rules: {
+      survival_threshold: 70,
+      weights: {
+        group_size: 40,
+        time_window: 25,
+        vibe: 20,
+        constraints: 15,
+      },
+    },
+  },
 };
 
 /**

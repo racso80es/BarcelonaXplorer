@@ -80,4 +80,43 @@ describe('Matriz de Densidad Polimórfica (HU 6 & HU-CORE-TRIAGE-002)', () => {
     expect(parsed.time_window).toBe('2 horas');
     expect(parsed.constraints).toEqual([]);
   });
+
+  describe('Matriz Especializada gastronomy (PBI-CORE-TRIAGE-003)', () => {
+    it('TC-TRIAGE-GASTRO-01: Solo con time_window alcanza 25% (< 70%) e identifica group_size (peso 40) como faltante crítico', () => {
+      const payload = {
+        time_window: 'Cena a las 21:00',
+      };
+
+      const result = calculateMatrixDensity('gastronomy', payload);
+
+      expect(result.matrixId).toBe('gastronomy');
+      expect(result.score).toBe(25);
+      expect(result.survivalThreshold).toBe(70);
+      expect(result.isThresholdSatisfied).toBe(false);
+      expect(result.presentVariables).toEqual(['time_window']);
+      // En gastronomy group_size tiene peso 40, debe ser la variable prioritaria faltante
+      expect(result.highestMissingVariable).toBe('group_size');
+    });
+
+    it('TC-TRIAGE-GASTRO-02: Con group_size (40%) y time_window (25%) alcanza 65% y desbloquea umbral al añadir vibe (85% >= 70%)', () => {
+      const payload65 = {
+        group_size: 4,
+        time_window: '21:00',
+      };
+
+      const result65 = calculateMatrixDensity('gastronomy', payload65);
+      expect(result65.score).toBe(65);
+      expect(result65.isThresholdSatisfied).toBe(false);
+      expect(result65.highestMissingVariable).toBe('vibe');
+
+      const payload85 = {
+        ...payload65,
+        vibe: 'tapas de autor y vermut',
+      };
+
+      const result85 = calculateMatrixDensity('gastronomy', payload85);
+      expect(result85.score).toBe(85);
+      expect(result85.isThresholdSatisfied).toBe(true);
+    });
+  });
 });

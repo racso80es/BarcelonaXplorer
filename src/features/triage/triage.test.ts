@@ -278,5 +278,35 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         }),
       );
     });
+
+    it('debe migrar limpiamente variables universales al transicionar de matriz (PBI-CORE-TRIAGE-003)', async () => {
+      // Estado previo bajo 'default' con time_window y group_size
+      const priorDefaultPayload = {
+        time_window: '2 horas por la tarde',
+        group_size: 4,
+        districts: ['Eixample'],
+      };
+
+      mockMatrixRepo.getMatrixPayload = vi.fn().mockImplementation((_sessionId, matrixId) => {
+        if (matrixId === 'default') {
+          return Promise.resolve(priorDefaultPayload);
+        }
+        return Promise.resolve(null);
+      });
+
+      // El usuario ahora envía una solicitud bajo la matriz especializada 'gastronomy'
+      const outcome = await useCase.execute({
+        sessionId: 'sess-trans-gastro',
+        matrixId: 'gastronomy',
+        prompt: 'Queremos cenar de tapas',
+      });
+
+      // En 'gastronomy': group_size (40) + time_window (25) + vibe tapas (20) = 85% >= 70%
+      expect(outcome.matrixId).toBe('gastronomy');
+      expect(outcome.survivalThreshold).toBe(70);
+      expect(outcome.isThresholdSatisfied).toBe(true);
+      expect(outcome.status).toBe('DISPATCH_READY');
+      expect(mockRouteUseCase.execute).toHaveBeenCalled();
+    });
   });
 });

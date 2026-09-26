@@ -85,6 +85,30 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       }
     }
 
+    // 1.2 Transición Idempotente entre Matrices (PBI-CORE-TRIAGE-003):
+    // Si la matriz solicitada carece de estado pero la sesión posee variables previas bajo 'default',
+    // se migran de forma segura las variables universales consolidadas.
+    if (Object.keys(priorPayload).length === 0 && matrixId !== 'default') {
+      try {
+        const defaultPrior = await this.matrixRepo.getMatrixPayload(
+          input.sessionId,
+          'default',
+        );
+        if (defaultPrior && Object.keys(defaultPrior).length > 0) {
+          priorPayload = {
+            time_window: defaultPrior.time_window,
+            group_size: defaultPrior.group_size,
+            districts: defaultPrior.districts ? [...defaultPrior.districts] : [],
+            constraints: defaultPrior.constraints ? [...defaultPrior.constraints] : [],
+            vibe: defaultPrior.vibe,
+            mood: defaultPrior.mood,
+          };
+        }
+      } catch {
+        // Fail-soft en migración de matriz
+      }
+    }
+
     // 2. Preparar contexto inmutable para Jev AI (System One)
     const stateContext = JSON.stringify({
       sessionId: input.sessionId,
