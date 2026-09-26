@@ -151,5 +151,45 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(await screen.findByText(/Amanece con lluvia en Barcelona/i, {}, { timeout: 2000 })).toBeDefined();
     expect(screen.getByText(/Lluvia en Barcelona \(17ºC\)/i)).toBeDefined();
   });
+
+  it('sincroniza el ThermalMeter reactivamente tras la evaluación de la Aduana Universal', async () => {
+    global.fetch = vi.fn(async (url) => {
+      if (url === '/api/triage') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            status: 'INCOMPLETE_REPROMPT',
+            score: 75,
+            survivalThreshold: 70,
+            isThresholdSatisfied: true,
+            missingVariable: 'budget',
+            repromptMessage: '¿Qué presupuesto aproximado tenéis?',
+          }),
+        } as unknown as Response;
+      }
+      return {} as unknown as Response;
+    });
+
+    render(<OrchestratorPage />);
+
+    // Inicialmente el medidor está en 0%
+    const meter = screen.getByTestId('thermal-meter');
+    expect(meter).toBeDefined();
+    expect(meter.getAttribute('data-thermal-state')).toBe('inert');
+
+    // Enviamos un prompt
+    const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
+    const button = screen.getByRole('button', { name: /Enviar mensaje/i });
+
+    fireEvent.change(input, { target: { value: 'Vamos 2 personas durante 4 horas' } });
+    fireEvent.submit(button);
+
+    // Debe recibir 75%, superar el umbral de 70% y transicionar a "operational"
+    expect(await screen.findByText(/Umbral operativo superado \(70%\)/i, {}, { timeout: 2500 })).toBeDefined();
+    expect(meter.getAttribute('data-thermal-state')).toBe('operational');
+    expect(screen.getByRole('button', { name: /Forjar Ruta Inmediata/i })).toBeDefined();
+  });
 });
+
 

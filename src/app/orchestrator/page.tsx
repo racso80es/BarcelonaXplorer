@@ -8,6 +8,7 @@ import { HybridCanvas } from '@/components/tactical/hybrid-canvas';
 import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X, Compass } from 'lucide-react';
 
 import { TacticalRoute, EnrichedRoute, ChronologicalPropagator, consumeOrchestratorStream } from '@/features/planner';
+import { ThermalMeter } from '@/features/triage';
 
 type Turn = {
   id: string;
@@ -47,6 +48,19 @@ export default function OrchestratorPage() {
     greeting: '',
     sparks: [],
     status: 'idle',
+  });
+  const [thermalState, setThermalState] = useState<{
+    score: number;
+    survivalThreshold: number;
+    isThresholdSatisfied: boolean;
+    missingVariable?: string | null;
+    matrixId: string;
+  }>({
+    score: 0,
+    survivalThreshold: 60,
+    isThresholdSatisfied: false,
+    missingVariable: null,
+    matrixId: 'default',
   });
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +161,20 @@ export default function OrchestratorPage() {
         });
 
         const triageData = await triageRes.json().catch(() => ({}));
+
+        // Sincronización Termodinámica con el Medidor de Densidad (PBI-TRIAGE-THM-002)
+        if (isSubscribed && typeof triageData.score === 'number') {
+          setThermalState({
+            score: triageData.score,
+            survivalThreshold:
+              typeof triageData.survivalThreshold === 'number'
+                ? triageData.survivalThreshold
+                : 60,
+            isThresholdSatisfied: Boolean(triageData.isThresholdSatisfied),
+            missingVariable: triageData.missingVariable ?? null,
+            matrixId: triageData.matrixId || 'default',
+          });
+        }
 
         // Chispa táctica de diagnóstico de aduana
         const triageSpark: Omit<TacticalSparkProps, 'icon'> = {
@@ -401,7 +429,25 @@ export default function OrchestratorPage() {
     });
   };
 
+  const handleForceDispatch = () => {
+    if (!thermalState.isThresholdSatisfied || isLocked) return;
+    const newTurnId = `turn-${Date.now()}`;
+    const newTurn: Turn = {
+      id: newTurnId,
+      userPrompt: 'Por favor, forja la ruta táctica inmediata con el contexto actual.',
+      sparks: [],
+      status: 'pending',
+    };
+    setTurns((prev) => [...prev, newTurn]);
+    setTimeout(() => {
+      setTurns((prev) =>
+        prev.map((t) => (t.id === newTurnId ? { ...t, status: 'orchestrating' } : t)),
+      );
+    }, 400);
+  };
+
   return (
+
     <div className="flex flex-col lg:flex-row h-screen bg-surface-canvas text-content-primary overflow-hidden">
       
       {/* ZONA DE CONVERSACIÓN (Scroll iterativo) */}
@@ -586,7 +632,16 @@ export default function OrchestratorPage() {
 
       {/* ZONA DE INPUT (Sticky Bottom) */}
       <div className="sticky bottom-0 w-full p-3 sm:p-6 bg-surface-container/90 backdrop-blur-md border-t border-layout-divider shadow-sm">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto flex flex-col gap-2.5">
+          <ThermalMeter
+            score={thermalState.score}
+            survivalThreshold={thermalState.survivalThreshold}
+            isThresholdSatisfied={thermalState.isThresholdSatisfied}
+            missingVariable={thermalState.missingVariable}
+            matrixId={thermalState.matrixId}
+            onForceDispatch={thermalState.isThresholdSatisfied ? handleForceDispatch : undefined}
+            isDispatching={isStreamingItinerary || isLocked}
+          />
           <form onSubmit={handleSubmit} className="relative flex items-center">
             <textarea
               className="w-full bg-white border border-layout-divider-strong text-content-primary placeholder:text-zinc-400 rounded-lg py-3 pl-4 pr-14 resize-none focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-focus-tactical transition-all shadow-xs disabled:opacity-50 text-sm sm:text-base leading-normal"
