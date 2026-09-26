@@ -8,9 +8,17 @@
 # Axioma IV: El Peaje del Oráculo — Bloqueo preventivo ante fallas
 # ═══════════════════════════════════════════════════════════════
 
-# Axioma III: Recarga atómica de contenedores con recreación y purga de huérfanos
-- name: Recargar orquestación Docker en la nueva versión
-  ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer down && docker compose --env-file .env.production -p barcelonaxplorer up -d --build --remove-orphans
+# Axioma V: Ejecución Encapsulada y Aislamiento de Fallos (Build-Before-Swap)
+# Paso 1: Compilar la imagen Docker de la aplicación web antes de alterar cualquier contenedor en ejecución
+- name: Compilar imagen web de forma aislada previa a la sustitución (Build-Before-Swap)
+  ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer build web
+  args:
+    chdir: "{{ ansistrano_deploy_to }}/current"
+
+# Axioma III: Convergencia declarativa sin derribo destructivo previo (Zero-Downtime)
+# Paso 2: Sustituir de forma atómica y transparente únicamente los contenedores cuya imagen ha cambiado
+- name: Orquestar convergencia declarativa de contenedores Zero-Downtime
+  ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
 
