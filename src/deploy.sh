@@ -52,6 +52,16 @@ if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" 'echo
 fi
 echo -e "${GREEN}[OK] Canal SSH validado.${NC}"
 
+# 3.1. Verificación preventiva de espacio libre en disco raíz del Nodo 11 (Axioma I y II)
+echo -e "${YELLOW}>>> Verificando capacidad de almacenamiento en partición raíz de ${TARGET_HOST}...${NC}"
+REMOTE_DISK_USE_PCT=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'")
+REMOTE_DISK_FREE_PCT=$((100 - REMOTE_DISK_USE_PCT))
+if (( REMOTE_DISK_FREE_PCT < 10 )); then
+    echo -e "${RED}[ERROR] Espacio crítico en ${TARGET_HOST}: solo ${REMOTE_DISK_FREE_PCT}% libre en / (mínimo requerido: 10%).${NC}"
+    exit 1
+fi
+echo -e "${GREEN}[OK] Espacio en disco validado en el nodo destino: ${REMOTE_DISK_FREE_PCT}% disponible (${REMOTE_DISK_USE_PCT}% usado).${NC}"
+
 # 4. Verificación de compilación previa de TypeScript
 echo -e "${YELLOW}>>> Ejecutando comprobación de tipos estáticos (noEmit)...${NC}"
 if [[ -d "${PROJECT_ROOT}/src" ]]; then

@@ -2,9 +2,9 @@
 # ═══════════════════════════════════════════════════════════════
 # Pipeline IaaC: Despliegue Atómico Ansistrano — BarcelonaXplorer
 # Marco Constitucional: Protocolo de Acero — Grado S+
-# Axioma I: Localidad de Comportamiento — Estructura aislada de releases
-# Axioma II: Tolerancia Cero a la Inferencia — Permisos y rutas estrictas
-# Axioma III: Diseño Declarativo sobre Lógica Imperativa
+# Axioma I: Localidad de Comportamiento — Estructura aislada de releases e higiene de almacenamiento
+# Axioma II: Tolerancia Cero a la Inferencia — Verificación determinista de capacidad en disco
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa — Poda y contención automatizada
 # ═══════════════════════════════════════════════════════════════
 
 - name: Despliegue PWA BarcelonaXplorer
@@ -18,12 +18,53 @@
     ansistrano_deploy_via: "rsync"
     # Rotación automática de versiones para contención de disco
     ansistrano_keep_releases: 3
+    # Axioma II: Umbral mínimo de seguridad en disco raíz (en Megabytes: 3072 MB = 3 GB)
+    min_root_disk_free_mb: 3072
     # Axioma II: Archivos de configuración y secretos inmutables preservados entre despliegues
     ansistrano_shared_files:
       - .env.production
     # Axioma III: Hook declarativo de post-enlace simbólico para ignición de contenedores
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
   pre_tasks:
+    # Axioma I: Auditoría preventiva de almacenamiento en la partición raíz
+    - name: Comprobar espacio disponible en la partición raíz
+      ansible.builtin.command: df -m --output=avail /
+      register: root_disk_avail_output
+      changed_when: false
+
+    - name: Establecer hecho determinista de espacio libre en disco raíz (MB)
+      ansible.builtin.set_fact:
+        root_disk_free_mb: "{{ root_disk_avail_output.stdout_lines[1] | trim | int }}"
+
+    # Axioma I: Purgado agresivo si el almacenamiento está por debajo del umbral de contingencia (< 3 GB)
+    - name: Purgar agresivamente caché de Docker BuildKit ante riesgo de saturación (< 3 GB)
+      ansible.builtin.command: docker builder prune -a -f
+      when: root_disk_free_mb < min_root_disk_free_mb
+      changed_when: true
+
+    # Axioma I: Poda rutinaria de mantenimiento para contención de crecimiento acumulado
+    - name: Contener almacenamiento de Docker BuildKit preservando límite seguro (2 GB)
+      ansible.builtin.command: docker builder prune -f --keep-storage 2GB
+      changed_when: true
+
+    # Axioma II: Verificación determinista de capacidad antes de transferir artefactos y compilar
+    - name: Reevaluar espacio disponible tras la purga preventiva
+      ansible.builtin.command: df -m --output=avail /
+      register: post_prune_disk_output
+      changed_when: false
+
+    - name: Validar oráculo determinista de almacenamiento disponible (mínimo 3 GB libres)
+      ansible.builtin.assert:
+        that:
+          - (post_prune_disk_output.stdout_lines[1] | trim | int) >= min_root_disk_free_mb
+        fail_msg: >
+          Almacenamiento crítico en el nodo de destino: solo se dispone de
+          {{ post_prune_disk_output.stdout_lines[1] | trim }} MB libres en /,
+          inferior al umbral de seguridad de {{ min_root_disk_free_mb }} MB.
+        success_msg: >
+          Espacio en disco suficiente: {{ post_prune_disk_output.stdout_lines[1] | trim }} MB
+          libres en la partición raíz /.
+
     - name: Asegurar existencia del directorio shared en el Nodo 11
       ansible.builtin.file:
         path: "{{ ansistrano_deploy_to }}/shared"
@@ -46,4 +87,8 @@
   roles:
     # Rol Ansistrano: orquestación atómica cero-downtime (setup -> update -> symlink -> cleanup)
     - ansistrano.deploy
-
+  post_tasks:
+    # Axioma I: Higiene final post-despliegue para evitar remanentes de capas efímeras
+    - name: Poda final de capas intermedias efímeras de Docker BuildKit
+      ansible.builtin.command: docker builder prune -f --keep-storage 2GB
+      changed_when: true
