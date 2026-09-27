@@ -8,6 +8,8 @@ export interface UiDictionary {
     readonly thresholdMet: string;
     readonly thresholdNeeded: string;
     readonly missingVariablePrefix: string;
+    readonly forgeRoute: string;
+    readonly forging: string;
   };
   readonly pickpocket: {
     readonly badgePrefix: string;
@@ -63,6 +65,8 @@ export const UI_DICTIONARY: Readonly<Record<SupportedLanguage, UiDictionary>> = 
       thresholdMet: 'Itinerario Listo',
       thresholdNeeded: 'Se requiere umbral',
       missingVariablePrefix: 'Falta definir',
+      forgeRoute: 'Forjar Ruta Inmediata',
+      forging: 'Forjando...',
     },
     pickpocket: {
       badgePrefix: 'Carteristas',
@@ -116,6 +120,8 @@ export const UI_DICTIONARY: Readonly<Record<SupportedLanguage, UiDictionary>> = 
       thresholdMet: 'Itinerary Ready',
       thresholdNeeded: 'Threshold required',
       missingVariablePrefix: 'Missing',
+      forgeRoute: 'Forge Route Now',
+      forging: 'Forging...',
     },
     pickpocket: {
       badgePrefix: 'Pickpockets',
@@ -169,6 +175,8 @@ export const UI_DICTIONARY: Readonly<Record<SupportedLanguage, UiDictionary>> = 
       thresholdMet: 'Itinéraire Prêt',
       thresholdNeeded: 'Seuil requis',
       missingVariablePrefix: 'À définir',
+      forgeRoute: "Forger l'itinéraire",
+      forging: 'Forgeage...',
     },
     pickpocket: {
       badgePrefix: 'Pickpockets',
@@ -222,6 +230,8 @@ export const UI_DICTIONARY: Readonly<Record<SupportedLanguage, UiDictionary>> = 
       thresholdMet: 'Route Bereit',
       thresholdNeeded: 'Schwelle erforderlich',
       missingVariablePrefix: 'Fehlt noch',
+      forgeRoute: 'Route sofort schmieden',
+      forging: 'Wird geschmiedet...',
     },
     pickpocket: {
       badgePrefix: 'Taschendiebe',
@@ -275,6 +285,8 @@ export const UI_DICTIONARY: Readonly<Record<SupportedLanguage, UiDictionary>> = 
       thresholdMet: 'Itinerario Pronto',
       thresholdNeeded: 'Soglia richiesta',
       missingVariablePrefix: 'Mancante',
+      forgeRoute: 'Forgia itinerario ora',
+      forging: 'Forgiatura...',
     },
     pickpocket: {
       badgePrefix: 'Borseggiatori',
@@ -328,6 +340,8 @@ export const UI_DICTIONARY: Readonly<Record<SupportedLanguage, UiDictionary>> = 
       thresholdMet: 'Itinerari Llest',
       thresholdNeeded: 'Es requereix llindar',
       missingVariablePrefix: 'Manca definir',
+      forgeRoute: 'Forjar ruta immediata',
+      forging: 'Forjant...',
     },
     pickpocket: {
       badgePrefix: 'Carteristes',

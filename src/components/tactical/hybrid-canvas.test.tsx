@@ -71,7 +71,7 @@ describe('HybridCanvas Component (PBI-FEAT-CANVAS-SURVIVAL-002 / HU-10)', () => 
 
     // Badge de carteristas presente
     const pickpocketBadge = screen.getByTestId('pickpocket-badge-wp-1');
-    expect(pickpocketBadge.textContent).toContain('Carteristas: HIGH');
+    expect(pickpocketBadge.textContent).toContain('Carteristas: Alto');
 
     // Alternativas gastronómicas LATENTES (no renderizadas en Base)
     expect(screen.queryByTestId('recommended-alternatives-wp-1')).toBeNull();
@@ -113,7 +113,28 @@ describe('HybridCanvas Component (PBI-FEAT-CANVAS-SURVIVAL-002 / HU-10)', () => 
     expect(alternatives.textContent).toContain("Bodega L'Estevet");
 
     // Pase prioritario preventivo visible
-    expect(screen.getByText('Acceso Prioritario Preventivo')).toBeDefined();
+    expect(screen.getByText(/Acceso prioritario:/i)).toBeDefined();
     expect(screen.getByText('Asegurar Entrada')).toBeDefined();
+  });
+
+  it('muta badges, CTAs y controles al francés al recibir lang="fr"', () => {
+    render(
+      <HybridCanvas
+        itinerary={baseRoute}
+        onSelectOption={vi.fn()}
+        onTimeShift={vi.fn()}
+        thermalState="operational"
+        lang="fr"
+      />
+    );
+
+    const canvas = screen.getByLabelText('Itinéraire Tactique');
+    expect(canvas.getAttribute('data-lang')).toBe('fr');
+    expect(screen.getByTestId('pickpocket-badge-wp-1').textContent).toContain(
+      'Pickpockets: Élevé',
+    );
+    expect(screen.getByText('Modifier')).toBeDefined();
+    expect(screen.getByText('Culturel')).toBeDefined();
+    expect(screen.getByText('Voir tour sur Civitatis')).toBeDefined();
   });
 });

@@ -15,6 +15,8 @@ describe('UI_DICTIONARY (Cero Disonancia en Cliente)', () => {
       expect(dict.thermalMeter.title).toBeTruthy();
       expect(dict.thermalMeter.operational).toBeTruthy();
       expect(dict.thermalMeter.saturated).toBeTruthy();
+      expect(dict.thermalMeter.forgeRoute).toBeTruthy();
+      expect(dict.thermalMeter.forging).toBeTruthy();
 
       // Pickpocket
       expect(dict.pickpocket.levels.LOW).toBeTruthy();

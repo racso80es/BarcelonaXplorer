@@ -54,9 +54,9 @@ describe('ThermalMeter Component (HU-8 S+ Grade)', () => {
       expect(progressbar.getAttribute('aria-valuemin')).toBe('0');
       expect(progressbar.getAttribute('aria-valuemax')).toBe('100');
 
-      // Texto de meta y variable faltante
-      expect(screen.getByText(/Meta: 70%/i)).toBeDefined();
-      expect(screen.getByText(/Falta: group_size/i)).toBeDefined();
+      // Texto de meta y variable faltante (diccionario es)
+      expect(screen.getByText(/Se requiere umbral 70%/i)).toBeDefined();
+      expect(screen.getByText(/Falta definir: group_size/i)).toBeDefined();
 
       // Botón de despacho deshabilitado
       const dispatchBtn = screen.getByRole('button', { name: /Forjar Ruta Inmediata/i }) as HTMLButtonElement;
@@ -83,8 +83,7 @@ describe('ThermalMeter Component (HU-8 S+ Grade)', () => {
       expect(container.getAttribute('data-thermal-state')).toBe('operational');
       expect(container.className).toContain('border-emerald-300');
 
-      // Texto de umbral superado
-      expect(screen.getByText(/Umbral operativo superado \(70%\)/i)).toBeDefined();
+      expect(screen.getByText(/Operativo · Itinerario Listo \(70%\)/i)).toBeDefined();
 
       // Botón de despacho habilitado
       const dispatchBtn = screen.getByRole('button', { name: /Forjar Ruta Inmediata/i }) as HTMLButtonElement;
@@ -108,8 +107,37 @@ describe('ThermalMeter Component (HU-8 S+ Grade)', () => {
       expect(container.getAttribute('data-thermal-state')).toBe('saturated');
       expect(container.className).toContain('border-emerald-400');
 
-      // Distintivo de recompensa
-      expect(screen.getByText(/Modo Explorador S\+ Grade Desbloqueado/i)).toBeDefined();
+      expect(screen.getByText(/Saturado/i)).toBeDefined();
+    });
+
+    it('muta las leyendas al francés sin recargar al recibir lang="fr"', () => {
+      const { rerender } = render(
+        <ThermalMeter
+          score={75}
+          survivalThreshold={70}
+          isThresholdSatisfied={true}
+          lang="es"
+          onForceDispatch={vi.fn()}
+        />
+      );
+
+      expect(screen.getByText(/Operativo/i)).toBeDefined();
+      expect(screen.getByRole('button', { name: /Forjar Ruta Inmediata/i })).toBeDefined();
+
+      rerender(
+        <ThermalMeter
+          score={75}
+          survivalThreshold={70}
+          isThresholdSatisfied={true}
+          lang="fr"
+          onForceDispatch={vi.fn()}
+        />
+      );
+
+      const meter = screen.getByTestId('thermal-meter');
+      expect(meter.getAttribute('data-lang')).toBe('fr');
+      expect(screen.getByText(/Opérationnel/i)).toBeDefined();
+      expect(screen.getByRole('button', { name: /Forger l'itinéraire/i })).toBeDefined();
     });
 
     it('Muestra estado de carga durante isDispatching', () => {

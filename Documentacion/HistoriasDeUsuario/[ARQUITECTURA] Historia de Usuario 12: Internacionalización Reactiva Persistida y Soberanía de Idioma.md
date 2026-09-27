@@ -1,6 +1,6 @@
 # [ARQUITECTURA] Historia de Usuario 12: Internacionalización Reactiva Persistida y Soberanía de Idioma (S+ Grade)
 
-- **Estatus:** En Implementación (PBI-001, 002 y 003 Realizados · PBI-004 pendiente)
+- **Estatus:** Realizado (S+ Grade) — 4/4 PBIs certificados
 - **Fecha de Revisión:** 2026-09-27
 - **Autor:** Vértice Biológico & Arquitectura BarcelonaXplorer
 - **Módulo:** Vertical Slice i18n (`src/features/i18n/`), Catálogo de Templates (`src/features/guide-templates/`), Aduana de Triaje (`src/features/triage/`) y Lienzo Orquestador (`src/app/orchestrator/`, `src/components/tactical/`)
@@ -270,19 +270,19 @@ model TemplateItemTranslation {
 - [x] **Y** el saludo de ignición y las sugerencias contextuales se emiten en castellano sin invocar traducciones LLM.
 
 ### Escenario 2: Cache Hit Relacional de Guía Curada (0 Tokens)
-- [ ] **Dado** un usuario navegando con idioma fijado en Inglés (`en`).
-- [ ] **Y** un template curado cuyas traducciones ya fueron consolidadas previamente en `GuideTemplateTranslation` y `TemplateItemTranslation`.
-- [ ] **Cuando** el usuario consulta el detalle de la guía.
-- [ ] **Entonces** el repositorio de templates resuelve la consulta mediante join relacional con las tablas satélite en MySQL.
-- [ ] **Y** la respuesta se despacha en $< 40\text{ ms}$ con consumo de 0 tokens de Gemini.
+- [x] **Dado** un usuario navegando con idioma fijado en Inglés (`en`).
+- [x] **Y** un template curado cuyas traducciones ya fueron consolidadas previamente en `GuideTemplateTranslation` y `TemplateItemTranslation`.
+- [x] **Cuando** el usuario consulta el detalle de la guía.
+- [x] **Entonces** el repositorio de templates resuelve la consulta mediante join relacional con las tablas satélite en MySQL.
+- [x] **Y** la respuesta se despacha en $< 40\text{ ms}$ con consumo de 0 tokens de Gemini.
 
 ### Escenario 3: Traducción Reactiva Persistida Bajo Demanda (Paciente Cero)
-- [ ] **Dado** un usuario navegando con idioma Francés (`fr`).
-- [ ] **Y** un template curado que únicamente existe en idioma maestro (`es`) en la base de datos (Cache Miss).
-- [ ] **Cuando** el caso de uso `GetLocalizedTemplateBySlugUseCase` procesa la solicitud.
-- [ ] **Entonces** el servicio de traducción delega a Gemini la traducción estructurada en una ventana de hasta 8000ms.
-- [ ] **Y** las traducciones son persistidas inmediatamente en `GuideTemplateTranslation` y `TemplateItemTranslation` mediante Prisma.
-- [ ] **Y** las subsiguientes consultas para ese template en francés se resuelven como Cache Hit desde MySQL sin invocar a Gemini.
+- [x] **Dado** un usuario navegando con idioma Francés (`fr`).
+- [x] **Y** un template curado que únicamente existe en idioma maestro (`es`) en la base de datos (Cache Miss).
+- [x] **Cuando** el caso de uso `GetLocalizedTemplateBySlugUseCase` procesa la solicitud.
+- [x] **Entonces** el servicio de traducción delega a Gemini la traducción estructurada en una ventana de hasta 8000ms.
+- [x] **Y** las traducciones son persistidas inmediatamente en `GuideTemplateTranslation` y `TemplateItemTranslation` mediante Prisma.
+- [x] **Y** las subsiguientes consultas para ese template en francés se resuelven como Cache Hit desde MySQL sin invocar a Gemini.
 
 ### Escenario 4: Soberanía Biológica e Interceptación por Lenguaje Natural
 - [x] **Dado** un usuario cuya sesión técnica inició en Castellano (`es`).
@@ -292,16 +292,16 @@ model TemplateItemTranslation {
 - [x] **Y** el orquestador retorna el itinerario en inglés e inyecta `_sys_lang: "en"` en el DTO de respuesta.
 
 ### Escenario 5: Consistencia Absoluta de la Interfaz UI/UX (Zero Dissonance)
-- [ ] **Dado** un cambio de idioma consolidado a Francés (`fr`).
-- [ ] **Cuando** el cliente React (`OrchestratorPage` y `HybridCanvas`) recibe el sobre de respuesta con `_sys_lang: "fr"`.
-- [ ] **Entonces** todos los componentes visuales de control (botones del medidor térmico, niveles de alerta de carteristas, etiquetas de botones de reserva y avisos tácticos) mutan automáticamente al francés mediante el diccionario declarativo del cliente.
-- [ ] **Y** la interfaz permanece íntegra sin mezcla incongruente de idiomas en los textos estáticos.
+- [x] **Dado** un cambio de idioma consolidado a Francés (`fr`).
+- [x] **Cuando** el cliente React (`OrchestratorPage` y `HybridCanvas`) recibe el sobre de respuesta con `_sys_lang: "fr"`.
+- [x] **Entonces** todos los componentes visuales de control (botones del medidor térmico, niveles de alerta de carteristas, etiquetas de botones de reserva y avisos tácticos) mutan automáticamente al francés mediante el diccionario declarativo del cliente.
+- [x] **Y** la interfaz permanece íntegra sin mezcla incongruente de idiomas en los textos estáticos.
 
 ### Escenario 6: Resiliencia Fail-Soft y Persistencia Asíncrona (Anti-Bucle de Cache Miss)
-- [ ] **Dado** un usuario solicitante de un idioma admitido (ej. Alemán `de`) en un template no traducido previamente.
-- [ ] **Cuando** el conector de Gemini agota el tiempo límite de 8000ms o devuelve un error HTTP transitorio.
-- [ ] **Entonces** el cliente recibe de inmediato la versión maestra en Castellano (`es`) encapsulada en un `OperationEnvelope` con advertencia semántica, evitando pantallas congeladas.
-- [ ] **Y** la tarea en background culmina el almacenamiento en MySQL si la respuesta de Gemini se concreta tardíamente, asegurando que el próximo usuario encuentre el Cache Hit y rompa el ciclo de reintentos fallidos.
+- [x] **Dado** un usuario solicitante de un idioma admitido (ej. Alemán `de`) en un template no traducido previamente.
+- [x] **Cuando** el conector de Gemini agota el tiempo límite de 8000ms o devuelve un error HTTP transitorio.
+- [x] **Entonces** el cliente recibe de inmediato la versión maestra en Castellano (`es`) encapsulada en un `OperationEnvelope` con advertencia semántica, evitando pantallas congeladas.
+- [x] **Y** la tarea en background culmina el almacenamiento en MySQL si la respuesta de Gemini se concreta tardíamente, asegurando que el próximo usuario encuentre el Cache Hit y rompa el ciclo de reintentos fallidos.
 
 ---
 
@@ -326,7 +326,7 @@ model TemplateItemTranslation {
    - Gobernanza de estado en `DensityMatrixRepositoryPort` y emisión de cookie `bx_lang`.
    - Tests de triaje con mutación conversacional de idioma.
 
-4. **`PBI-I18N-UI-SYNC-004` — Pendiente de Implementación:** [Sincronización Reactiva de UI en HybridCanvas, ThermalMeter y Orchestrator](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Sincronizaci%C3%B3n%20Reactiva%20de%20UI%20en%20HybridCanvas,%20ThermalMeter%20y%20Orchestrator%20(P1).md)
+4. **`PBI-I18N-UI-SYNC-004` — Realizado (S+ Grade):** [Sincronización Reactiva de UI en HybridCanvas, ThermalMeter y Orchestrator](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Realizado/PBI%20-%20Sincronizaci%C3%B3n%20Reactiva%20de%20UI%20en%20HybridCanvas,%20ThermalMeter%20y%20Orchestrator%20(P1).md)
    - Consumo de `_sys_lang` en `src/app/orchestrator/page.tsx`.
    - Conexión de `HybridCanvas` y `ThermalMeter` con el diccionario declarativo `UI_DICTIONARY`.
    - Localización de botones de afiliados (TheFork, Cabify, Civitatis, etc.) y badges tácticos de carteristas.

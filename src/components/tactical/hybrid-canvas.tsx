@@ -18,6 +18,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { EnrichedRoute, EnrichedWaypoint } from '@/features/planner';
+import {
+  SupportedLanguage,
+  getUiDictionary,
+  type UiDictionary,
+} from '@/features/i18n';
 
 interface HybridCanvasProps {
   itinerary: EnrichedRoute;
@@ -26,6 +31,46 @@ interface HybridCanvasProps {
   onClose?: () => void;
   isStreaming?: boolean;
   thermalState?: 'operational' | 'saturated';
+  lang?: SupportedLanguage;
+}
+
+const CATEGORY_DICTIONARY_KEY: Readonly<
+  Record<string, keyof UiDictionary['categories']>
+> = {
+  GASTRONOMY: 'GASTRONOMIC',
+  CULTURE: 'CULTURAL',
+  ACTIVITY: 'GENERAL',
+  TRANSIT: 'LOGISTICS',
+  GENERAL: 'GENERAL',
+};
+
+function localizePickpocketLevel(
+  level: string,
+  dict: UiDictionary,
+): string {
+  if (
+    level === 'LOW' ||
+    level === 'MEDIUM' ||
+    level === 'HIGH' ||
+    level === 'EXTREME'
+  ) {
+    return dict.pickpocket.levels[level];
+  }
+  return level;
+}
+
+function resolveAffiliateCta(
+  provider: string | undefined,
+  isPriorityAccess: boolean,
+  dict: UiDictionary,
+): string {
+  if (isPriorityAccess) return dict.hybridCanvas.secureEntrance;
+  if (provider === 'THEFORK') return dict.affiliates.theForkDefaultCta;
+  if (provider === 'CABIFY') return dict.affiliates.cabifyDefaultCta;
+  if (provider === 'FREENOW') return dict.affiliates.freeNowDefaultCta;
+  if (provider === 'TIQETS') return dict.affiliates.tiqetsDefaultCta;
+  if (provider === 'CIVITATIS') return dict.affiliates.civitatisDefaultCta;
+  return dict.hybridCanvas.selectOption;
 }
 
 export function HybridCanvas({
@@ -35,7 +80,9 @@ export function HybridCanvas({
   onClose,
   isStreaming,
   thermalState,
+  lang = 'es',
 }: HybridCanvasProps) {
+  const ui = getUiDictionary(lang);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [newStartTime, setNewStartTime] = useState('');
   const [newEndTime, setNewEndTime] = useState('');
@@ -98,7 +145,8 @@ export function HybridCanvas({
     <aside
       id="hybrid-orchestration-canvas"
       className="w-full lg:w-[460px] xl:w-[500px] h-full bg-zinc-900/95 border-l border-zinc-800 text-zinc-100 flex flex-col shadow-2xl backdrop-blur-md transition-all z-20"
-      aria-label="Lienzo de Orquestación Híbrida"
+      aria-label={ui.hybridCanvas.itineraryTitle}
+      data-lang={lang}
     >
       {/* HEADER DEL LIENZO */}
       <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/60">
@@ -108,7 +156,7 @@ export function HybridCanvas({
           </div>
           <div>
             <h2 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-              Lienzo de Orquestación Híbrida
+              {ui.hybridCanvas.itineraryTitle}
               <span className="text-[10px] font-mono uppercase bg-emerald-900/40 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800/40">
                 {isSaturated ? 'S+ Grade' : 'Base'}
               </span>
@@ -126,7 +174,7 @@ export function HybridCanvas({
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-            aria-label="Cerrar lienzo"
+            aria-label={ui.hybridCanvas.close}
           >
             <X className="w-4 h-4" />
           </button>
@@ -192,7 +240,9 @@ export function HybridCanvas({
                         )}`}
                       >
                         {getCategoryIcon(wp.category)}
-                        {wp.category}
+                        {ui.categories[
+                          CATEGORY_DICTIONARY_KEY[wp.category] ?? 'GENERAL'
+                        ]}
                       </span>
 
                       {/* INSIGNIA DE ALERTA DE CARTERISTAS */}
@@ -205,7 +255,8 @@ export function HybridCanvas({
                           title={transitTips}
                         >
                           <ShieldAlert className="w-3 h-3" />
-                          Carteristas: {pickpocketLevel}
+                          {ui.pickpocket.badgePrefix}:{' '}
+                          {localizePickpocketLevel(pickpocketLevel, ui)}
                         </span>
                       )}
                     </div>
@@ -222,7 +273,7 @@ export function HybridCanvas({
                         className="text-[11px] text-emerald-400 hover:text-emerald-300 underline underline-offset-2 ml-1 cursor-pointer"
                         aria-label={`Editar horario de ${wp.title}`}
                       >
-                        Modificar
+                        {ui.hybridCanvas.modifyTime}
                       </button>
                     </div>
                   </div>
@@ -247,7 +298,7 @@ export function HybridCanvas({
               {isEditingTime && (
                 <div className="p-3 bg-zinc-950/80 border-t border-b border-emerald-900/40 text-xs">
                   <p className="text-zinc-300 font-medium mb-2">
-                    Ajustar hora (se recalcularán los eventos posteriores):
+                    {ui.hybridCanvas.adjustTimeNotice}
                   </p>
                   <div className="flex items-center gap-2">
                     <input
@@ -269,13 +320,13 @@ export function HybridCanvas({
                       onClick={() => handleSaveTime(wp.id)}
                       className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold cursor-pointer"
                     >
-                      Aplicar
+                      {ui.hybridCanvas.save}
                     </button>
                     <button
                       onClick={() => setEditingNodeId(null)}
                       className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded text-xs cursor-pointer"
                     >
-                      Cancelar
+                      {ui.hybridCanvas.cancel}
                     </button>
                   </div>
                 </div>
@@ -344,7 +395,7 @@ export function HybridCanvas({
                       {opt.isPriorityAccess && (
                         <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 w-fit">
                           <Zap className="w-3 h-3 fill-amber-400" />
-                          Acceso Prioritario Preventivo
+                          {ui.hybridCanvas.priorityAccessNotice}
                         </div>
                       )}
 
@@ -402,7 +453,13 @@ export function HybridCanvas({
                                 : 'text-emerald-400 hover:text-emerald-300'
                             }`}
                           >
-                            <span>{opt.ctaLabel ?? (opt.isPriorityAccess ? 'Asegurar Entrada' : 'Reservar')}</span>
+                            <span>
+                              {resolveAffiliateCta(
+                                opt.provider,
+                                Boolean(opt.isPriorityAccess),
+                                ui,
+                              )}
+                            </span>
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>

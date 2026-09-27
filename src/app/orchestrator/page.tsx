@@ -9,6 +9,11 @@ import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, 
 
 import { TacticalRoute, EnrichedRoute, ChronologicalPropagator, consumeOrchestratorStream } from '@/features/planner';
 import { ThermalMeter } from '@/features/triage/components/thermal-meter';
+import {
+  SupportedLanguage,
+  SupportedLanguageVo,
+  getUiDictionary,
+} from '@/features/i18n';
 
 type Turn = {
   id: string;
@@ -62,6 +67,8 @@ export default function OrchestratorPage() {
     missingVariable: null,
     matrixId: 'default',
   });
+  const [sysLang, setSysLang] = useState<SupportedLanguage>('es');
+  const ui = getUiDictionary(sysLang);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Ignición Contextual proactiva al montar la página (PBI-TRIAGE-IGN-003)
@@ -75,6 +82,9 @@ export default function OrchestratorPage() {
         const envelope = await res.json().catch(() => ({}));
         if (isSubscribed && envelope?.success && envelope?.result) {
           const outcome = envelope.result;
+          if (typeof outcome._sys_lang === 'string') {
+            setSysLang(SupportedLanguageVo.from(outcome._sys_lang).value);
+          }
           setIgnitionState({
             greeting: outcome.greeting,
             sparks: (outcome.sparks || []).map(
@@ -161,6 +171,16 @@ export default function OrchestratorPage() {
         });
 
         const triageData = await triageRes.json().catch(() => ({}));
+
+        if (
+          isSubscribed &&
+          triageData &&
+          typeof triageData === 'object' &&
+          '_sys_lang' in triageData &&
+          typeof triageData._sys_lang === 'string'
+        ) {
+          setSysLang(SupportedLanguageVo.from(triageData._sys_lang).value);
+        }
 
         // Sincronización Termodinámica con el Medidor de Densidad (PBI-TRIAGE-THM-002)
         if (isSubscribed && typeof triageData.score === 'number') {
@@ -448,7 +468,10 @@ export default function OrchestratorPage() {
 
   return (
 
-    <div className="flex flex-col lg:flex-row h-screen bg-surface-canvas text-content-primary overflow-hidden">
+    <div
+      className="flex flex-col lg:flex-row h-screen bg-surface-canvas text-content-primary overflow-hidden"
+      data-sys-lang={sysLang}
+    >
       
       {/* ZONA DE CONVERSACIÓN (Scroll iterativo) */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -639,6 +662,7 @@ export default function OrchestratorPage() {
             isThresholdSatisfied={thermalState.isThresholdSatisfied}
             missingVariable={thermalState.missingVariable}
             matrixId={thermalState.matrixId}
+            lang={sysLang}
             onForceDispatch={thermalState.isThresholdSatisfied ? handleForceDispatch : undefined}
             isDispatching={isStreamingItinerary || isLocked}
           />
@@ -646,7 +670,7 @@ export default function OrchestratorPage() {
             <textarea
               className="w-full bg-white border border-layout-divider-strong text-content-primary placeholder:text-zinc-400 rounded-lg py-3 pl-4 pr-14 resize-none focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-focus-tactical transition-all shadow-xs disabled:opacity-50 text-sm sm:text-base leading-normal"
               rows={2}
-              placeholder="¿Qué experiencia táctica deseas orquestar en Barcelona?"
+              placeholder={ui.chat.inputPlaceholder}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isLocked}
@@ -661,7 +685,7 @@ export default function OrchestratorPage() {
               type="submit"
               disabled={!inputValue.trim() || isLocked}
               className="absolute right-2.5 sm:right-3 p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              aria-label="Enviar mensaje"
+              aria-label={ui.chat.sendButton}
             >
               <Send className="w-4 h-4" />
             </button>
@@ -680,6 +704,7 @@ export default function OrchestratorPage() {
         onClose={() => setActiveItinerary(null)}
         isStreaming={isStreamingItinerary}
         thermalState={thermalState.score >= 100 ? 'saturated' : 'operational'}
+        lang={sysLang}
       />
     )}
 

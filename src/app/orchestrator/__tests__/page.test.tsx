@@ -62,13 +62,13 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
 
   it('renders initial state correctly (Fase 0)', () => {
     render(<OrchestratorPage />);
-    expect(screen.getByPlaceholderText(/Qué experiencia táctica/i)).toBeDefined();
+    expect(screen.getByPlaceholderText(/Indica tus preferencias/i)).toBeDefined();
     expect(screen.getByText(/SISTEMA EN ESPERA/i)).toBeDefined();
   });
 
   it('transitions from Fase 0 to Fase 3 and displays the Lateral HybridCanvas', async () => {
     render(<OrchestratorPage />);
-    const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
+    const input = screen.getByPlaceholderText(/Indica tus preferencias/i) as HTMLTextAreaElement;
     const button = screen.getByRole('button');
 
     fireEvent.change(input, { target: { value: 'Quiero ir a la playa' } });
@@ -84,7 +84,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(await screen.findByText(/Ruta Táctica Consolidada/i, {}, { timeout: 4500 })).toBeDefined();
 
     // Debe desplegar el Lienzo Lateral Híbrido
-    expect(await screen.findByText(/Lienzo de Orquestación Híbrida/i, {}, { timeout: 2000 })).toBeDefined();
+    expect(await screen.findByText(/Itinerario Táctico/i, {}, { timeout: 2000 })).toBeDefined();
     expect(screen.getByText(/Itinerario Híbrido Enriquecido/i)).toBeDefined();
     expect(screen.getByText(/Entrada General/i)).toBeDefined();
   }, 10000);
@@ -105,7 +105,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     });
 
     render(<OrchestratorPage />);
-    const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
+    const input = screen.getByPlaceholderText(/Indica tus preferencias/i) as HTMLTextAreaElement;
     const button = screen.getByRole('button');
 
     fireEvent.change(input, { target: { value: 'Hola qué tal' } });
@@ -179,16 +179,48 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(meter.getAttribute('data-thermal-state')).toBe('inert');
 
     // Enviamos un prompt
-    const input = screen.getByPlaceholderText(/Qué experiencia táctica/i) as HTMLTextAreaElement;
-    const button = screen.getByRole('button', { name: /Enviar mensaje/i });
+    const input = screen.getByPlaceholderText(/Indica tus preferencias/i) as HTMLTextAreaElement;
+    const button = screen.getByRole('button', { name: /Enviar/i });
 
     fireEvent.change(input, { target: { value: 'Vamos 2 personas durante 4 horas' } });
     fireEvent.submit(button);
 
     // Debe recibir 75%, superar el umbral de 70% y transicionar a "operational"
-    expect(await screen.findByText(/Umbral operativo superado \(70%\)/i, {}, { timeout: 2500 })).toBeDefined();
+    expect(await screen.findByText(/Operativo · Itinerario Listo \(70%\)/i, {}, { timeout: 2500 })).toBeDefined();
     expect(meter.getAttribute('data-thermal-state')).toBe('operational');
     expect(screen.getByRole('button', { name: /Forjar Ruta Inmediata/i })).toBeDefined();
+  });
+
+  it('muta placeholder y ThermalMeter al francés al recibir _sys_lang desde /api/triage', async () => {
+    global.fetch = vi.fn(async (url) => {
+      if (url === '/api/triage') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            status: 'INCOMPLETE_REPROMPT',
+            score: 30,
+            survivalThreshold: 60,
+            isThresholdSatisfied: false,
+            _sys_lang: 'fr',
+            missingVariable: 'time_window',
+            repromptMessage: 'Combien de temps avez-vous ?',
+          }),
+        } as unknown as Response;
+      }
+      return {} as unknown as Response;
+    });
+
+    render(<OrchestratorPage />);
+    const input = screen.getByPlaceholderText(/Indica tus preferencias/i);
+    fireEvent.change(input, { target: { value: 'Parlez-moi en français' } });
+    fireEvent.submit(screen.getByRole('button', { name: /Enviar/i }));
+
+    expect(
+      await screen.findByPlaceholderText(/Indiquez vos préférences/i, {}, { timeout: 2500 }),
+    ).toBeDefined();
+    expect(screen.getByTestId('thermal-meter').getAttribute('data-lang')).toBe('fr');
+    expect(document.querySelector('[data-sys-lang="fr"]')).toBeDefined();
   });
 });
 

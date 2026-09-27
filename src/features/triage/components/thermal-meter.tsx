@@ -5,6 +5,7 @@ import { cva } from 'class-variance-authority';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import { Flame, CheckCircle, ShieldAlert, Zap, Loader2 } from 'lucide-react';
+import { SupportedLanguageSchema, getUiDictionary } from '@/features/i18n';
 
 
 export const ThermalMeterPropsSchema = z.object({
@@ -16,6 +17,7 @@ export const ThermalMeterPropsSchema = z.object({
   onForceDispatch: z.custom<() => void>().optional(),
 
   isDispatching: z.boolean().optional().default(false),
+  lang: SupportedLanguageSchema.optional(),
   className: z.string().optional(),
 });
 
@@ -56,10 +58,12 @@ export function ThermalMeter({
   matrixId = 'default',
   onForceDispatch,
   isDispatching = false,
+  lang = 'es',
   className,
 }: ThermalMeterProps) {
   const state = deriveThermalState(score, survivalThreshold, isThresholdSatisfied);
   const normalizedScore = Math.min(100, Math.max(0, Math.round(score)));
+  const ui = getUiDictionary(lang);
 
   return (
     <div
@@ -67,6 +71,7 @@ export function ThermalMeter({
       data-testid="thermal-meter"
       data-thermal-state={state}
       data-matrix-id={matrixId}
+      data-lang={lang}
     >
 
       {/* Sección Izquierda: Estado e Indicador de Progreso */}
@@ -86,7 +91,7 @@ export function ThermalMeter({
           aria-valuenow={normalizedScore}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`Densidad térmica del itinerario: ${normalizedScore} por ciento`}
+          aria-label={`${ui.thermalMeter.title}: ${normalizedScore}%`}
           className="h-2 w-20 sm:w-28 bg-zinc-200 rounded-full overflow-hidden shrink-0 relative"
         >
           {/* Marcador del Umbral de Supervivencia */}
@@ -110,23 +115,23 @@ export function ThermalMeter({
         <div className="truncate text-xs">
           {state === 'inert' && (
             <span>
-              Meta: {survivalThreshold}%
+              {ui.thermalMeter.thresholdNeeded} {survivalThreshold}%
               {missingVariable && (
                 <span className="ml-2 inline-block px-1.5 py-0.5 rounded bg-zinc-200/80 text-zinc-700 font-sans text-xs">
-                  Falta: {missingVariable}
+                  {ui.thermalMeter.missingVariablePrefix}: {missingVariable}
                 </span>
               )}
             </span>
           )}
           {state === 'operational' && (
             <span className="text-emerald-800 font-sans font-medium">
-              Umbral operativo superado ({survivalThreshold}%). ¡Ruta viable!
+              {ui.thermalMeter.operational} · {ui.thermalMeter.thresholdMet} ({survivalThreshold}%)
             </span>
           )}
           {state === 'saturated' && (
             <span className="text-emerald-950 font-sans font-bold flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 shrink-0" />
-              Modo Explorador S+ Grade Desbloqueado
+              {ui.thermalMeter.saturated}
             </span>
           )}
         </div>
@@ -148,10 +153,10 @@ export function ThermalMeter({
           {isDispatching ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Forjando...</span>
+              <span>{ui.thermalMeter.forging}</span>
             </>
           ) : (
-            <span>Forjar Ruta Inmediata</span>
+            <span>{ui.thermalMeter.forgeRoute}</span>
           )}
         </button>
       )}

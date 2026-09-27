@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { DefaultDensityPayloadSchema } from '@/features/planner';
-import { SupportedLanguageSchema, SupportedLanguage } from '@/features/i18n';
+import { SupportedLanguageSchema } from '@/features/i18n';
 
 /**
  * Estados posibles del triaje entrópico en la Aduana Universal.
