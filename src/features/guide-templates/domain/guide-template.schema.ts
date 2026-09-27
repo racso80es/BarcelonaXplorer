@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SupportedLanguageSchema } from '@/features/i18n';
 
 /**
  * ============================================================================
@@ -123,6 +124,14 @@ export const GuideTemplateDetailDTOSchema = GuideTemplateDTOSchema.extend({
   items: z.array(TemplateItemDTOSchema),
 });
 export type GuideTemplateDetailDTO = z.infer<typeof GuideTemplateDetailDTOSchema>;
+
+export const LocalizedGuideTemplateDetailDTOSchema = GuideTemplateDetailDTOSchema.extend({
+  language: SupportedLanguageSchema.default('es'),
+  isTranslated: z.boolean().default(false),
+});
+export type LocalizedGuideTemplateDetailDTO = z.infer<
+  typeof LocalizedGuideTemplateDetailDTOSchema
+>;
 
 /**
  * ============================================================================
