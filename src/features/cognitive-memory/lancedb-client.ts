@@ -1,3 +1,4 @@
+import 'server-only';
 import * as lancedb from '@lancedb/lancedb';
 import fs from 'fs';
 import path from 'path';
