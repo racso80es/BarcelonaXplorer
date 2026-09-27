@@ -13,3 +13,5 @@ export * from './audit-telegram-bot-health.use-case.port';
 export * from './reactive/geometric-fatigue.vo';
 export * from './reactive/reactive-drops.schema';
 export * from './reactive/indoor-tactical-shelters';
+export * from './reactive/reactive-patrol.use-case.port';
+export * from './reactive/reactive-patrol.use-case';
