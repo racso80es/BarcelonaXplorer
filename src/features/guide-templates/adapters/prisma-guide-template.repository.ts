@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma } from '@/shared/persistence/prisma';
 import { IGuideTemplateRepositoryPort } from '../ports/guide-template-repository.port';
 import {
   GuideTemplateDTO,
@@ -18,7 +19,7 @@ import {
  * Cumple con Clean Architecture, Pure DI y Fronteras Deterministas (Zod).
  */
 export class PrismaGuideTemplateRepository implements IGuideTemplateRepositoryPort {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
 
   public async findPublishedByCategoryAndSlug(
     categorySlug: string,

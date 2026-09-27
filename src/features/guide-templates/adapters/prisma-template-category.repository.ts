@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma } from '@/shared/persistence/prisma';
 import { ITemplateCategoryRepositoryPort } from '../ports/template-category-repository.port';
 import { TemplateCategoryEntity } from '../domain/template-category.entity';
 import {
@@ -11,7 +12,7 @@ import {
  * Cumple con Clean Architecture y Pure DI.
  */
 export class PrismaTemplateCategoryRepository implements ITemplateCategoryRepositoryPort {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
 
   public async findBySlug(slug: string): Promise<TemplateCategoryEntity | null> {
     const record = await this.prisma.templateCategory.findUnique({
