@@ -202,9 +202,16 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(mockItineraryRepo.saveItinerary).toHaveBeenCalledWith(
         'sess-logistics-complete',
         expect.objectContaining({
+          thermalState: 'operational',
           waypoints: expect.arrayContaining([
             expect.objectContaining({
               affiliateProvider: 'CIVITATIS',
+              tacticalMetadata: expect.objectContaining({
+                antiTrapShield: expect.objectContaining({
+                  warnings: expect.arrayContaining([expect.stringContaining('Avenida Gaudí')]),
+                  recommendedAlternatives: [],
+                }),
+              }),
             }),
           ]),
         }),
@@ -214,6 +221,35 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         'default',
       );
     });
+
+    it('HU-10: debe propagar thermalState "saturated" al enriquecedor y persistir en MySQL al saturar al 100%', async () => {
+      const result = await useCase.execute({
+        sessionId: 'sess-logistics-saturated',
+        prompt: 'Tengo 3 horas para ver la Sagrada Familia en pareja, ambiente modernista y sin prisas', // 60 + 15 + 15 + 10 = 100%
+      });
+
+      expect(result.status).toBe('DISPATCH_READY');
+      expect(result.isThresholdSatisfied).toBe(true);
+      expect(result.score).toBe(100);
+      expect(mockItineraryRepo.saveItinerary).toHaveBeenCalledWith(
+        'sess-logistics-saturated',
+        expect.objectContaining({
+          thermalState: 'saturated',
+          waypoints: expect.arrayContaining([
+            expect.objectContaining({
+              affiliateProvider: 'CIVITATIS',
+              tacticalMetadata: expect.objectContaining({
+                antiTrapShield: expect.objectContaining({
+                  warnings: expect.arrayContaining([expect.stringContaining('Avenida Gaudí')]),
+                  recommendedAlternatives: expect.arrayContaining([expect.stringContaining('Estevet')]),
+                }),
+              }),
+            }),
+          ]),
+        }),
+      );
+    });
+
 
     it('CA-3 (PBI-COGN-CACHE-001): debe interceptar por caché semántica vectorial si similitud >= 0.95 y emitir telemetría con tokensSaved', async () => {
       const mockTelemetry = {

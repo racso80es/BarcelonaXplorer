@@ -452,8 +452,11 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       (forgedRoute as TacticalRoute).waypoints
     ) {
       try {
+        const thermalState: 'operational' | 'saturated' =
+          density.score >= 100 ? 'saturated' : 'operational';
         const enriched = await this.affiliateEnricher.enrichRoute(
           forgedRoute as TacticalRoute,
+          thermalState,
         );
         enrichedItinerary = enriched;
 
@@ -469,7 +472,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         this.emitTelemetry({
           level: 'INFO',
           context: 'SECURITY_PERIMETER',
-          message: `[Afiliados Enriquecimiento] ${enriched.waypoints.length} parcelas cruzadas`,
+          message: `[Afiliados Enriquecimiento] ${enriched.waypoints.length} parcelas cruzadas (${thermalState})`,
           statusCode: 200,
           durationMs: Date.now() - startTime,
           payload: {
@@ -478,10 +481,12 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
             provider: primaryProvider,
             query: trimmedPrompt.slice(0, 100),
             optionsGenerated: totalOptions,
+            thermalState,
             durationMs: Date.now() - startTime,
             statusCode: 200,
           },
         });
+
 
         // CA-4: Persistencia Relacional MySQL en Prisma
         if (this.itineraryRepo) {
@@ -617,8 +622,20 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       }
     }
 
+    // 5. constraints (10%)
+    if (!payload.constraints || payload.constraints.length === 0) {
+      const constraintMatches: string[] = [];
+      if (/\b(sin prisas|sin prisa|tranquil\w*|calma)\b/i.test(prompt)) constraintMatches.push('sin prisas');
+      if (/\b(barat\w+|econ[oó]mic\w+|bajo coste)\b/i.test(prompt)) constraintMatches.push('económico');
+      if (/\b(accesible|movilidad reducida|en silla de ruedas)\b/i.test(prompt)) constraintMatches.push('accesible');
+      if (constraintMatches.length > 0) {
+        payload.constraints = constraintMatches;
+      }
+    }
+
     return payload;
   }
+
 
   private async isCasualDialogueIntent(
     prompt: string,

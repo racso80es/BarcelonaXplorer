@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const prompt = body?.prompt;
+    const thermalState = body?.thermalState === 'saturated' ? 'saturated' : 'operational';
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
       return NextResponse.json(
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return createStreamResponse(req, prompt.trim());
+    return createStreamResponse(req, prompt.trim(), thermalState);
   } catch (err) {
     return NextResponse.json(
       { error: 'Error procesando la solicitud de streaming.', details: err instanceof Error ? err.message : String(err) },
@@ -37,6 +38,8 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const prompt = req.nextUrl.searchParams.get('prompt');
+  const thermalState = req.nextUrl.searchParams.get('thermalState') === 'saturated' ? 'saturated' : 'operational';
+
   if (!prompt || prompt.trim().length === 0) {
     return NextResponse.json(
       { error: 'El parámetro query "prompt" es obligatorio.' },
@@ -44,10 +47,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return createStreamResponse(req, prompt.trim());
+  return createStreamResponse(req, prompt.trim(), thermalState);
 }
 
-function createStreamResponse(req: NextRequest, prompt: string): Response {
+function createStreamResponse(
+  req: NextRequest,
+  prompt: string,
+  thermalState: 'operational' | 'saturated' = 'operational',
+): Response {
+
   const encoder = new TextEncoder();
   const routeId = `route-${randomUUID()}`;
 
@@ -157,7 +165,7 @@ function createStreamResponse(req: NextRequest, prompt: string): Response {
         }
 
         // 4. Enriquecimiento con Proveedores de Afiliación (affiliate_injected)
-        const enrichedRoute: EnrichedRoute = await affiliateEnricher.enrichRoute(generated);
+        const enrichedRoute: EnrichedRoute = await affiliateEnricher.enrichRoute(generated, thermalState);
 
         for (const enrichedWp of enrichedRoute.waypoints) {
           if (req.signal.aborted) {
