@@ -13,6 +13,7 @@ import {
   DeviceType,
 } from './ignition.schema';
 import { OperationEnvelope, createSuccessEnvelope } from '@/shared/operation-envelope';
+import { SupportedLanguageVo } from '@/features/i18n';
 
 export interface ContextualIgnitionInput {
   sessionId: string;
@@ -69,7 +70,7 @@ export class ContextualIgnitionUseCase {
     const detectedHour = this.getBarcelonaHour(clientTimestamp);
     const period = classifyTimeWindow(detectedHour);
     const device = detectDeviceType(input.userAgent);
-    const language = (input.language || 'es').slice(0, 5);
+    const language = SupportedLanguageVo.from(input.language).value;
 
     // 2. Telemetría meteorológica (Fail-Soft incorporado en el puerto)
     const weather = await this.weatherPort.getBarcelonaWeather();
@@ -159,6 +160,7 @@ export class ContextualIgnitionUseCase {
       device,
       sparks,
       contextSummary: `Hora: ${detectedHour}:00 (${period}) | Dispositivo: ${device} | Clima: ${weather.summary} (${weather.temperatureCelsius}ºC)`,
+      _sys_lang: language,
     };
 
     const durationMs = Date.now() - startTime;

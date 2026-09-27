@@ -19,6 +19,12 @@ import {
   buildContextualGreetingUserPrompt,
 } from './prompts/contextual-greeting.prompt';
 import type { IgnitionSensoryContextDto } from '@/features/triage/ignition.schema';
+import { z } from 'zod';
+import {
+  SupportedLanguage,
+  SupportedLanguageVo,
+  SUPPORTED_LANGUAGES,
+} from '@/features/i18n';
 
 /**
  * Adaptador de Infraestructura para el SLM Rápido Conversacional usando Groq (System Two Ligero).
@@ -385,6 +391,77 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
       }
 
       return fallbackMessage;
+    }
+  }
+
+  async detectLanguageIntent(
+    prompt: string,
+    currentLanguage: SupportedLanguage,
+  ): Promise<SupportedLanguage> {
+    if (!this.client) {
+      return currentLanguage;
+    }
+
+    const startTime = Date.now();
+    const whitelist = SUPPORTED_LANGUAGES.join(', ');
+
+    try {
+      const completion = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: `Eres un clasificador lingüístico determinista. Responde ÚNICAMENTE con JSON {"language":"<code>"} donde <code> es exactamente uno de: ${whitelist}. Si el usuario pide un cambio de idioma, usa ese código. Si no hay cambio claro, usa el idioma actual.`,
+          },
+          {
+            role: 'user',
+            content: `Idioma actual: ${currentLanguage}\nMensaje: ${prompt}`,
+          },
+        ],
+        temperature: 0,
+        max_tokens: 24,
+        response_format: { type: 'json_object' },
+      });
+
+      const raw = completion.choices[0]?.message?.content?.trim();
+      let candidate: string | undefined;
+      if (raw) {
+        try {
+          const parsed: unknown = JSON.parse(raw);
+          const boxed = z.object({ language: z.string() }).safeParse(parsed);
+          candidate = boxed.success ? boxed.data.language : raw;
+        } catch {
+          candidate = raw;
+        }
+      }
+
+      const resolved = SupportedLanguageVo.from(candidate ?? currentLanguage).value;
+
+      if (process.env.TELEMETRY_LLM_ENABLED !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo
+          .log(
+            new TelemetryEntry(
+              'INFO',
+              'LLM_ENGINE',
+              '[Groq Conversational SLM] Intención lingüística acorralada',
+              {
+                model: this.model,
+                currentLanguage,
+                resolved,
+                durationMs: Date.now() - startTime,
+              },
+              200,
+              Date.now() - startTime,
+            ),
+          )
+          .catch((e) =>
+            console.warn('[Telemetry Groq SLM Language Fire-and-Forget Error]', e),
+          );
+      }
+
+      return resolved;
+    } catch {
+      return currentLanguage;
     }
   }
 }

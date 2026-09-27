@@ -26,6 +26,13 @@ import { ICognitiveMemoryPort, ISemanticCachePort } from '@/features/cognitive-m
 import { IEmbeddingPort } from '@/features/ai-engine';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 import { TriageOutcomeDto } from './triage.schema';
+import { SupportedLanguage, SupportedLanguageVo } from '@/features/i18n';
+import {
+  buildRouteLanguageDirective,
+  detectLanguageFromPrompt,
+  looksLikeLanguageSwitch,
+  resolveBaselineLanguage,
+} from './language-detector';
 
 /**
  * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-ARCH-ORCH-001).
@@ -102,6 +109,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
             constraints: defaultPrior.constraints ? [...defaultPrior.constraints] : [],
             vibe: defaultPrior.vibe,
             mood: defaultPrior.mood,
+            language: defaultPrior.language,
           };
         }
       } catch {
@@ -109,12 +117,19 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       }
     }
 
+    const sovereignLang = await this.resolveSovereignLanguage(
+      trimmedPrompt,
+      priorPayload.language,
+      input.clientLanguage,
+    );
+
     // 2. Preparar contexto inmutable para Jev AI (System One)
     const stateContext = JSON.stringify({
       sessionId: input.sessionId,
       prompt: trimmedPrompt,
       matrixId,
       accumulated: priorPayload,
+      language: sovereignLang,
     });
 
     // 2.1 Interceptación por Caché Semántica Vectorial (PBI-COGN-CACHE-001)
@@ -130,6 +145,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
             sessionId: input.sessionId,
             matrixId,
             durationMs: Date.now() - startTime,
+            _sys_lang: sovereignLang,
           });
 
           this.emitTelemetry({
@@ -277,6 +293,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         rejectedEntity: entityToBounce,
         geographicScope,
         durationMs,
+        _sys_lang: sovereignLang,
       });
     }
 
@@ -317,16 +334,24 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         },
       });
 
+      const casualPayload = { ...priorPayload, language: sovereignLang };
+      await this.matrixRepo.saveMatrixPayload(
+        input.sessionId,
+        matrixId,
+        casualPayload,
+      );
+
       const casualOutcome = TriageOutcome.createCasualDialogue({
         sessionId: input.sessionId,
         matrixId,
         dialogueMessage,
         durationMs,
-        score: calculateMatrixDensity(matrixId, priorPayload).score,
+        score: calculateMatrixDensity(matrixId, casualPayload).score,
         survivalThreshold: 60,
-        partialPayload: priorPayload,
+        partialPayload: casualPayload,
         geographicScope,
         detectedDistricts,
+        _sys_lang: sovereignLang,
       });
 
       this.saveToSemanticCache(trimmedPrompt, promptVector, casualOutcome);
@@ -340,6 +365,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       priorPayload,
       detectedDistricts,
       input.mood,
+      sovereignLang,
     );
 
     // 5. Evaluación del Peaje Termodinámico (Reglas de Matriz HU 6)
@@ -395,6 +421,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         geographicScope,
         detectedDistricts,
         durationMs,
+        _sys_lang: sovereignLang,
       });
     }
 
@@ -435,7 +462,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       const gpsLabel = input.userLocation
         ? ` | GPS: ${input.userLocation.lat},${input.userLocation.lng}`
         : '';
-      const enrichedPrompt = `[Geo: Barcelona | Distritos: ${districtsLabel}${gpsLabel}] ${trimmedPrompt} | Contexto Semántico: ${denseMatrix.toDensePromptString()}`;
+      const enrichedPrompt = `${buildRouteLanguageDirective(sovereignLang)} [Geo: Barcelona | Distritos: ${districtsLabel}${gpsLabel}] ${trimmedPrompt} | Contexto Semántico: ${denseMatrix.toDensePromptString()}`;
       forgedRoute = await this.routeUseCase.execute({
         prompt: enrichedPrompt,
         environment: {
@@ -531,6 +558,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       geographicScope,
       detectedDistricts,
       durationMs,
+      _sys_lang: sovereignLang,
     });
 
     this.saveToSemanticCache(trimmedPrompt, promptVector, dispatchOutcome);
@@ -543,6 +571,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     priorPayload: Partial<DefaultDensityPayload>,
     detectedDistricts: readonly string[] = [],
     inputMood?: 'relaxed' | 'adventurous' | 'cultural' | 'gastronomic',
+    language: SupportedLanguage = 'es',
   ): Promise<DefaultDensityPayload> {
     const combinedDistricts = Array.from(
       new Set([...(priorPayload.districts ?? []), ...detectedDistricts]),
@@ -552,6 +581,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       constraints: [],
       ...priorPayload,
       districts: combinedDistricts,
+      language,
     };
 
     // 1. time_window (Vector Crítico de 60%)
@@ -676,6 +706,36 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       return evalResult.isAffirmative;
     } catch {
       return false;
+    }
+  }
+
+  private async resolveSovereignLanguage(
+    prompt: string,
+    persistedLanguage?: string,
+    clientLanguage?: string,
+  ): Promise<SupportedLanguage> {
+    const currentLanguage = resolveBaselineLanguage(
+      persistedLanguage,
+      clientLanguage,
+    );
+    const heuristicLang = detectLanguageFromPrompt(prompt, currentLanguage);
+
+    if (heuristicLang !== currentLanguage) {
+      return heuristicLang;
+    }
+
+    if (!looksLikeLanguageSwitch(prompt)) {
+      return currentLanguage;
+    }
+
+    try {
+      const slmLang = await this.conversationalSlm.detectLanguageIntent(
+        prompt,
+        currentLanguage,
+      );
+      return SupportedLanguageVo.from(slmLang).value;
+    } catch {
+      return currentLanguage;
     }
   }
 

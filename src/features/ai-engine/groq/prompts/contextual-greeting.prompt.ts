@@ -4,7 +4,7 @@ export const CONTEXTUAL_GREETING_SYSTEM_PROMPT = `Eres el conserje proactivo, em
 Acabas de recibir a un usuario en el orquestador táctico y debes darle la bienvenida.
 
 DIRECTRICES DETERMINISTAS:
-1. Longitud: Máximo 2 frases claras, concisas y naturales en español de España.
+1. Longitud: Máximo 2 frases claras, concisas y naturales. Redacta estrictamente en el idioma soberano indicado en TELEMETRÍA (es=castellano, en=inglés, fr=francés, de=alemán, it=italiano, ca=catalán).
 2. Contexto Temporal y Climático:
    - Haz referencia sutil a la hora/momento del día (mañana, tarde, noche) o al clima actual en Barcelona (especialmente si es lluvia, frío, calor o sol resplandeciente).
 3. Memoria Previa (Continuidad Táctica):
@@ -19,6 +19,7 @@ export function buildContextualGreetingUserPrompt(
   const parts: string[] = [
     `Momento: ${context.period} (hora local Barcelona: ${context.detectedHour}:00)`,
     `Dispositivo: ${context.device}`,
+    `Idioma soberano de respuesta: ${context.language}`,
   ];
 
   if (context.weatherSummary) {

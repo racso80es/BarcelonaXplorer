@@ -109,6 +109,9 @@ describe('Ignition Sensory Schemas & Helpers (S+ Grade)', () => {
 
       const parsed = IgnitionOutcomeSchema.safeParse(outcome);
       expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data._sys_lang).toBe('es');
+      }
     });
   });
 });

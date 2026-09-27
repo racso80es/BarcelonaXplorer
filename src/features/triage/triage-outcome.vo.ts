@@ -1,6 +1,7 @@
 import { TriageOutcomeDto, TriageStatus } from './triage.schema';
 import { DefaultDensityPayload } from '@/features/planner';
 import { GeographicScope } from '@/features/planner';
+import { SupportedLanguage } from '@/features/i18n';
 
 /**
  * Value Object inmutable que modela y encapsula el resultado de la Aduana Universal.
@@ -25,6 +26,7 @@ export class TriageOutcome {
     public readonly geographicScope?: GeographicScope,
     public readonly detectedDistricts?: readonly string[],
     public readonly durationMs: number = 0,
+    public readonly _sys_lang: SupportedLanguage = 'es',
   ) {
     if (this.detectedDistricts) {
       Object.freeze(this.detectedDistricts);
@@ -43,6 +45,7 @@ export class TriageOutcome {
     rejectedEntity?: string;
     geographicScope?: GeographicScope;
     durationMs: number;
+    _sys_lang?: SupportedLanguage;
   }): TriageOutcome {
     return new TriageOutcome(
       'REBOUND_OUT_OF_SCOPE',
@@ -62,6 +65,7 @@ export class TriageOutcome {
       params.geographicScope,
       undefined,
       params.durationMs,
+      params._sys_lang ?? 'es',
     );
   }
 
@@ -76,6 +80,7 @@ export class TriageOutcome {
     geographicScope?: GeographicScope;
     detectedDistricts?: readonly string[];
     durationMs: number;
+    _sys_lang?: SupportedLanguage;
   }): TriageOutcome {
     return new TriageOutcome(
       'INCOMPLETE_REPROMPT',
@@ -95,6 +100,7 @@ export class TriageOutcome {
       params.geographicScope,
       params.detectedDistricts,
       params.durationMs,
+      params._sys_lang ?? 'es',
     );
   }
 
@@ -108,6 +114,7 @@ export class TriageOutcome {
     geographicScope?: GeographicScope;
     detectedDistricts?: readonly string[];
     durationMs: number;
+    _sys_lang?: SupportedLanguage;
   }): TriageOutcome {
     return new TriageOutcome(
       'CASUAL_DIALOGUE',
@@ -127,6 +134,7 @@ export class TriageOutcome {
       params.geographicScope,
       params.detectedDistricts,
       params.durationMs,
+      params._sys_lang ?? 'es',
     );
   }
 
@@ -141,6 +149,7 @@ export class TriageOutcome {
     geographicScope?: GeographicScope;
     detectedDistricts?: readonly string[];
     durationMs: number;
+    _sys_lang?: SupportedLanguage;
   }): TriageOutcome {
     return new TriageOutcome(
       'DISPATCH_READY',
@@ -160,6 +169,7 @@ export class TriageOutcome {
       params.geographicScope,
       params.detectedDistricts,
       params.durationMs,
+      params._sys_lang ?? 'es',
     );
   }
 
@@ -182,6 +192,7 @@ export class TriageOutcome {
       undefined,
       dto.detectedDistricts,
       dto.durationMs,
+      dto._sys_lang,
     );
   }
 
@@ -204,6 +215,7 @@ export class TriageOutcome {
       payload: this.payload,
       route: this.route,
       itinerary: this.itinerary,
+      _sys_lang: this._sys_lang,
       durationMs: this.durationMs,
     };
   }

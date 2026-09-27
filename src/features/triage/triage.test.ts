@@ -106,6 +106,7 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
         generateEmpatheticDialogue: vi.fn().mockResolvedValue('Barcelona puede agotar; tómate un café.'),
         generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días! Barcelona amanece en movimiento.'),
+        detectLanguageIntent: vi.fn().mockResolvedValue('es'),
       };
 
 
@@ -170,10 +171,15 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         'Uf, estoy agotado',
         expect.any(String),
       );
-      // No debe haber guardado ni borrado matriz de sesión
-      expect(mockMatrixRepo.saveMatrixPayload).not.toHaveBeenCalled();
+      // Persiste el idioma soberano sin despachar ruta ni purgar la sesión
+      expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalledWith(
+        'sess-casual-user',
+        'default',
+        expect.objectContaining({ language: 'es' }),
+      );
       expect(mockMatrixRepo.clearMatrixPayload).not.toHaveBeenCalled();
       expect(mockRouteUseCase.execute).not.toHaveBeenCalled();
+      expect(result._sys_lang).toBe('es');
     });
 
     it('CA-2: debe requerir repregunta si falta el tiempo y la densidad es inferior al 60%', async () => {
@@ -345,6 +351,141 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(outcome.isThresholdSatisfied).toBe(true);
       expect(outcome.status).toBe('DISPATCH_READY');
       expect(mockRouteUseCase.execute).toHaveBeenCalled();
+    });
+  });
+
+  describe('PBI-I18N-TRIAGE-SOVEREIGNTY-003 (Soberanía Biológica)', () => {
+    let mockDecisionEngine: ITypedDecisionEngine;
+    let mockConversationalSlm: IConversationalSLMPort;
+    let mockMatrixRepo: DensityMatrixRepositoryPort;
+    let mockRouteUseCase: GenerateTacticalRouteUseCase;
+    let useCase: TriageInputUseCase;
+
+    beforeEach(() => {
+      mockDecisionEngine = {
+        evaluateHealth: vi.fn(),
+        evaluateNoul: vi.fn().mockResolvedValue({ probability: 0.1, isAffirmative: false }),
+        evaluateChoice: vi.fn(),
+      };
+
+      mockConversationalSlm = {
+        generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
+        generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
+        generateEmpatheticDialogue: vi.fn().mockResolvedValue('Barcelona puede agotar; tómate un café.'),
+        generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días!'),
+        detectLanguageIntent: vi.fn().mockResolvedValue('es'),
+      };
+
+      mockMatrixRepo = {
+        getMatrixPayload: vi.fn().mockResolvedValue({}),
+        saveMatrixPayload: vi.fn().mockResolvedValue(undefined),
+        clearMatrixPayload: vi.fn().mockResolvedValue(undefined),
+      };
+
+      mockRouteUseCase = {
+        execute: vi.fn().mockResolvedValue('ruta'),
+      } as unknown as GenerateTacticalRouteUseCase;
+
+      useCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+      );
+    });
+
+    it('CA-1: debe emitir _sys_lang por defecto en castellano en el DTO', () => {
+      const outcome = TriageOutcome.createIncompleteReprompt({
+        sessionId: 'sess-lang-default',
+        matrixId: 'default',
+        score: 30,
+        survivalThreshold: 60,
+        missingVariable: 'time_window',
+        repromptMessage: '¿Cuánto tiempo tienes?',
+        durationMs: 8,
+      });
+      const dto = outcome.toDto();
+      expect(dto._sys_lang).toBe('es');
+      expect(TriageOutcomeDtoSchema.parse(dto)._sys_lang).toBe('es');
+    });
+
+    it('CA-2: debe interceptar un switch explícito a inglés y persistirlo en la sesión', async () => {
+      const result = await useCase.execute({
+        sessionId: 'sess-switch-en',
+        prompt: 'Please switch to English, I want to explore Gràcia',
+        clientLanguage: 'es',
+      });
+
+      expect(result._sys_lang).toBe('en');
+      expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalledWith(
+        'sess-switch-en',
+        'default',
+        expect.objectContaining({ language: 'en' }),
+      );
+      expect(mockConversationalSlm.detectLanguageIntent).not.toHaveBeenCalled();
+    });
+
+    it('CA-2: debe delegar en el SLM acorralado si hay pista de idioma sin código heurístico', async () => {
+      mockConversationalSlm.detectLanguageIntent = vi.fn().mockResolvedValue('fr');
+
+      const result = await useCase.execute({
+        sessionId: 'sess-slm-fr',
+        prompt: 'Cambia el idioma de la conversación por favor',
+        clientLanguage: 'es',
+      });
+
+      expect(mockConversationalSlm.detectLanguageIntent).toHaveBeenCalledWith(
+        'Cambia el idioma de la conversación por favor',
+        'es',
+      );
+      expect(result._sys_lang).toBe('fr');
+      expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalledWith(
+        'sess-slm-fr',
+        'default',
+        expect.objectContaining({ language: 'fr' }),
+      );
+    });
+
+    it('CA-3: debe recuperar el idioma persistido en la matriz si el prompt no muta', async () => {
+      mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({
+        language: 'de',
+        vibe: 'museos',
+      });
+
+      const result = await useCase.execute({
+        sessionId: 'sess-persisted-de',
+        prompt: 'Quiero una ruta de museos',
+        clientLanguage: 'es',
+      });
+
+      expect(result._sys_lang).toBe('de');
+      expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalledWith(
+        'sess-persisted-de',
+        'default',
+        expect.objectContaining({ language: 'de' }),
+      );
+    });
+
+    it('CA-4: debe instruir a Gemini para redactar el itinerario en el idioma soberano', async () => {
+      mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({
+        time_window: '3 horas',
+        group_size: 2,
+        language: 'es',
+      });
+
+      const result = await useCase.execute({
+        sessionId: 'sess-dispatch-en',
+        prompt: 'Can you plan a 2 hour walk in Born?',
+        clientLanguage: 'es',
+      });
+
+      expect(result.status).toBe('DISPATCH_READY');
+      expect(result._sys_lang).toBe('en');
+      expect(mockRouteUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('[Idioma soberano: en]'),
+        }),
+      );
     });
   });
 });

@@ -7,6 +7,8 @@ import {
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
+import { SupportedLanguageVo } from '@/features/i18n';
 
 export const runtime = 'nodejs';
 
@@ -24,7 +26,10 @@ export async function GET(req: NextRequest) {
       randomUUID();
 
     const userAgent = req.headers.get('user-agent');
-    const language = req.headers.get('accept-language') || 'es';
+    const language =
+      req.cookies.get(BX_LANG_COOKIE)?.value ||
+      req.headers.get('accept-language') ||
+      'es';
 
     const telemetryRepo = new PrismaTelemetryRepository();
     const conversationalSlm = new GroqConversationalSlmAdapter(
@@ -60,6 +65,17 @@ export async function GET(req: NextRequest) {
         maxAge: 30 * 24 * 60 * 60, // 30 días
       });
     }
+
+    const resolvedLang = SupportedLanguageVo.from(
+      envelope.result?._sys_lang ?? language,
+    ).value;
+    response.cookies.set(BX_LANG_COOKIE, resolvedLang, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60,
+    });
 
     return response;
   } catch (error: unknown) {

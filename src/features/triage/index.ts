@@ -46,3 +46,15 @@ export {
   ContextualIgnitionUseCase,
   type ContextualIgnitionInput,
 } from './contextual-ignition.use-case';
+
+export {
+  BX_LANG_COOKIE,
+  LanguageIntentSchema,
+  ROUTE_LANGUAGE_DIRECTIVES,
+  detectLanguageFromPrompt,
+  looksLikeLanguageSwitch,
+  parseLanguageIntent,
+  resolveBaselineLanguage,
+  buildRouteLanguageDirective,
+  type LanguageIntent,
+} from './language-detector';

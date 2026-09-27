@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SupportedLanguageSchema } from '@/features/i18n';
 
 /**
  * Esquema de reglas termodinámicas de una matriz de densidad.
@@ -21,6 +22,7 @@ export const DefaultDensityPayloadSchema = z.object({
   mood: z.enum(['relaxed', 'adventurous', 'cultural', 'gastronomic']).optional(),
   constraints: z.array(z.string()).optional().default([]),
   districts: z.array(z.string()).optional().default([]),
+  language: SupportedLanguageSchema.optional(),
 });
 
 export type DefaultDensityPayload = z.infer<typeof DefaultDensityPayloadSchema>;

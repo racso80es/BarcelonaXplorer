@@ -18,6 +18,8 @@ import {
 } from '@/features/cognitive-memory';
 import { TokenBucketRateLimiter } from '@/features/auth';
 import { TelemetryEntry } from '@/features/telemetry';
+import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
+import { SupportedLanguageVo } from '@/features/i18n';
 
 export const runtime = 'nodejs';
 
@@ -94,6 +96,11 @@ export async function POST(req: NextRequest) {
 
     const matrixId = body?.matrixId || 'default';
     const userLocation = body?.userLocation;
+    const clientLanguage =
+      req.cookies.get(BX_LANG_COOKIE)?.value ||
+      (typeof body?.clientLanguage === 'string' ? body.clientLanguage : undefined) ||
+      req.headers.get('accept-language') ||
+      undefined;
 
     const telemetryRepo = new PrismaTelemetryRepository();
     const decisionEngine = new JevClient(undefined, telemetryRepo);
@@ -130,6 +137,7 @@ export async function POST(req: NextRequest) {
       prompt,
       matrixId,
       userLocation,
+      clientLanguage,
     });
 
     const dto = outcome.toDto();
@@ -146,6 +154,18 @@ export async function POST(req: NextRequest) {
         path: '/',
       });
     }
+
+    response.cookies.set(
+      BX_LANG_COOKIE,
+      SupportedLanguageVo.from(dto._sys_lang).value,
+      {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+      },
+    );
 
     return response;
   } catch (error: unknown) {

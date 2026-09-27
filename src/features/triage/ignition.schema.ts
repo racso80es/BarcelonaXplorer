@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SupportedLanguageSchema } from '@/features/i18n';
 
 export const DeviceTypeEnum = z.enum(['MOBILE', 'DESKTOP', 'TABLET']);
 export type DeviceType = z.infer<typeof DeviceTypeEnum>;
@@ -14,7 +15,7 @@ export type TimeWindowPeriod = z.infer<typeof TimeWindowPeriodEnum>;
 export const IgnitionSensoryContextSchema = z.object({
   sessionId: z.string().uuid(),
   device: DeviceTypeEnum,
-  language: z.string().min(2).max(10).default('es'),
+  language: SupportedLanguageSchema.default('es'),
   clientTimestamp: z.number().int().positive(),
   serverTimestamp: z.number().int().positive(),
   detectedHour: z.number().int().min(0).max(23),
@@ -42,6 +43,7 @@ export const IgnitionOutcomeSchema = z.object({
   device: DeviceTypeEnum,
   sparks: z.array(IgnitionSparkSchema),
   contextSummary: z.string(),
+  _sys_lang: SupportedLanguageSchema.default('es'),
 });
 
 export type IgnitionOutcome = z.infer<typeof IgnitionOutcomeSchema>;

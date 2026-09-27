@@ -16,6 +16,7 @@ describe('ContextualIgnitionUseCase (S+ Grade)', () => {
     generateRepromptMessage: vi.fn().mockResolvedValue('reprompt'),
     generateEmpatheticDialogue: vi.fn().mockResolvedValue('dialogue'),
     generateContextualGreeting: vi.fn().mockResolvedValue(greeting),
+    detectLanguageIntent: vi.fn().mockResolvedValue('es'),
   });
 
   it('Escenario 1: Ignición virgen con lluvia y móvil (sin memoria LanceDB previa)', async () => {
@@ -48,6 +49,7 @@ describe('ContextualIgnitionUseCase (S+ Grade)', () => {
     expect(result.isFallback).toBe(false);
     expect(result.device).toBe('MOBILE');
     expect(result.period).toBe('MORNING');
+    expect(result._sys_lang).toBe('es');
 
     // Chispas: debe incluir chispa meteorológica de alta urgencia por ser lluvia
     const weatherSpark = result.sparks.find((s) => s.type === 'weather');
@@ -158,6 +160,7 @@ describe('ContextualIgnitionUseCase (S+ Grade)', () => {
       generateRepromptMessage: vi.fn(),
       generateEmpatheticDialogue: vi.fn(),
       generateContextualGreeting: vi.fn().mockRejectedValue(new Error('Groq SLM timeout exceeded (250ms)')),
+      detectLanguageIntent: vi.fn().mockResolvedValue('es'),
     };
 
     const useCase = new ContextualIgnitionUseCase(failingSlm, weatherPort);
@@ -177,5 +180,33 @@ describe('ContextualIgnitionUseCase (S+ Grade)', () => {
     expect(result.greeting).toContain('Buenas tardes');
     expect(result.period).toBe('AFTERNOON');
     expect(result.device).toBe('MOBILE');
+  });
+
+  it('Escenario 5: Soberanía lingüística — Accept-Language en whitelist y fallback a castellano', async () => {
+    const weatherPort = createMockWeatherPort({
+      summary: 'Soleado',
+      temperatureCelsius: 24,
+      conditionCode: 0,
+      isAdverse: false,
+    });
+    const mockSlm = createMockSlm('Good morning! Ready to explore Barcelona?');
+    const useCase = new ContextualIgnitionUseCase(mockSlm, weatherPort);
+    const mockTimestamp = new Date('2026-09-26T10:00:00+02:00').getTime();
+
+    const englishEnvelope = await useCase.execute({
+      sessionId: dummySessionId,
+      userAgent: 'Mozilla/5.0',
+      language: 'en-US,en;q=0.9',
+      clientTimestamp: mockTimestamp,
+    });
+    expect(englishEnvelope.result?._sys_lang).toBe('en');
+
+    const fallbackEnvelope = await useCase.execute({
+      sessionId: dummySessionId,
+      userAgent: 'Mozilla/5.0',
+      language: 'ru-RU,ru;q=0.9',
+      clientTimestamp: mockTimestamp,
+    });
+    expect(fallbackEnvelope.result?._sys_lang).toBe('es');
   });
 });

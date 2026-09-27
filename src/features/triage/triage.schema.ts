@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DefaultDensityPayloadSchema } from '@/features/planner';
+import { SupportedLanguageSchema, SupportedLanguage } from '@/features/i18n';
 
 /**
  * Estados posibles del triaje entrópico en la Aduana Universal.
@@ -37,7 +38,7 @@ export type Mood = z.infer<typeof MoodSchema>;
 
 /**
  * DTO de entrada para la evaluación de triaje (Laudo 2: Gobernanza del Estado).
- * Acepta prompt, sessionId, opcionalmente matrixId, coordenadas GPS y estado anímico.
+ * Acepta prompt, sessionId, opcionalmente matrixId, coordenadas GPS, estado anímico e idioma del cliente.
  */
 export const TriageInputSchema = z.object({
   sessionId: z.string().min(1, 'sessionId es requerido'),
@@ -45,6 +46,7 @@ export const TriageInputSchema = z.object({
   matrixId: z.string().default('default'),
   userLocation: UserGpsLocationSchema.optional(),
   mood: MoodSchema.optional(),
+  clientLanguage: z.string().optional(),
 });
 
 export type TriageInputDto = z.input<typeof TriageInputSchema>;
@@ -68,6 +70,7 @@ export const TriageOutcomeDtoSchema = z.object({
   payload: DefaultDensityPayloadSchema.partial().optional(),
   route: z.unknown().optional(),
   itinerary: z.unknown().optional(),
+  _sys_lang: SupportedLanguageSchema.default('es'),
   durationMs: z.number(),
 });
 

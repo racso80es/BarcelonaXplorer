@@ -1,4 +1,5 @@
 import type { IgnitionSensoryContextDto } from '@/features/triage/ignition.schema';
+import type { SupportedLanguage } from '@/features/i18n';
 
 /**
  * Puerto de Salida Hexagonal (Driven Port) para el SLM Rápido Conversacional (System Two Ligero).
@@ -7,6 +8,7 @@ import type { IgnitionSensoryContextDto } from '@/features/triage/ignition.schem
  * 1. Rebotes empáticos y amables ante consultas fuera de perímetro geográfico.
  * 2. Repreguntas orgánicas, atómicas y contextuales para recopilar variables faltantes de la matriz.
  * 3. Saludos proactivos dinámicos de ignición contextual adaptados al entorno y memoria RAG.
+ * 4. Detección de intención lingüística acorralada por whitelist (HU-12 / PBI-003).
  */
 export interface IConversationalSLMPort {
   /**
@@ -51,5 +53,14 @@ export interface IConversationalSLMPort {
   generateContextualGreeting(
     sensoryContext: IgnitionSensoryContextDto,
   ): Promise<string>;
+
+  /**
+   * Extrae el idioma soberano del prompt con salida constreñida a la Whitelist
+   * `es | en | fr | de | it | ca`. Si no hay cambio claro, devuelve el idioma actual.
+   */
+  detectLanguageIntent(
+    prompt: string,
+    currentLanguage: SupportedLanguage,
+  ): Promise<SupportedLanguage>;
 }
 

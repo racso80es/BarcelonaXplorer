@@ -56,9 +56,39 @@ describe('GET /api/triage/ignition', () => {
     expect(body.result.device).toBe('MOBILE');
     expect(body.result.sparks).toBeInstanceOf(Array);
 
-    // Debe haber fijado la cookie bx_session_id
+    // Debe haber fijado la cookie bx_session_id y la cookie de idioma
     const setCookieHeader = res.headers.get('set-cookie');
     expect(setCookieHeader).toContain('bx_session_id=');
+    expect(setCookieHeader).toContain('bx_lang=es');
+  });
+
+  it('normaliza Accept-Language fuera de whitelist a castellano y emite bx_lang=es', async () => {
+    const req = new NextRequest('http://localhost:3000/api/triage/ignition', {
+      headers: {
+        'accept-language': 'ru-RU,ru;q=0.9',
+      },
+    });
+
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.result._sys_lang).toBe('es');
+    expect(res.headers.get('set-cookie')).toContain('bx_lang=es');
+  });
+
+  it('respeta la cookie soberana bx_lang frente a Accept-Language', async () => {
+    const req = new NextRequest('http://localhost:3000/api/triage/ignition', {
+      headers: {
+        'accept-language': 'de-DE,de;q=0.9',
+        cookie: 'bx_lang=en; bx_session_id=12345678-1234-4234-8234-123456789012',
+      },
+    });
+
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.result._sys_lang).toBe('en');
+    expect(res.headers.get('set-cookie')).toContain('bx_lang=en');
   });
 
   it('respeta la cookie existente bx_session_id', async () => {
