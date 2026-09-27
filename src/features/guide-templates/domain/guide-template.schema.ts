@@ -138,7 +138,7 @@ export const CreateTemplateCategoryInputSchema = z.object({
   displayOrder: z.number().int().nonnegative().default(0),
   isActive: z.boolean().default(true),
 });
-export type CreateTemplateCategoryInput = z.infer<typeof CreateTemplateCategoryInputSchema>;
+export type CreateTemplateCategoryInput = z.input<typeof CreateTemplateCategoryInputSchema>;
 
 export const CreateGuideTemplateInputSchema = z.object({
   categoryId: z.string(),
@@ -149,7 +149,7 @@ export const CreateGuideTemplateInputSchema = z.object({
   status: TemplateStatusEnum.default('DRAFT'),
   isFeatured: z.boolean().default(false),
 });
-export type CreateGuideTemplateInput = z.infer<typeof CreateGuideTemplateInputSchema>;
+export type CreateGuideTemplateInput = z.input<typeof CreateGuideTemplateInputSchema>;
 
 export const CreateTemplateItemInputSchema = z.object({
   templateId: z.string(),
@@ -162,4 +162,4 @@ export const CreateTemplateItemInputSchema = z.object({
   tacticalMetadata: TacticalMetadataSchema.optional(),
   affiliateRefs: AffiliateRefsSchema.optional(),
 });
-export type CreateTemplateItemInput = z.infer<typeof CreateTemplateItemInputSchema>;
+export type CreateTemplateItemInput = z.input<typeof CreateTemplateItemInputSchema>;
