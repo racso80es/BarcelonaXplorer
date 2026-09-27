@@ -12,6 +12,10 @@ import {
   ChevronUp,
   X,
   Sparkles,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  Zap,
 } from 'lucide-react';
 import { EnrichedRoute, EnrichedWaypoint } from '@/features/planner';
 
@@ -21,6 +25,7 @@ interface HybridCanvasProps {
   onTimeShift: (nodeId: string, newStartTime: string, newEndTime?: string) => void;
   onClose?: () => void;
   isStreaming?: boolean;
+  thermalState?: 'operational' | 'saturated';
 }
 
 export function HybridCanvas({
@@ -29,6 +34,7 @@ export function HybridCanvas({
   onTimeShift,
   onClose,
   isStreaming,
+  thermalState,
 }: HybridCanvasProps) {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [newStartTime, setNewStartTime] = useState('');
@@ -36,6 +42,9 @@ export function HybridCanvas({
   const [expandedNodeId, setExpandedNodeId] = useState<string | null>(
     itinerary.waypoints[0]?.id ?? null,
   );
+
+  const currentThermalState = thermalState ?? itinerary.thermalState ?? 'operational';
+  const isSaturated = currentThermalState === 'saturated';
 
   const handleStartEditTime = (wp: EnrichedWaypoint) => {
     setEditingNodeId(wp.id);
@@ -72,6 +81,19 @@ export function HybridCanvas({
     }
   };
 
+  const getPickpocketBadgeClass = (level: string) => {
+    switch (level) {
+      case 'EXTREME':
+        return 'bg-rose-950/70 text-rose-300 border-rose-500/60 animate-pulse';
+      case 'HIGH':
+        return 'bg-orange-950/70 text-orange-300 border-orange-500/60';
+      case 'MEDIUM':
+        return 'bg-amber-950/60 text-amber-300 border-amber-500/50';
+      default:
+        return 'bg-zinc-800/60 text-zinc-300 border-zinc-700/50';
+    }
+  };
+
   return (
     <aside
       id="hybrid-orchestration-canvas"
@@ -88,7 +110,7 @@ export function HybridCanvas({
             <h2 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
               Lienzo de Orquestación Híbrida
               <span className="text-[10px] font-mono uppercase bg-emerald-900/40 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800/40">
-                S+ Grade
+                {isSaturated ? 'S+ Grade' : 'Base'}
               </span>
               {isStreaming && (
                 <span className="text-[10px] font-mono uppercase bg-amber-900/40 text-amber-300 px-1.5 py-0.5 rounded border border-amber-700/50 animate-pulse">
@@ -111,6 +133,27 @@ export function HybridCanvas({
         )}
       </div>
 
+      {/* BANNER DIDÁCTICO DE RUTA OPERATIVA SEGURA (BASE) O S+ GRADE */}
+      {!isSaturated ? (
+        <div
+          data-testid="canvas-safety-banner"
+          className="mx-4 mt-3 p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs flex items-start gap-2 shadow-xs"
+        >
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <span className="leading-snug">
+            Ruta Operativa Segura. Completa tu perfil para desbloquear alternativas gastronómicas hiperlocales y pases de acceso prioritario.
+          </span>
+        </div>
+      ) : (
+        <div
+          data-testid="canvas-s-grade-banner"
+          className="mx-4 mt-3 p-2.5 rounded-lg bg-emerald-900/30 border border-emerald-400/40 text-emerald-300 text-xs flex items-center gap-2 shadow-xs font-medium"
+        >
+          <Zap className="w-4 h-4 text-emerald-400 fill-emerald-400 shrink-0" />
+          <span>Modo S+ Grade: Escudo de Supervivencia & Curaduría Hiperlocal Activos</span>
+        </div>
+      )}
+
       {/* LISTA DE NODOS / PARCELAS */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {itinerary.waypoints.length === 0 && isStreaming && (
@@ -121,6 +164,10 @@ export function HybridCanvas({
         {itinerary.waypoints.map((wp, index) => {
           const isExpanded = expandedNodeId === wp.id;
           const isEditingTime = editingNodeId === wp.id;
+          const pickpocketLevel = wp.tacticalMetadata?.microLogistics?.pickpocketAlertLevel;
+          const warnings = wp.tacticalMetadata?.antiTrapShield?.warnings ?? [];
+          const alternatives = wp.tacticalMetadata?.antiTrapShield?.recommendedAlternatives ?? [];
+          const transitTips = wp.tacticalMetadata?.microLogistics?.transitTips;
 
           return (
             <div
@@ -147,6 +194,20 @@ export function HybridCanvas({
                         {getCategoryIcon(wp.category)}
                         {wp.category}
                       </span>
+
+                      {/* INSIGNIA DE ALERTA DE CARTERISTAS */}
+                      {pickpocketLevel && (
+                        <span
+                          data-testid={`pickpocket-badge-${wp.id}`}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 font-mono font-semibold ${getPickpocketBadgeClass(
+                            pickpocketLevel,
+                          )}`}
+                          title={transitTips}
+                        >
+                          <ShieldAlert className="w-3 h-3" />
+                          Carteristas: {pickpocketLevel}
+                        </span>
+                      )}
                     </div>
 
                     {/* HORARIO Y PROPAGACIÓN */}
@@ -158,7 +219,7 @@ export function HybridCanvas({
                       </span>
                       <button
                         onClick={() => handleStartEditTime(wp)}
-                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline underline-offset-2 ml-1"
+                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline underline-offset-2 ml-1 cursor-pointer"
                         aria-label={`Editar horario de ${wp.title}`}
                       >
                         Modificar
@@ -171,7 +232,7 @@ export function HybridCanvas({
                   onClick={() =>
                     setExpandedNodeId(isExpanded ? null : wp.id)
                   }
-                  className="p-1 rounded text-zinc-400 hover:text-white"
+                  className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
                   aria-label={isExpanded ? 'Colapsar opciones' : 'Expandir opciones'}
                 >
                   {isExpanded ? (
@@ -206,17 +267,57 @@ export function HybridCanvas({
                     />
                     <button
                       onClick={() => handleSaveTime(wp.id)}
-                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold"
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold cursor-pointer"
                     >
                       Aplicar
                     </button>
                     <button
                       onClick={() => setEditingNodeId(null)}
-                      className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded text-xs"
+                      className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded text-xs cursor-pointer"
                     >
                       Cancelar
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* ESCUDO ANTI-TRAMPAS (WARNINGS VITALES - TÁCTICA DEL REFUGIO) */}
+              {warnings.length > 0 && (
+                <div
+                  data-testid={`anti-trap-warnings-${wp.id}`}
+                  className="p-2.5 mx-3 my-2 rounded-lg bg-amber-950/30 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    {warnings.map((w, wi) => (
+                      <p key={wi} className="leading-snug">{w}</p>
+                    ))}
+                    {transitTips && (
+                      <p className="text-[11px] text-amber-300/80 font-mono mt-1">
+                        💡 Tip de tránsito: {transitTips}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ALTERNATIVAS LOCALES RECOMENDADAS (EXCLUSIVO MODO S+ GRADE) */}
+              {isSaturated && alternatives.length > 0 && (
+                <div
+                  data-testid={`recommended-alternatives-${wp.id}`}
+                  className="p-2.5 mx-3 mb-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-xs"
+                >
+                  <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Alternativas Locales Recomendadas (Sin Trampas):
+                  </div>
+                  <ul className="space-y-1 text-zinc-300 text-xs">
+                    {alternatives.map((alt, ai) => (
+                      <li key={ai} className="flex items-center gap-1.5">
+                        <span className="text-emerald-500">✓</span> {alt}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
@@ -233,15 +334,29 @@ export function HybridCanvas({
                       onClick={() => onSelectOption(wp.id, opt.id)}
                       className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                         opt.isSelected
-                          ? 'border-emerald-500/70 bg-emerald-950/20'
+                          ? opt.isPriorityAccess
+                            ? 'border-amber-500/80 bg-amber-950/20 shadow-xs'
+                            : 'border-emerald-500/70 bg-emerald-950/20'
                           : 'border-zinc-800 bg-zinc-950/40 hover:border-zinc-700'
                       }`}
                     >
+                      {/* BADGE DE ACCESO PRIORITARIO EN S+ GRADE */}
+                      {opt.isPriorityAccess && (
+                        <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40 w-fit">
+                          <Zap className="w-3 h-3 fill-amber-400" />
+                          Acceso Prioritario Preventivo
+                        </div>
+                      )}
+
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2">
                           <div className="mt-0.5">
                             {opt.isSelected ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                              <CheckCircle2
+                                className={`w-4 h-4 shrink-0 ${
+                                  opt.isPriorityAccess ? 'text-amber-400' : 'text-emerald-400'
+                                }`}
+                              />
                             ) : (
                               <div className="w-4 h-4 rounded-full border border-zinc-600 shrink-0" />
                             )}
@@ -263,7 +378,7 @@ export function HybridCanvas({
                         )}
                       </div>
 
-                      {/* ENLACE DE AFILIACIÓN (THEFORK / CIVITATIS) */}
+                      {/* ENLACE DE AFILIACIÓN (THEFORK / CIVITATIS / DROPS CPA) */}
                       {opt.affiliateUrl && (
                         <div className="mt-2.5 pt-2 border-t border-zinc-800/60 flex items-center justify-between">
                           <span className="text-[10px] text-zinc-400 font-mono">
@@ -281,9 +396,13 @@ export function HybridCanvas({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold"
+                            className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+                              opt.isPriorityAccess
+                                ? 'text-amber-300 hover:text-amber-200 bg-amber-950/70 px-2.5 py-1 rounded border border-amber-500/50 shadow-xs'
+                                : 'text-emerald-400 hover:text-emerald-300'
+                            }`}
                           >
-                            <span>Reservar</span>
+                            <span>{opt.ctaLabel ?? (opt.isPriorityAccess ? 'Asegurar Entrada' : 'Reservar')}</span>
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>

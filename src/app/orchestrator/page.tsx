@@ -8,7 +8,7 @@ import { HybridCanvas } from '@/components/tactical/hybrid-canvas';
 import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X, Compass } from 'lucide-react';
 
 import { TacticalRoute, EnrichedRoute, ChronologicalPropagator, consumeOrchestratorStream } from '@/features/planner';
-import { ThermalMeter } from '@/features/triage';
+import { ThermalMeter } from '@/features/triage/components/thermal-meter';
 
 type Turn = {
   id: string;
@@ -679,8 +679,10 @@ export default function OrchestratorPage() {
         onTimeShift={handleTimeShift}
         onClose={() => setActiveItinerary(null)}
         isStreaming={isStreamingItinerary}
+        thermalState={thermalState.score >= 100 ? 'saturated' : 'operational'}
       />
     )}
+
 
   </div>
   );
