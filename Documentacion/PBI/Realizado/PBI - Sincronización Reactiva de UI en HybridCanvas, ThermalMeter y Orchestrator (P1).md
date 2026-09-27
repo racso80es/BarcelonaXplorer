@@ -4,7 +4,7 @@
 **Estatus:** Realizado (S+ Grade)  
 **Fecha de Creación:** 2026-09-27  
 **Fecha de Culminación:** 2026-09-27  
-**Historia de Usuario Relacionada:** [[ARQUITECTURA] Historia de Usuario 12: Internacionalización Reactiva Persistida y Soberanía de Idioma (S+ Grade)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/%5BARQUITECTURA%5D%20Historia%20de%20Usuario%2012:%20Internacionalizaci%C3%B3n%20Reactiva%20Persistida%20y%20Soberan%C3%ADa%20de%20Idioma.md)  
+**Historia de Usuario Relacionada:** [[ARQUITECTURA] Historia de Usuario 12: Internacionalización Reactiva Persistida y Soberanía de Idioma (S+ Grade)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario_Historico/%5BARQUITECTURA%5D%20Historia%20de%20Usuario%2012:%20Internacionalizaci%C3%B3n%20Reactiva%20Persistida%20y%20Soberan%C3%ADa%20de%20Idioma.md)  
 **Módulo:** `src/app/orchestrator/`, `src/components/tactical/`, `src/features/triage/components/`  
 **Entorno:** React 19 Client Components / Next.js 16 / Lucide Icons / Vitest  
 **Prioridad:** Alta (P1 - Cero Disonancia en Experiencia de Usuario)  

@@ -4,7 +4,7 @@
 **Estatus:** Realizado (S+ Grade)  
 **Fecha de Creación:** 2026-09-27  
 **Fecha de Culminación:** 2026-09-27  
-**Historia de Usuario Relacionada:** [[ARQUITECTURA] Historia de Usuario 12: Internacionalización Reactiva Persistida y Soberanía de Idioma (S+ Grade)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario/%5BARQUITECTURA%5D%20Historia%20de%20Usuario%2012:%20Internacionalizaci%C3%B3n%20Reactiva%20Persistida%20y%20Soberan%C3%ADa%20de%20Idioma.md)  
+**Historia de Usuario Relacionada:** [[ARQUITECTURA] Historia de Usuario 12: Internacionalización Reactiva Persistida y Soberanía de Idioma (S+ Grade)](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/HistoriasDeUsuario_Historico/%5BARQUITECTURA%5D%20Historia%20de%20Usuario%2012:%20Internacionalizaci%C3%B3n%20Reactiva%20Persistida%20y%20Soberan%C3%ADa%20de%20Idioma.md)  
 **Módulo:** Vertical Slice i18n (`src/features/i18n/`)  
 **Entorno:** TypeScript 5.8+, Zod 4+, Vitest  
 **Prioridad:** Alta (P1 - Fundamento de Contratos y Dominio i18n)  
