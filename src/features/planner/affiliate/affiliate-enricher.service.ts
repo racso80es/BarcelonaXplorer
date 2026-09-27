@@ -5,13 +5,101 @@ import {
   EnrichedRouteSchema,
   EnrichedWaypoint,
   WaypointOption,
+  TacticalMetadata,
+  PickpocketAlertLevel,
 } from './affiliate-enricher.schema';
 
 import { CircuitBreaker } from './circuit-breaker';
 import { STATIC_AFFILIATE_CATALOG } from './static-affiliate-catalog';
 
+interface TacticalPointKnowledge {
+  keywords: string[];
+  warnings: string[];
+  pickpocketAlertLevel: PickpocketAlertLevel;
+  transitTips: string;
+  recommendedAlternatives: string[];
+  isHighQueue: boolean;
+  priorityAccessTitle?: string;
+  priorityAccessCta?: string;
+  priorityAccessDesc?: string;
+}
+
+const TACTICAL_KNOWLEDGE_BASE: TacticalPointKnowledge[] = [
+  {
+    keywords: ['sagrada familia', 'sagrada família', 'avda gaudi', 'avenida gaudí', 'gaudi'],
+    warnings: [
+      '⚠️ Escudo Anti-Trampas: Evita comer en la Avenida Gaudí adyacente; precios inflados y paellas recalentadas.',
+    ],
+    pickpocketAlertLevel: 'HIGH',
+    transitTips: 'Mantén pertenencias al frente en la salida de Metro L2/L5 Sagrada Família.',
+    recommendedAlternatives: [
+      "Bodega L'Estevet (C/ Mallorca)",
+      'Can Ros (Menú de mercado tradicional a 4 calles)',
+    ],
+    isHighQueue: true,
+    priorityAccessTitle: 'Acceso Prioritario Sin Colas (Sagrada Família)',
+    priorityAccessDesc:
+      'Aforo crítico de alta congestión. Asegura tu acceso prioritario aquí antes de desplazarte para evitar colas de más de 90 minutos.',
+    priorityAccessCta: 'Asegurar Entrada',
+  },
+  {
+    keywords: ['rambla', 'ramblas', 'boqueria', 'boquería', 'gótico', 'gotico', 'catedral', 'drassanes'],
+    warnings: [
+      '⚠️ Escudo Anti-Trampas: Desconfía de terrazas con fotos de paellas y sangrías de 1 litro en La Rambla.',
+    ],
+    pickpocketAlertLevel: 'EXTREME',
+    transitTips:
+      'Atención a distracciones con mapas o peticiones de firmas falsas en torno al mosaico de Miró.',
+    recommendedAlternatives: [
+      'Bar del Pla (C/ Montcada)',
+      'El Xampanyet (Born auténtico)',
+      'Bar La Plata (C/ Mercè)',
+    ],
+    isHighQueue: false,
+  },
+  {
+    keywords: ['park güell', 'park guell', 'guell'],
+    warnings: [
+      '⚠️ Escudo Anti-Trampas: Vendedores no autorizados cobran suplementos abusivos en las inmediaciones.',
+    ],
+    pickpocketAlertLevel: 'MEDIUM',
+    transitTips:
+      'Accede por las escaleras mecánicas de Baixada de la Glòria para evitar la pendiente pronunciada.',
+    recommendedAlternatives: [
+      'Terraza La Cabaña (C/ Verdi, Gràcia)',
+      'Bar Casi (Cocina casera en Horta-Guinardó)',
+    ],
+    isHighQueue: true,
+    priorityAccessTitle: 'Ticket Anticipado Zona Monumental (Park Güell)',
+    priorityAccessDesc:
+      'Aforo crítico de alta congestión. Asegura tu acceso prioritario aquí antes de desplazarte para evitar colas de más de 90 minutos.',
+    priorityAccessCta: 'Reservar Pase',
+  },
+  {
+    keywords: ['casa batlló', 'casa batllo', 'casa milà', 'casa mila', 'pedrera', 'passeig de gracia'],
+    warnings: [
+      '⚠️ Escudo Anti-Trampas: Terrazas de Passeig de Gràcia aplican recargos abusivos de servicio no señalizados.',
+    ],
+    pickpocketAlertLevel: 'MEDIUM',
+    transitTips:
+      'Usa el pasaje subterráneo de Passeig de Gràcia para cruzar sin esperas de semáforos.',
+    recommendedAlternatives: [
+      'Cervecería Catalana (C/ Mallorca)',
+      'Betlem Miscel·lània Gastronòmica (C/ Girona)',
+    ],
+    isHighQueue: true,
+    priorityAccessTitle: 'Entrada VIP Sin Colas (Casa Batlló / La Pedrera)',
+    priorityAccessDesc:
+      'Aforo crítico de alta congestión. Asegura tu acceso prioritario aquí antes de desplazarte para evitar colas de más de 90 minutos.',
+    priorityAccessCta: 'Acceso VIP Sin Colas',
+  },
+];
+
 export interface IAffiliateEnricherService {
-  enrichRoute(route: TacticalRoute): Promise<EnrichedRoute>;
+  enrichRoute(
+    route: TacticalRoute,
+    thermalState?: 'operational' | 'saturated',
+  ): Promise<EnrichedRoute>;
 }
 
 export class AffiliateEnricherService implements IAffiliateEnricherService {
@@ -65,25 +153,30 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     return this.circuitBreaker;
   }
 
-  async enrichRoute(route: TacticalRoute): Promise<EnrichedRoute> {
+  async enrichRoute(
+    route: TacticalRoute,
+    thermalState: 'operational' | 'saturated' = 'operational',
+  ): Promise<EnrichedRoute> {
     const execution = await this.circuitBreaker.execute(
       async () => {
         const enrichedWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp, index) =>
-          this.enrichWaypoint(wp, index),
+          this.enrichWaypoint(wp, index, thermalState),
         );
         return {
           id: route.id,
           summary: route.summary,
+          thermalState,
           waypoints: enrichedWaypoints,
         };
       },
       () => {
         const fallbackWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp) =>
-          this.fallbackWaypoint(wp),
+          this.fallbackWaypoint(wp, thermalState),
         );
         return {
           id: route.id,
           summary: `${route.summary} (Catálogo Resiliente)`,
+          thermalState,
           waypoints: fallbackWaypoints,
         };
       },
@@ -92,7 +185,16 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     return EnrichedRouteSchema.parse(execution.result);
   }
 
-  private fallbackWaypoint(wp: TacticalWaypoint): EnrichedWaypoint {
+  private matchTacticalKnowledge(textToAnalyze: string): TacticalPointKnowledge | undefined {
+    return TACTICAL_KNOWLEDGE_BASE.find((entry) =>
+      entry.keywords.some((kw) => textToAnalyze.includes(kw)),
+    );
+  }
+
+  private fallbackWaypoint(
+    wp: TacticalWaypoint,
+    thermalState: 'operational' | 'saturated',
+  ): EnrichedWaypoint {
     const textToAnalyze = `${wp.title} ${wp.description}`.toLowerCase();
     const isGastronomy = this.gastronomyKeywords.some((kw) => textToAnalyze.includes(kw));
     const isCultural = this.culturalKeywords.some((kw) => textToAnalyze.includes(kw));
@@ -100,6 +202,9 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     const category = isGastronomy ? 'GASTRONOMY' : isCultural ? 'CULTURE' : 'ACTIVITY';
     const fallbackOptions = STATIC_AFFILIATE_CATALOG[category];
     const primaryOption = fallbackOptions[0];
+
+    const tacticalMatch = this.matchTacticalKnowledge(textToAnalyze);
+    const tacticalMetadata = this.buildTacticalMetadata(tacticalMatch, isGastronomy, thermalState);
 
     return {
       id: wp.id,
@@ -116,10 +221,62 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
       affiliateProvider: primaryOption.provider,
       affiliateUrl: primaryOption.affiliateUrl,
       options: fallbackOptions,
+      tacticalMetadata,
     };
   }
 
-  private enrichWaypoint(wp: TacticalWaypoint, index: number): EnrichedWaypoint {
+  private buildTacticalMetadata(
+    match: TacticalPointKnowledge | undefined,
+    isGastronomy: boolean,
+    thermalState: 'operational' | 'saturated',
+  ): TacticalMetadata | undefined {
+    if (!match && !isGastronomy) {
+      return undefined;
+    }
+
+    const defaultGastronomyWarnings = [
+      '⚠️ Consejo Local: Comprueba que el menú incluya IVA y evita locales con relaciones públicas en la puerta.',
+    ];
+    const defaultGastronomyAlternatives = [
+      'Bodega Montferry (Sants)',
+      'Quimet & Quimet (Poble Sec)',
+    ];
+
+    const warnings = match ? match.warnings : defaultGastronomyWarnings;
+    const pickpocketAlertLevel = match ? match.pickpocketAlertLevel : 'LOW';
+    const transitTips = match ? match.transitTips : undefined;
+
+    // Táctica del Refugio: La seguridad física (warnings, carteristas, tips) viaja siempre.
+    // Curaduría S+ Grade: Las alternativas gastronómicas solo se revelan en modo 'saturated'.
+    const recommendedAlternatives =
+      thermalState === 'saturated'
+        ? match
+          ? match.recommendedAlternatives
+          : defaultGastronomyAlternatives
+        : [];
+
+    return {
+      antiTrapShield: {
+        warnings,
+        recommendedAlternatives,
+      },
+      microLogistics: {
+        pickpocketAlertLevel,
+        transitTips,
+        realWalkingTimeMinutes: 12,
+      },
+      environmentalConditions: {
+        rainFriendly: true,
+        requiresDaylight: false,
+      },
+    };
+  }
+
+  private enrichWaypoint(
+    wp: TacticalWaypoint,
+    index: number,
+    thermalState: 'operational' | 'saturated',
+  ): EnrichedWaypoint {
     const textToAnalyze = `${wp.title} ${wp.description}`.toLowerCase();
 
     const isGastronomy = this.gastronomyKeywords.some((kw) =>
@@ -146,7 +303,17 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
       provider = 'NONE';
     }
 
-    const options = this.generateOptionsForWaypoint(wp, category, provider, affiliateUrl, index);
+    const tacticalMatch = this.matchTacticalKnowledge(textToAnalyze);
+    const tacticalMetadata = this.buildTacticalMetadata(tacticalMatch, isGastronomy, thermalState);
+    const options = this.generateOptionsForWaypoint(
+      wp,
+      category,
+      provider,
+      affiliateUrl,
+      index,
+      thermalState,
+      tacticalMatch,
+    );
 
     return {
       id: wp.id,
@@ -163,6 +330,7 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
       affiliateProvider: provider,
       affiliateUrl,
       options,
+      tacticalMetadata,
     };
   }
 
@@ -172,16 +340,32 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     provider: AffiliateProvider,
     affiliateUrl: string | undefined,
     index: number,
+    thermalState: 'operational' | 'saturated',
+    tacticalMatch?: TacticalPointKnowledge,
   ): WaypointOption[] {
+    const isSaturated = thermalState === 'saturated';
+    const isPriorityMonument = isSaturated && tacticalMatch?.isHighQueue;
+
+    const option1Title = isPriorityMonument && tacticalMatch.priorityAccessTitle
+      ? tacticalMatch.priorityAccessTitle
+      : `${wp.title} (Selección Principal)`;
+
+    const option1Desc = isPriorityMonument && tacticalMatch.priorityAccessDesc
+      ? tacticalMatch.priorityAccessDesc
+      : wp.description;
+
     const option1: WaypointOption = {
       id: `opt-${wp.id}-1`,
-      title: `${wp.title} (Selección Principal)`,
-      description: wp.description,
+      title: option1Title,
+      description: option1Desc,
       provider,
       affiliateUrl,
       priceEstimate: category === 'GASTRONOMY' ? '25€ - 40€' : category === 'CULTURE' ? '18€ - 30€' : 'Gratis',
       rating: 4.8,
       isSelected: true,
+      placementTrigger: isPriorityMonument ? 'HIGH_QUEUE_MONUMENT' : undefined,
+      isPriorityAccess: Boolean(isPriorityMonument),
+      ctaLabel: isPriorityMonument ? tacticalMatch.priorityAccessCta : undefined,
     };
 
     let option2Title = `Alternativa en ${wp.title}`;
@@ -215,3 +399,4 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     return [option1, option2];
   }
 }
+
