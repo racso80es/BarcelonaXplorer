@@ -113,3 +113,134 @@ model TacticalItineraryNode {
   @@map("tactical_itinerary_nodes")
 }
 
+// ============================================================================
+// CATÁLOGO DE TEMPLATES Y TAXONOMÍA DINÁMICA (MOTOR HÍBRIDO - HU 9 / HU 12)
+// ============================================================================
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Taxonomía dinámica que gobierna la naturaleza y clasificación de las guías
+model TemplateCategory {
+  id           String                        @id @default(cuid())
+  slug         String                        @unique @db.VarChar(64)
+  name         String                        @db.VarChar(128)
+  description  String                        @db.Text
+  icon         String?                       @db.VarChar(64)
+  displayOrder Int                           @default(0) @map("display_order")
+  isActive     Boolean                       @default(true) @map("is_active")
+  createdAt    DateTime                      @default(now()) @map("created_at")
+  updatedAt    DateTime                      @updatedAt @map("updated_at")
+
+  templates    GuideTemplate[]
+  // Conector reactivo para Internacionalización Persistida (HU 12)
+  translations TemplateCategoryTranslation[]
+
+  @@index([slug])
+  @@index([isActive, displayOrder])
+  @@map("template_categories")
+}
+
+/// Cabecera de la ruta temática curada
+model GuideTemplate {
+  id                String                     @id @default(cuid())
+  categoryId        String                     @map("category_id")
+  category          TemplateCategory           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  slug              String                     @db.VarChar(96)
+  title             String                     @db.VarChar(255)
+  abstract          String                     @db.Text
+  estimatedDuration Int                        @map("estimated_duration") // Duración en minutos
+  status            TemplateStatus             @default(DRAFT)
+  isFeatured        Boolean                    @default(false) @map("is_featured")
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
+
+  items             TemplateItem[]
+  // Conector reactivo para Internacionalización Persistida (HU 12)
+  translations      GuideTemplateTranslation[]
+
+  // Unicidad contextualizada por categoría: permite slugs repetidos en distintas categorías
+  @@unique([categoryId, slug])
+  @@index([slug])
+  @@index([status, isFeatured])
+  @@map("guide_templates")
+}
+
+/// Nodos secuenciales y paradas físicas de la guía
+model TemplateItem {
+  id                String                    @id @default(cuid())
+  templateId        String                    @map("template_id")
+  template          GuideTemplate             @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  orderIndex        Int                       @map("order_index")
+  title             String                    @db.VarChar(255)
+  description       String                    @db.Text
+  coordinatesLat    Float?                    @map("coordinates_lat")
+  coordinatesLng    Float?                    @map("coordinates_lng")
+  approxDurationMin Int                       @default(30) @map("approx_duration_min")
+  tacticalMetadata  Json?                     @map("tactical_metadata") @db.Json
+  affiliateRefs     Json?                     @map("affiliate_refs") @db.Json
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+
+  // Conector reactivo para Internacionalización Persistida (HU 12)
+  translations      TemplateItemTranslation[]
+
+  @@unique([templateId, orderIndex])
+  @@index([templateId, orderIndex])
+  @@map("template_items")
+}
+
+// ============================================================================
+// MODELOS SATÉLITE DE LOCALIZACIÓN REACTIVA PERSISTIDA (CONECTORES HU 12)
+// ============================================================================
+
+/// Traducciones reactivas de categorías (Cache Miss persistido bajo demanda)
+model TemplateCategoryTranslation {
+  id          String           @id @default(cuid())
+  categoryId  String           @map("category_id")
+  category    TemplateCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  language    String           @db.VarChar(5) // ej. 'en', 'fr', 'de', 'it', 'ca'
+  name        String           @db.VarChar(128)
+  description String           @db.Text
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@unique([categoryId, language])
+  @@index([language])
+  @@map("template_category_translations")
+}
+
+/// Traducciones reactivas de cabeceras de guía
+model GuideTemplateTranslation {
+  id          String        @id @default(cuid())
+  templateId  String        @map("template_id")
+  template    GuideTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  language    String        @db.VarChar(5) // ej. 'en', 'fr', 'de', 'it', 'ca'
+  title       String        @db.VarChar(255)
+  abstract    String        @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@unique([templateId, language])
+  @@index([language])
+  @@map("guide_template_translations")
+}
+
+/// Traducciones reactivas de paradas/nodos secuenciales
+model TemplateItemTranslation {
+  id          String       @id @default(cuid())
+  itemId      String       @map("item_id")
+  item        TemplateItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  language    String       @db.VarChar(5) // ej. 'en', 'fr', 'de', 'it', 'ca'
+  title       String       @db.VarChar(255)
+  description String       @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@unique([itemId, language])
+  @@index([language])
+  @@map("template_item_translations")
+}

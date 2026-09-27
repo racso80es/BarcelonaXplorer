@@ -37,9 +37,10 @@
         root_disk_free_mb: "{{ root_disk_avail_output.stdout_lines[1] | trim | int }}"
 
     # Axioma I: Purgado agresivo si el almacenamiento está por debajo del umbral de contingencia (< 3 GB)
+    # Axioma II: Casteo explícito a entero para garantizar frontera determinista en Python 3
     - name: Purgar agresivamente caché de Docker BuildKit ante riesgo de saturación (< 3 GB)
       ansible.builtin.command: docker builder prune -a -f
-      when: root_disk_free_mb < min_root_disk_free_mb
+      when: (root_disk_free_mb | int) < (min_root_disk_free_mb | int)
       changed_when: true
 
     # Axioma I: Poda rutinaria de mantenimiento para contención de crecimiento acumulado
