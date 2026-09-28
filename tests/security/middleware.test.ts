@@ -230,8 +230,8 @@ describe('Admin Security Middleware (middleware.ts)', () => {
       expect(response.status).toBe(401);
 
       expect(fetchSpy).toHaveBeenCalled();
-      const call = fetchSpy.mock.calls.find(([url]) =>
-        String(url).includes('/api/telemetry/log')
+      const call = fetchSpy.mock.calls.find((entry) =>
+        String(entry[0]).includes('/api/telemetry/log')
       );
       expect(call).toBeDefined();
 
@@ -264,8 +264,8 @@ describe('Admin Security Middleware (middleware.ts)', () => {
       expect(response.status).toBe(403);
 
       expect(fetchSpy).toHaveBeenCalled();
-      const call = fetchSpy.mock.calls.find(([url]) =>
-        String(url).includes('/api/telemetry/log')
+      const call = fetchSpy.mock.calls.find((entry) =>
+        String(entry[0]).includes('/api/telemetry/log')
       );
       expect(call).toBeDefined();
 

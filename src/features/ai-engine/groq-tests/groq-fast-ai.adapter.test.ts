@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type Groq from 'groq-sdk';
 import { GroqFastAiAdapter } from '@/features/ai-engine/groq/groq-fast-ai.adapter';
 
 /**
@@ -40,15 +41,14 @@ function createMockGroqStream(
  * Crea un mock del cliente Groq con el método chat.completions.create mockeado.
  * Se inyecta al adaptador via constructor (Dependency Inversion).
  */
-function createMockGroqClient(createFn: ReturnType<typeof vi.fn>) {
+function createMockGroqClient(createFn: ReturnType<typeof vi.fn>): Groq {
   return {
     chat: {
       completions: {
         create: createFn,
       },
     },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any;
+  } as unknown as Groq;
 }
 
 describe('GroqFastAiAdapter', () => {

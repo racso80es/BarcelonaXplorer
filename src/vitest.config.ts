@@ -10,6 +10,7 @@ export default defineConfig({
     setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
     exclude: [
       ...configDefaults.exclude,
+      '../tests/node_modules/**',
       '**/playwright-e2e/**',
       // E2E en vivo (JEV/Groq): fuera del cuádruple oráculo; usar npm run test:live
       '../tests/e2e/**/*.e2e.test.ts',

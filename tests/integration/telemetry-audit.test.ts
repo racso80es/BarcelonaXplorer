@@ -6,6 +6,29 @@ import { TelemetryEntry } from '@/features/telemetry';
 import { TelemetryLogInputSchema } from '@/features/telemetry';
 import * as fs from 'fs';
 import * as path from 'path';
+import { z } from 'zod';
+
+const AuditSensorPayloadSchema = z.object({
+  sensor: z.string(),
+  version: z.string().optional(),
+  metrics: z
+    .object({
+      cpu: z.string(),
+      memory: z.string().optional(),
+    })
+    .optional(),
+});
+
+const SanitizedPayloadSchema = z.object({
+  username: z.string(),
+  password: z.string(),
+  authorization: z.string(),
+  token: z.string(),
+  nested: z.object({
+    apiKey: z.string(),
+    normalData: z.string(),
+  }),
+});
 
 const hasDatabaseUrl = (): boolean => {
   if (process.env.DATABASE_URL) {
@@ -83,8 +106,9 @@ describe.skipIf(!hasDatabaseUrl())(
     expect(saved?.statusCode).toBe(200);
     expect(saved?.durationMs).toBe(15);
     expect(saved?.environment).toBe('test-audit');
-    expect((saved?.payload as any)?.sensor).toBe('MySQL_Core');
-    expect((saved?.payload as any)?.metrics?.cpu).toBe('12%');
+    const sensorPayload = AuditSensorPayloadSchema.parse(saved?.payload);
+    expect(sensorPayload.sensor).toBe('MySQL_Core');
+    expect(sensorPayload.metrics?.cpu).toBe('12%');
   });
 
   it('2. Blindaje Anti-Fugas: Sanitización estricta de credenciales en el payload', async () => {
@@ -114,7 +138,7 @@ describe.skipIf(!hasDatabaseUrl())(
     });
 
     expect(saved).not.toBeNull();
-    const payload = saved?.payload as any;
+    const payload = SanitizedPayloadSchema.parse(saved?.payload);
 
     expect(payload.username).toBe('operador_admin');
     expect(payload.password).toBe('[REDACTED]');

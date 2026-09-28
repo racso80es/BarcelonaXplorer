@@ -186,7 +186,7 @@ Redactados el 2026-09-28 a partir de la tabla "Diferibles" de la sección 9 del 
 | ✅ PBI-STEEL-013 | [Desactivación del drop de fatiga sin progreso](../PBI/Realizado/PBI%20-%20Desactivaci%C3%B3n%20del%20Drop%20de%20Fatiga%20sin%20Progreso%20Real%20%28P2%29.md) | F-12 | P2 — Realizado |
 | ✅ PBI-STEEL-014 | [Telemetría veraz de modelo y tokens](../PBI/Realizado/PBI%20-%20Telemetr%C3%ADa%20Veraz%20de%20Modelo%20y%20Tokens%20%28P2%29.md) | F-13 | P2 — Realizado |
 | ✅ PBI-STEEL-015 | [Gobernanza de render del orquestador y del lienzo](../PBI/Realizado/PBI%20-%20Gobernanza%20de%20Render%20del%20Orquestador%20y%20del%20Lienzo%20%28P2%29.md) | F-14 | P2 — Realizado |
-| PBI-STEEL-016 | [Ampliación del perímetro de los oráculos](../PBI/Pendiente/PBI%20-%20Ampliaci%C3%B3n%20del%20Per%C3%ADmetro%20de%20los%20Or%C3%A1culos%20%28P2%29.md) | F-16, T-07 | P2 |
+| ✅ PBI-STEEL-016 | [Ampliación del perímetro de los oráculos](../PBI/Realizado/PBI%20-%20Ampliaci%C3%B3n%20del%20Per%C3%ADmetro%20de%20los%20Or%C3%A1culos%20%28P2%29.md) | F-16, T-07 | P2 — Realizado |
 | PBI-STEEL-017 | [Externalización de credenciales y renombrado del contenedor](../PBI/Pendiente/PBI%20-%20Externalizaci%C3%B3n%20de%20Credenciales%20y%20Renombrado%20del%20Contenedor%20Web%20%28P2%29.md) | F-17 | P2 |
 | PBI-STEEL-018 | [Colocalización del árbol de tests](../PBI/Pendiente/PBI%20-%20Colocalizaci%C3%B3n%20del%20%C3%81rbol%20de%20Tests%20y%20Destino%20de%20los%20Hu%C3%A9rfanos%20%28P2%29.md) | T-08 | P2 |
 | PBI-STEEL-019 | [Cierre de i18n en lienzo y orquestador](../PBI/Pendiente/PBI%20-%20Cierre%20de%20i18n%20en%20Lienzo%20y%20Orquestador%20%28P3%29.md) | F-15 | P3 |

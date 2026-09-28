@@ -21,7 +21,7 @@ describe('CognitiveKpiCards (Tarjetas de Telemetría Cognitiva)', () => {
 
   const mockVectorStorePort: IVectorStorePort = {
     upsert: vi.fn().mockResolvedValue(undefined),
-    query: vi.fn().mockResolvedValue([]),
+    search: vi.fn().mockResolvedValue([]),
     delete: vi.fn().mockResolvedValue(undefined),
     tableExists: vi.fn().mockResolvedValue(true),
     ping: vi.fn().mockResolvedValue({

@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["playwright-e2e/**/*.ts", "playwright-e2e/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

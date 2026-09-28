@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/telemetry/prune/route';
 
-vi.mock('@/features/telemetry', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/telemetry')>();
+vi.mock('@/features/telemetry', async (importOriginal: () => Promise<typeof import('@/features/telemetry')>) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     PrismaTelemetryRepository: class {

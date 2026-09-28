@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Ampliación del Perímetro de los Oráculos
 
 **Identificador:** PBI-STEEL-016
-**Estatus:** Pendiente (Backlog diferido — no se ejecuta antes de cerrar PBI-STEEL-001 a 009)
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-28
 **Historia de Usuario Relacionada:** [[OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20Historia%20de%20Usuario%2015%3A%20Auditor%C3%ADa%20Ontol%C3%B3gica%20de%20Acero%20y%20Purga%20Kaizen%20%28El%20Hombre%20de%20Acero%29.md)
 **Origen:** [`AUD-OPS-STEEL-001`](../../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md) · F-16, T-07
@@ -34,10 +34,10 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Avisos):** `scripts/audit-anchor.sh` ejecuta el lint con `--max-warnings 0`. CI no tiene otro camino: solo llama a ese script.
-- [ ] **CA-2 (Playwright):** un `tsc --noEmit` con un `tsconfig` que incluya `src/playwright-e2e` forma parte del mismo script. El `tsconfig` de la aplicación puede seguir excluyendo esa carpeta si el script invoca el segundo fichero.
-- [ ] **CA-3 (Groq):** `groq-fast-ai.adapter.test.ts` deja de usar `as any` y de desactivar la regla en la línea. El doble se tipa con el fragmento del cliente que el test usa, o con `vi.mocked` sobre el método real.
-- [ ] **CA-4 (Árbol `tests/`):** si PBI-STEEL-018 todavía no ha vaciado `tests/`, ESLint y `tsc` incluyen esa carpeta mientras exista, para que dejen de ser invisibles los `as any` de `tests/integration/telemetry-audit.test.ts`. Si el árbol ya se ha colocalizado, este criterio se cumple porque esos ficheros pasan a vivir bajo `src/` y entran en el oráculo normal. No se duplica el trabajo de moverlos.
+- [x] **CA-1 (Avisos):** `scripts/audit-anchor.sh` ejecuta el lint con `--max-warnings 0`. CI no tiene otro camino: solo llama a ese script.
+- [x] **CA-2 (Playwright):** un `tsc --noEmit` con un `tsconfig` que incluya `src/playwright-e2e` forma parte del mismo script. El `tsconfig` de la aplicación puede seguir excluyendo esa carpeta si el script invoca el segundo fichero.
+- [x] **CA-3 (Groq):** `groq-fast-ai.adapter.test.ts` deja de usar `as any` y de desactivar la regla en la línea. El doble se tipa con el fragmento del cliente que el test usa, o con `vi.mocked` sobre el método real.
+- [x] **CA-4 (Árbol `tests/`):** si PBI-STEEL-018 todavía no ha vaciado `tests/`, ESLint y `tsc` incluyen esa carpeta mientras exista, para que dejen de ser invisibles los `as any` de `tests/integration/telemetry-audit.test.ts`. Si el árbol ya se ha colocalizado, este criterio se cumple porque esos ficheros pasan a vivir bajo `src/` y entran en el oráculo normal. No se duplica el trabajo de moverlos.
 
 ---
 
@@ -50,4 +50,4 @@
 
 ## 4. Evidencia de Certificación
 
-Pendiente de forja.
+Vitest 479 tests; `npm run lint` con `--max-warnings 0` sobre `src` y `tests/`; `tsc` aplicación + `tsconfig.playwright-e2e.json` + `tests/tsconfig.json` (enlace simbólico `tests/node_modules` → `src/node_modules` creado por `audit-anchor.sh` antes del compile); payload de integración parseado con Zod; mock Groq tipado como `Groq`.
