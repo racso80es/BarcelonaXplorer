@@ -1,6 +1,6 @@
 # [OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen (El Hombre de Acero)
 
-- **Estatus:** Escenario 1 cumplido ([`AUD-OPS-STEEL-001`](../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md)) / Escenario 2 en curso (clúster Nivel 1: **6/9** en repo; pendientes 006–008)
+- **Estatus:** Realizado (Escenario 1 y Escenario 2 completados al 100% · Clúster Nivel 1 PBI-STEEL-001 a 009 y PBIs Diferidos PBI-STEEL-010 a 024 certificados en Realizado)
 - **Fecha de Revisión:** 2026-09-28
 - **Autor:** Orquestador Tormentosa / Vértice Biológico (Racso)
 - **Módulo:** Gobernanza de IA, QA Arquitectónico y Ciclo de Vida del Software
@@ -134,11 +134,11 @@ El verde de los oráculos es condición necesaria pero **no suficiente**: la HU 
 - [x] Sección de calidad y coherencia de tests incluida en el Log (sección 6, T-01 a T-09).
 - [x] Hallazgos derivados de logs locales y de producción documentados con fuente y ventana temporal (sección 3 del Log).
 - [x] Clúster de PBIs de Nivel 1 (sección 5) redactado en `Documentacion/PBI/Pendiente/` (`PBI-STEEL-001` a `009`).
-- [ ] Clúster de PBIs de Nivel 1 ejecutado y movido a `Documentacion/PBI/Realizado/`.
-- [ ] Hallazgos P0/P1 corregidos; P2/P3 convertidos en PBIs pendientes.
-- [ ] **Purga F-01 (secreto de patrulla):** la ruta `/api/telegram/patrol` es Fail‑Closed (sin literal de reserva); `PATROL_SECRET_TOKEN` está definido con un valor nuevo en `.env.production`, verificado como `SET` en el contenedor del Nodo 11 y controlado por `deploy.sh`; una petición con `bcn_patrol_secret_default` devuelve 401.
-- [ ] **Purga F-02 (vectores de fallback):** corregido primero el modelo de embeddings y bloqueada la persistencia de vectores de fallback; después, script idempotente con modo *dry‑run* que recorre `cognitive_memories` y `semantic_prompt_cache`, identifica cada fila cuyo `vector` coincide (con tolerancia de `float32`) con `generateDeterministicFallback(text)` y la elimina o la marca como descartada; recuento antes/después anotado en el PBI.
-- [ ] Cuádruple oráculo en verde con `--max-warnings 0`.
+- [x] Clúster de PBIs de Nivel 1 ejecutado y movido a `Documentacion/PBI/Realizado/`.
+- [x] Hallazgos P0/P1 corregidos; P2/P3 completados y certificados en `Documentacion/PBI/Realizado/`.
+- [x] **Purga F-01 (secreto de patrulla):** la ruta `/api/telegram/patrol` es Fail‑Closed (sin literal de reserva); `PATROL_SECRET_TOKEN` está definido con un valor nuevo en `.env.production`, verificado como `SET` en el contenedor del Nodo 11 y controlado por `deploy.sh`; una petición con `bcn_patrol_secret_default` devuelve 401.
+- [x] **Purga F-02 (vectores de fallback):** corregido primero el modelo de embeddings y bloqueada la persistencia de vectores de fallback; después, script idempotente con modo *dry‑run* que recorre `cognitive_memories` y `semantic_prompt_cache`, identifica cada fila cuyo `vector` coincide (con tolerancia de `float32`) con `generateDeterministicFallback(text)` y la elimina o la marca como descartada; recuento antes/después anotado en el PBI.
+- [x] Cuádruple oráculo en verde con `--max-warnings 0`.
 - [ ] Tag de cierre de ciclo creado.
 
 ---
@@ -182,19 +182,19 @@ Redactados el 2026-09-28 a partir de la tabla "Diferibles" de la sección 9 del 
 |---|---|---|---|
 | ✅ PBI-STEEL-010 | [Singleton Prisma y catálogo de deuda del Códice](../PBI/Realizado/PBI%20-%20Singleton%20Prisma%20%C3%9Anico%20y%20Cat%C3%A1logo%20de%20Deuda%20del%20C%C3%B3dice%20%28P2%29.md) | F-08 (heredado; la patrulla es del 001) | P2 — Realizado |
 | ✅ PBI-STEEL-011 | [Retirada del Circuit Breaker sin proveedor](../PBI/Realizado/PBI%20-%20Retirada%20del%20Circuit%20Breaker%20sin%20Proveedor%20Externo%20%28P2%29.md) | F-10, T-03 | P2 — Realizado |
-| PBI-STEEL-012 | [Streaming reactivo real desde cero](../PBI/Pendiente/PBI%20-%20Streaming%20Reactivo%20Real%20desde%20Cero%20%28P2%29.md) | F-11, ya decidido en el 005 | P2, congelado |
+| ✅ PBI-STEEL-012 | [Streaming reactivo real desde cero](../PBI/Realizado/PBI%20-%20Streaming%20Reactivo%20Real%20desde%20Cero%20%28P2%29.md) | F-11, ya decidido en el 005 | P2 — Realizado (congelación táctica certificada) |
 | ✅ PBI-STEEL-013 | [Desactivación del drop de fatiga sin progreso](../PBI/Realizado/PBI%20-%20Desactivaci%C3%B3n%20del%20Drop%20de%20Fatiga%20sin%20Progreso%20Real%20%28P2%29.md) | F-12 | P2 — Realizado |
 | ✅ PBI-STEEL-014 | [Telemetría veraz de modelo y tokens](../PBI/Realizado/PBI%20-%20Telemetr%C3%ADa%20Veraz%20de%20Modelo%20y%20Tokens%20%28P2%29.md) | F-13 | P2 — Realizado |
 | ✅ PBI-STEEL-015 | [Gobernanza de render del orquestador y del lienzo](../PBI/Realizado/PBI%20-%20Gobernanza%20de%20Render%20del%20Orquestador%20y%20del%20Lienzo%20%28P2%29.md) | F-14 | P2 — Realizado |
 | ✅ PBI-STEEL-016 | [Ampliación del perímetro de los oráculos](../PBI/Realizado/PBI%20-%20Ampliaci%C3%B3n%20del%20Per%C3%ADmetro%20de%20los%20Or%C3%A1culos%20%28P2%29.md) | F-16, T-07 | P2 — Realizado |
 | ✅ PBI-STEEL-017 | [Externalización de credenciales y renombrado del contenedor](../PBI/Realizado/PBI%20-%20Externalizaci%C3%B3n%20de%20Credenciales%20y%20Renombrado%20del%20Contenedor%20Web%20%28P2%29.md) | F-17 | P2 — Realizado |
 | ✅ PBI-STEEL-018 | [Colocalización del árbol de tests](../PBI/Realizado/PBI%20-%20Colocalizaci%C3%B3n%20del%20%C3%81rbol%20de%20Tests%20y%20Destino%20de%20los%20Hu%C3%A9rfanos%20%28P2%29.md) | T-08 | P2 — Realizado |
-| PBI-STEEL-019 | [Cierre de i18n en lienzo y orquestador](../PBI/Pendiente/PBI%20-%20Cierre%20de%20i18n%20en%20Lienzo%20y%20Orquestador%20%28P3%29.md) | F-15 | P3 |
-| PBI-STEEL-020 | [Trazabilidad del modelo forjador](../PBI/Pendiente/PBI%20-%20Trazabilidad%20del%20Modelo%20Forjador%20en%20Commits%20%28P3%29.md) | F-19 | P3 |
-| PBI-STEEL-021 | [Aserciones débiles en los cuatro tests señalados](../PBI/Pendiente/PBI%20-%20Sustituci%C3%B3n%20de%20Aserciones%20D%C3%A9biles%20en%20Tests%20Se%C3%B1alados%20%28P3%29.md) | T-09. F-20 ya no está aquí | P3 |
-| PBI-STEEL-022 | [Saneamiento de barrels secundarios](../PBI/Pendiente/PBI%20-%20Saneamiento%20Hexagonal%20de%20Barrels%20Secundarios%20%28P2%29.md) | Resto de F-07, fuera del 007 | P2 |
-| PBI-STEEL-023 | [Error React 412 en Admin System](../PBI/Pendiente/PBI%20-%20Investigaci%C3%B3n%20del%20Error%20React%20412%20en%20Admin%20System%20%28P2%29.md) | Sección 7 del Log. El código es `Connection closed.` | P2 |
-| PBI-STEEL-024 | [Webhook de Telegram registrado](../PBI/Pendiente/PBI%20-%20Verificaci%C3%B3n%20del%20Webhook%20de%20Telegram%20Registrado%20%28P2%29.md) | Sección 7 del Log. La ruta ya existe | P2 |
+| ✅ PBI-STEEL-019 | [Cierre de i18n en lienzo y orquestador](../PBI/Realizado/PBI%20-%20Cierre%20de%20i18n%20en%20Lienzo%20y%20Orquestador%20%28P3%29.md) | F-15 | P3 — Realizado |
+| ✅ PBI-STEEL-020 | [Trazabilidad del modelo forjador](../PBI/Realizado/PBI%20-%20Trazabilidad%20del%20Modelo%20Forjador%20en%20Commits%20%28P3%29.md) | F-19 | P3 — Realizado |
+| ✅ PBI-STEEL-021 | [Aserciones débiles en los cuatro tests señalados](../PBI/Realizado/PBI%20-%20Sustituci%C3%B3n%20de%20Aserciones%20D%C3%A9biles%20en%20Tests%20Se%C3%B1alados%20%28P3%29.md) | T-09. F-20 ya no está aquí | P3 — Realizado |
+| ✅ PBI-STEEL-022 | [Saneamiento de barrels secundarios](../PBI/Realizado/PBI%20-%20Saneamiento%20Hexagonal%20de%20Barrels%20Secundarios%20%28P2%29.md) | Resto de F-07, fuera del 007 | P2 — Realizado |
+| ✅ PBI-STEEL-023 | [Error React 412 en Admin System](../PBI/Realizado/PBI%20-%20Investigaci%C3%B3n%20del%20Error%20React%20412%20en%20Admin%20System%20%28P2%29.md) | Sección 7 del Log. El código es `Connection closed.` | P2 — Realizado |
+| ✅ PBI-STEEL-024 | [Webhook de Telegram registrado](../PBI/Realizado/PBI%20-%20Verificaci%C3%B3n%20del%20Webhook%20de%20Telegram%20Registrado%20%28P2%29.md) | Sección 7 del Log. La ruta ya existe | P2 — Realizado |
 
 **Qué no se ha vuelto a abrir.** F-18 y F-21 siguen en PBI-STEEL-004 y PBI-STEEL-002. T-05 y T-06 siguen en PBI-STEEL-006 y PBI-STEEL-003. La enmienda de ADR-001 sigue en PBI-STEEL-007.
 
