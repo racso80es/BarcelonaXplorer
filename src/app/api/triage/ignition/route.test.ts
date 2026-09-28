@@ -13,6 +13,20 @@ vi.mock('@/features/ai-engine/groq/groq-conversational-slm.adapter', () => {
   };
 });
 
+const weatherPortMock = vi.hoisted(() => ({
+  getBarcelonaWeather: vi.fn().mockResolvedValue({
+    summary: 'Cielo despejado en Barcelona',
+    temperatureCelsius: 22,
+    isAdverse: false,
+  }),
+}));
+
+vi.mock('@/features/triage/open-meteo-weather.adapter', () => ({
+  OpenMeteoWeatherAdapter: class {
+    getBarcelonaWeather = weatherPortMock.getBarcelonaWeather;
+  },
+}));
+
 vi.mock('@/features/cognitive-memory', () => {
   return {
     LanceDbCognitiveMemoryAdapter: class {
@@ -91,6 +105,21 @@ describe('GET /api/triage/ignition', () => {
     const body = await res.json();
     expect(body.result._sys_lang).toBe('en');
     expect(res.headers.get('set-cookie')).toContain('bx_lang=en');
+  });
+
+  it('PBI-STEEL-009: incluye chispa meteorológica cuando el sensor reporta clima adverso', async () => {
+    weatherPortMock.getBarcelonaWeather.mockResolvedValueOnce({
+      summary: 'Lluvia intensa en Barcelona',
+      temperatureCelsius: 12,
+      isAdverse: true,
+    });
+
+    const req = new NextRequest('http://localhost:3000/api/triage/ignition');
+    const res = await GET(req);
+    const body = await res.json();
+    expect(body.result.sparks.some((s: { type: string }) => s.type === 'weather')).toBe(
+      true,
+    );
   });
 
   it('respeta la cookie existente bx_session_id', async () => {

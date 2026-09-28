@@ -1,6 +1,6 @@
 # [OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen (El Hombre de Acero)
 
-- **Estatus:** Escenario 1 cumplido ([`AUD-OPS-STEEL-001`](../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md)) / Escenario 2 en curso (clúster Nivel 1: **5/9** en repo)
+- **Estatus:** Escenario 1 cumplido ([`AUD-OPS-STEEL-001`](../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md)) / Escenario 2 en curso (clúster Nivel 1: **6/9** en repo; pendientes 006–008)
 - **Fecha de Revisión:** 2026-09-28
 - **Autor:** Orquestador Tormentosa / Vértice Biológico (Racso)
 - **Módulo:** Gobernanza de IA, QA Arquitectónico y Ciclo de Vida del Software
