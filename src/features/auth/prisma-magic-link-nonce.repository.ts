@@ -1,25 +1,17 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/shared/persistence/prisma';
 import {
   MagicLinkNonceRecord,
   MagicLinkNonceRepositoryPort,
 } from '@/features/auth';
-
-const globalForPrisma = globalThis as unknown as {
-  prismaNonceClient?: PrismaClient;
-};
-
-const defaultPrisma = globalForPrisma.prismaNonceClient ?? new PrismaClient();
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prismaNonceClient = defaultPrisma;
-}
 
 export class PrismaMagicLinkNonceRepository
   implements MagicLinkNonceRepositoryPort
 {
   private readonly prisma: PrismaClient;
 
-  constructor(prismaClient?: PrismaClient) {
-    this.prisma = prismaClient ?? defaultPrisma;
+  constructor(prismaClient: PrismaClient = prisma) {
+    this.prisma = prismaClient;
   }
 
   async saveNonce(

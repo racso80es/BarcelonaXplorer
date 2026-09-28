@@ -1,23 +1,14 @@
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/shared/persistence/prisma';
 import { UserAnchorRepositoryPort } from '@/features/auth';
 import { UserAnchor } from '@/features/auth';
 import { TelegramChatId } from '@/features/auth';
 
-// Prisma singleton para reutilización en entornos serverless/Next.js
-const globalForPrisma = globalThis as unknown as {
-  prismaUserAnchorClient?: PrismaClient;
-};
-
-const defaultPrisma = globalForPrisma.prismaUserAnchorClient ?? new PrismaClient();
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prismaUserAnchorClient = defaultPrisma;
-}
-
 export class PrismaUserAnchorRepository implements UserAnchorRepositoryPort {
   private readonly prisma: PrismaClient;
 
-  constructor(prismaClient?: PrismaClient) {
-    this.prisma = prismaClient ?? defaultPrisma;
+  constructor(prismaClient: PrismaClient = prisma) {
+    this.prisma = prismaClient;
   }
 
   async findByTelegramChatId(chatId: TelegramChatId): Promise<UserAnchor | null> {

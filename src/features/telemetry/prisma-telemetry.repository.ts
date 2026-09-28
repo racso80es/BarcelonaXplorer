@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '@/shared/persistence/prisma';
 import { TelemetryRepositoryPort } from './telemetry-repository.port';
 import {
   TelemetryEntry,
@@ -9,21 +10,11 @@ import {
   TelemetryPayload,
 } from './telemetry-entry.entity';
 
-// Prisma singleton para reutilización en entornos serverless/Next.js
-const globalForPrisma = globalThis as unknown as {
-  prismaTelemetryClient?: PrismaClient;
-};
-
-const defaultPrisma = globalForPrisma.prismaTelemetryClient ?? new PrismaClient();
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prismaTelemetryClient = defaultPrisma;
-}
-
 export class PrismaTelemetryRepository implements TelemetryRepositoryPort {
   private readonly prisma: PrismaClient;
 
-  constructor(prismaClient?: PrismaClient) {
-    this.prisma = prismaClient ?? defaultPrisma;
+  constructor(prismaClient: PrismaClient = prisma) {
+    this.prisma = prismaClient;
   }
 
   /**

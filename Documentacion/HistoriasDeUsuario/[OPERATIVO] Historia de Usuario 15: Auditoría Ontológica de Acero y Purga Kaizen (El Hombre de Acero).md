@@ -180,10 +180,10 @@ Redactados el 2026-09-28 a partir de la tabla "Diferibles" de la sección 9 del 
 
 | ID | PBI | Hallazgos | Prioridad |
 |---|---|---|---|
-| PBI-STEEL-010 | [Singleton Prisma y catálogo de deuda del Códice](../PBI/Pendiente/PBI%20-%20Singleton%20Prisma%20%C3%9Anico%20y%20Cat%C3%A1logo%20de%20Deuda%20del%20C%C3%B3dice%20%28P2%29.md) | F-08 (heredado; la patrulla es del 001) | P2 |
-| PBI-STEEL-011 | [Retirada del Circuit Breaker sin proveedor](../PBI/Pendiente/PBI%20-%20Retirada%20del%20Circuit%20Breaker%20sin%20Proveedor%20Externo%20%28P2%29.md) | F-10, T-03 | P2 |
+| ✅ PBI-STEEL-010 | [Singleton Prisma y catálogo de deuda del Códice](../PBI/Realizado/PBI%20-%20Singleton%20Prisma%20%C3%9Anico%20y%20Cat%C3%A1logo%20de%20Deuda%20del%20C%C3%B3dice%20%28P2%29.md) | F-08 (heredado; la patrulla es del 001) | P2 — Realizado |
+| ✅ PBI-STEEL-011 | [Retirada del Circuit Breaker sin proveedor](../PBI/Realizado/PBI%20-%20Retirada%20del%20Circuit%20Breaker%20sin%20Proveedor%20Externo%20%28P2%29.md) | F-10, T-03 | P2 — Realizado |
 | PBI-STEEL-012 | [Streaming reactivo real desde cero](../PBI/Pendiente/PBI%20-%20Streaming%20Reactivo%20Real%20desde%20Cero%20%28P2%29.md) | F-11, ya decidido en el 005 | P2, congelado |
-| PBI-STEEL-013 | [Desactivación del drop de fatiga sin progreso](../PBI/Pendiente/PBI%20-%20Desactivaci%C3%B3n%20del%20Drop%20de%20Fatiga%20sin%20Progreso%20Real%20%28P2%29.md) | F-12 | P2 |
+| ✅ PBI-STEEL-013 | [Desactivación del drop de fatiga sin progreso](../PBI/Realizado/PBI%20-%20Desactivaci%C3%B3n%20del%20Drop%20de%20Fatiga%20sin%20Progreso%20Real%20%28P2%29.md) | F-12 | P2 — Realizado |
 | PBI-STEEL-014 | [Telemetría veraz de modelo y tokens](../PBI/Pendiente/PBI%20-%20Telemetr%C3%ADa%20Veraz%20de%20Modelo%20y%20Tokens%20%28P2%29.md) | F-13 | P2 |
 | PBI-STEEL-015 | [Gobernanza de render del orquestador y del lienzo](../PBI/Pendiente/PBI%20-%20Gobernanza%20de%20Render%20del%20Orquestador%20y%20del%20Lienzo%20%28P2%29.md) | F-14 | P2 |
 | PBI-STEEL-016 | [Ampliación del perímetro de los oráculos](../PBI/Pendiente/PBI%20-%20Ampliaci%C3%B3n%20del%20Per%C3%ADmetro%20de%20los%20Or%C3%A1culos%20%28P2%29.md) | F-16, T-07 | P2 |

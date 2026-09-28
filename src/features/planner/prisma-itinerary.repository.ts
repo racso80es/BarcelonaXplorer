@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '@/shared/persistence/prisma';
 import { ItineraryPersistencePort, PersistedItineraryDto } from './itinerary-persistence.port';
 import {
   AffiliateProvider,
@@ -9,20 +10,11 @@ import {
   WaypointOptionSchema,
 } from './affiliate/affiliate-enricher.schema';
 
-const globalForPrisma = globalThis as unknown as {
-  prismaItineraryClient?: PrismaClient;
-};
-
-const defaultPrisma = globalForPrisma.prismaItineraryClient ?? new PrismaClient();
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prismaItineraryClient = defaultPrisma;
-}
-
 export class PrismaItineraryRepository implements ItineraryPersistencePort {
   private readonly prisma: PrismaClient;
 
-  constructor(prismaClient?: PrismaClient) {
-    this.prisma = prismaClient ?? defaultPrisma;
+  constructor(prismaClient: PrismaClient = prisma) {
+    this.prisma = prismaClient;
   }
 
   async saveItinerary(
