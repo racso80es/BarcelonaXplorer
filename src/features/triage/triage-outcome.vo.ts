@@ -1,6 +1,13 @@
 import { TriageOutcomeDto, TriageStatus } from './triage.schema';
-import { DefaultDensityPayload } from '@/features/planner';
-import { GeographicScope } from '@/features/planner';
+import type { z } from 'zod';
+import {
+  DefaultDensityPayload,
+  GeographicScope,
+  TacticalRouteZodSchema,
+  EnrichedRoute,
+} from '@/features/planner';
+
+type TacticalRouteSnapshot = z.infer<typeof TacticalRouteZodSchema>;
 import { SupportedLanguage } from '@/features/i18n';
 
 /**
@@ -22,8 +29,8 @@ export class TriageOutcome {
     public readonly missingVariable?: string,
     public readonly rejectedEntity?: string,
     public readonly payload?: DefaultDensityPayload | Partial<DefaultDensityPayload>,
-    public readonly route?: unknown,
-    public readonly itinerary?: unknown,
+    public readonly route?: TacticalRouteSnapshot,
+    public readonly itinerary?: EnrichedRoute,
     public readonly geographicScope?: GeographicScope,
     public readonly detectedDistricts?: readonly string[],
     public readonly durationMs: number = 0,
@@ -183,8 +190,8 @@ export class TriageOutcome {
     score: number;
     survivalThreshold: number;
     payload: DefaultDensityPayload;
-    route?: unknown;
-    itinerary?: unknown;
+    route?: TacticalRouteSnapshot;
+    itinerary?: EnrichedRoute;
     geographicScope?: GeographicScope;
     detectedDistricts?: readonly string[];
     durationMs: number;

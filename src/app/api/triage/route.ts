@@ -25,6 +25,9 @@ import {
   applyBxSessionCookie,
 } from '@/features/triage/session-perimeter';
 import { SupportedLanguageVo } from '@/features/i18n';
+import { TriageInputSchema } from '@/features/triage/triage.schema';
+import { createErrorEnvelope } from '@/shared/operation-envelope';
+import { ZodError } from 'zod';
 
 export const runtime = 'nodejs';
 
@@ -35,17 +38,38 @@ const semanticCache = new LanceDbSemanticCacheAdapter();
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const prompt = body?.prompt;
+    const rawBody: unknown = await req.json().catch(() => ({}));
+    const { sessionId, isNewSession } = resolveBxSessionFromRequest(req);
 
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    const bodyRecord =
+      typeof rawBody === 'object' && rawBody !== null
+        ? (rawBody as Record<string, unknown>)
+        : {};
+
+    const parsedInput = TriageInputSchema.safeParse({
+      ...bodyRecord,
+      sessionId,
+    });
+
+    if (!parsedInput.success) {
       return NextResponse.json(
-        { error: 'El prompt es obligatorio y no puede estar vacío.' },
+        createErrorEnvelope(
+          parsedInput.error.issues.map(
+            (issue) => `${issue.path.join('.')}: ${issue.message}`,
+          ),
+          1,
+          'Cuerpo de triaje inválido',
+        ),
         { status: 400 },
       );
     }
 
-    const { sessionId, isNewSession } = resolveBxSessionFromRequest(req);
+    const {
+      prompt,
+      matrixId,
+      userLocation,
+      clientLanguage: bodyClientLanguage,
+    } = parsedInput.data;
 
     const rateLimitResult = enforcePublicLlmRateLimit();
     if (!rateLimitResult.allowed) {
@@ -77,11 +101,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const matrixId = body?.matrixId || 'default';
-    const userLocation = body?.userLocation;
     const clientLanguage =
       req.cookies.get(BX_LANG_COOKIE)?.value ||
-      (typeof body?.clientLanguage === 'string' ? body.clientLanguage : undefined) ||
+      bodyClientLanguage ||
       req.headers.get('accept-language') ||
       undefined;
 
@@ -147,6 +169,18 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        createErrorEnvelope(
+          error.issues.map(
+            (issue) => `${issue.path.join('.')}: ${issue.message}`,
+          ),
+          1,
+          'Validación de triaje fallida',
+        ),
+        { status: 400 },
+      );
+    }
     console.error('[API /api/triage Error]:', error);
     try {
       const telemetryRepo = new PrismaTelemetryRepository();

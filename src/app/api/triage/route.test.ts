@@ -105,6 +105,14 @@ describe('POST /api/triage (PBI-STEEL-004)', () => {
     expect(setCookie).not.toContain('bx_session_id=fixed-session-uuid');
   });
 
+  it('devuelve 400 con OperationEnvelope si el cuerpo no valida (PBI-STEEL-006)', async () => {
+    const res = await POST(triageRequest({ body: { prompt: '' } }));
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(Array.isArray(body.errors)).toBe(true);
+  });
+
   it('devuelve 429 con Retry-After al agotar el cubo global aunque cambien IP y cookie', async () => {
     for (let i = 0; i < 10; i++) {
       const ok = await POST(

@@ -14,6 +14,7 @@ import {
   calculateMatrixDensity,
   DefaultDensityPayload,
   TacticalRoute,
+  EnrichedRoute,
   AffiliateEnricherService,
   IAffiliateEnricherService,
   ItineraryPersistencePort,
@@ -490,7 +491,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     }
 
     // Laudo 1: Despacho interno unificado hacia el orquestador pesado (Gemini) con inyección densa RAG
-    let forgedRoute: unknown = undefined;
+    let forgedRoute: TacticalRoute | string | undefined = undefined;
     if (this.routeUseCase) {
       const districtsLabel =
         detectedDistricts.length > 0 ? detectedDistricts.join(', ') : 'Global';
@@ -541,17 +542,13 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     }
 
     // CA-3: Cruce asíncrono con Proveedores de Afiliados (TheFork / Civitatis)
-    let enrichedItinerary: unknown = undefined;
-    if (
-      forgedRoute &&
-      typeof forgedRoute !== 'string' &&
-      (forgedRoute as TacticalRoute).waypoints
-    ) {
+    let enrichedItinerary: EnrichedRoute | undefined = undefined;
+    if (forgedRoute && forgedRoute.waypoints.length > 0) {
       try {
         const thermalState: 'operational' | 'saturated' =
           density.score >= 100 ? 'saturated' : 'operational';
         const enriched = await this.affiliateEnricher.enrichRoute(
-          forgedRoute as TacticalRoute,
+          forgedRoute,
           thermalState,
         );
         enrichedItinerary = enriched;

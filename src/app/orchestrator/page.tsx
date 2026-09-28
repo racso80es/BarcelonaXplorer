@@ -7,7 +7,13 @@ import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
 import { HybridCanvas } from '@/components/tactical/hybrid-canvas';
 import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, X, Compass } from 'lucide-react';
 
-import { EnrichedRoute, ChronologicalPropagator, TacticalRoute } from '@/features/planner';
+import {
+  EnrichedRoute,
+  ChronologicalPropagator,
+  TacticalRouteZodSchema,
+} from '@/features/planner';
+import { TriageOutcomeSchema } from '@/features/triage/triage.schema';
+import type { z } from 'zod';
 import { ThermalMeter } from '@/features/triage/components/thermal-meter';
 import {
   SupportedLanguage,
@@ -15,12 +21,18 @@ import {
   getUiDictionary,
 } from '@/features/i18n';
 
+type TacticalRoutePayload = z.infer<typeof TacticalRouteZodSchema>;
+
+type TurnAiResponse =
+  | { kind: 'message'; text: string }
+  | { kind: 'route'; route: TacticalRoutePayload };
+
 type Turn = {
   id: string;
   userPrompt: string;
   sparks: Omit<TacticalSparkProps, 'icon'>[];
   status: 'pending' | 'orchestrating' | 'completed';
-  aiResponse?: TacticalRoute | string;
+  aiResponse?: TurnAiResponse;
 };
 
 export default function OrchestratorPage() {
@@ -203,29 +215,44 @@ export default function OrchestratorPage() {
           signal: abortController.signal,
         });
 
-        const triageData = await triageRes.json().catch(() => ({}));
+        const rawOutcome = await triageRes.json().catch(() => ({}));
+        const parsedOutcome = TriageOutcomeSchema.safeParse(rawOutcome);
 
-        if (
-          isSubscribed &&
-          triageData &&
-          typeof triageData === 'object' &&
-          '_sys_lang' in triageData &&
-          typeof triageData._sys_lang === 'string'
-        ) {
+        if (!parsedOutcome.success) {
+          if (isSubscribed) {
+            setTurns((prev) =>
+              prev.map((t) =>
+                t.id === turnId
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: {
+                        kind: 'message',
+                        text:
+                          'Respuesta de triaje inválida. La aduana rechazó el contrato de datos.',
+                      },
+                    }
+                  : t,
+              ),
+            );
+          }
+          return;
+        }
+
+        const triageData = parsedOutcome.data;
+
+        if (isSubscribed) {
           setSysLang(SupportedLanguageVo.from(triageData._sys_lang).value);
         }
 
         // Sincronización Termodinámica con el Medidor de Densidad (PBI-TRIAGE-THM-002)
-        if (isSubscribed && typeof triageData.score === 'number') {
+        if (isSubscribed) {
           setThermalState({
             score: triageData.score,
-            survivalThreshold:
-              typeof triageData.survivalThreshold === 'number'
-                ? triageData.survivalThreshold
-                : 60,
-            isThresholdSatisfied: Boolean(triageData.isThresholdSatisfied),
+            survivalThreshold: triageData.survivalThreshold,
+            isThresholdSatisfied: triageData.isThresholdSatisfied,
             missingVariable: triageData.missingVariable ?? null,
-            matrixId: triageData.matrixId || 'default',
+            matrixId: triageData.matrixId,
           });
         }
 
@@ -256,7 +283,6 @@ export default function OrchestratorPage() {
         if (triageRes.status === 422 || triageData.status === 'REBOUND_OUT_OF_SCOPE') {
           const bounceMsg =
             triageData.bounceMessage ||
-            triageData.error ||
             'Destino fuera del perímetro de Barcelona.';
           if (isSubscribed) {
             setTurns((prev) =>
@@ -265,7 +291,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
-                      aiResponse: bounceMsg,
+                      aiResponse: { kind: 'message', text: bounceMsg },
                     }
                   : t,
               ),
@@ -285,7 +311,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
-                      aiResponse: dialogueMsg,
+                      aiResponse: { kind: 'message', text: dialogueMsg },
                     }
                   : t,
               ),
@@ -305,7 +331,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
-                      aiResponse: repromptMsg,
+                      aiResponse: { kind: 'message', text: repromptMsg },
                     }
                   : t,
               ),
@@ -322,7 +348,11 @@ export default function OrchestratorPage() {
             setTurns((prev) =>
               prev.map((t) =>
                 t.id === turnId
-                  ? { ...t, status: 'completed', aiResponse: claudicationMsg }
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: { kind: 'message', text: claudicationMsg },
+                    }
                   : t,
               ),
             );
@@ -331,22 +361,43 @@ export default function OrchestratorPage() {
         }
 
         if (triageData.itinerary) {
-          setActiveItinerary(triageData.itinerary as EnrichedRoute);
+          setActiveItinerary(triageData.itinerary);
         }
 
         if (triageData.status === 'DISPATCH_READY' && triageData.itinerary) {
           const summary =
-            typeof triageData.itinerary === 'object' &&
-            triageData.itinerary !== null &&
-            'summary' in triageData.itinerary &&
-            typeof (triageData.itinerary as { summary?: string }).summary === 'string'
-              ? (triageData.itinerary as { summary: string }).summary
-              : 'Ruta táctica forjada con éxito.';
+            triageData.itinerary.summary || 'Ruta táctica forjada con éxito.';
           if (isSubscribed) {
             setTurns((prev) =>
               prev.map((t) =>
                 t.id === turnId
-                  ? { ...t, status: 'completed', aiResponse: summary }
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: { kind: 'message', text: summary },
+                    }
+                  : t,
+              ),
+            );
+          }
+          return;
+        }
+
+        if (
+          triageData.status === 'DISPATCH_READY' &&
+          triageData.route &&
+          !triageData.itinerary
+        ) {
+          const routePayload = triageData.route;
+          if (isSubscribed) {
+            setTurns((prev) =>
+              prev.map((t) =>
+                t.id === turnId
+                  ? {
+                      ...t,
+                      status: 'completed',
+                      aiResponse: { kind: 'route', route: routePayload },
+                    }
                   : t,
               ),
             );
@@ -365,8 +416,11 @@ export default function OrchestratorPage() {
                 ? {
                     ...t,
                     status: 'completed',
-                    aiResponse:
-                      'Error de comunicación táctica. Proceda con precaución manual.',
+                    aiResponse: {
+                      kind: 'message',
+                      text:
+                        'Error de comunicación táctica. Proceda con precaución manual.',
+                    },
                   }
                 : t,
             ),
@@ -584,24 +638,27 @@ export default function OrchestratorPage() {
                      role="ai"
                      status="completed"
                      content={
-                       typeof turn.aiResponse === 'string' ? (
+                       turn.aiResponse?.kind === 'message' ? (
                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-900 font-medium text-sm flex items-start gap-2 shadow-xs">
                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                           <span className="leading-relaxed">{turn.aiResponse}</span>
+                           <span className="leading-relaxed">{turn.aiResponse.text}</span>
                          </div>
-                       ) : turn.aiResponse ? (
+                       ) : turn.aiResponse?.kind === 'route' ? (
+                         (() => {
+                           const routeView = turn.aiResponse.route;
+                           return (
                          <div className="flex flex-col gap-4">
                            <div className="border-b border-emerald-200/80 pb-2">
-                             <h3 className="text-lg font-bold text-content-accent mb-1">{(turn.aiResponse as TacticalRoute).summary}</h3>
+                             <h3 className="text-lg font-bold text-content-accent mb-1">{routeView.summary}</h3>
                            </div>
                            <div className="flex flex-col gap-3">
-                             {(turn.aiResponse as TacticalRoute).waypoints.map((wp, idx) => (
+                             {routeView.waypoints.map((wp, idx) => (
                                <div key={wp.id} className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-surface-container rounded-lg border border-emerald-100 shadow-xs">
                                  <div className="flex flex-col items-center justify-start mt-0.5">
                                    <div className="w-6 h-6 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-xs font-mono font-bold text-emerald-800 shrink-0">
                                      {idx + 1}
                                    </div>
-                                   {idx < (turn.aiResponse as TacticalRoute).waypoints.length - 1 && (
+                                   {idx < routeView.waypoints.length - 1 && (
                                      <div className="w-[1px] h-full min-h-[20px] bg-emerald-200 mt-2" />
                                    )}
                                  </div>
@@ -630,6 +687,8 @@ export default function OrchestratorPage() {
                              ))}
                            </div>
                          </div>
+                           );
+                         })()
                        ) : (
                          <div className="text-zinc-500 italic">No se pudo forjar la ruta.</div>
                        )
@@ -638,7 +697,7 @@ export default function OrchestratorPage() {
                    />
 
                    {/* Drop de Anclaje Táctico y Alertas en Telegram tras completar ruta */}
-                   {typeof turn.aiResponse !== 'string' && turn.aiResponse && (
+                   {turn.aiResponse?.kind === 'route' && (
                      <TelegramAnchorDrop />
                    )}
                  </div>

@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { DefaultDensityPayloadSchema } from '@/features/planner';
+import {
+  DefaultDensityPayloadSchema,
+  TacticalRouteZodSchema,
+  EnrichedRouteSchema,
+} from '@/features/planner';
 import { SupportedLanguageSchema } from '@/features/i18n';
 
 /**
@@ -70,10 +74,13 @@ export const TriageOutcomeDtoSchema = z.object({
   rejectedEntity: z.string().optional(),
   detectedDistricts: z.array(z.string()).optional(),
   payload: DefaultDensityPayloadSchema.partial().optional(),
-  route: z.unknown().optional(),
-  itinerary: z.unknown().optional(),
+  route: TacticalRouteZodSchema.optional(),
+  itinerary: EnrichedRouteSchema.optional(),
   _sys_lang: SupportedLanguageSchema.default('es'),
   durationMs: z.number(),
 });
 
 export type TriageOutcomeDto = z.infer<typeof TriageOutcomeDtoSchema>;
+
+/** Alias canónico para validación en fronteras cliente (PBI-STEEL-006). */
+export const TriageOutcomeSchema = TriageOutcomeDtoSchema;

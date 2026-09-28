@@ -6,6 +6,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import OrchestratorPage from '@/app/orchestrator/page';
 
+const triageOutcomeBase = {
+  sessionId: 'sess-mock',
+  matrixId: 'default',
+  durationMs: 1,
+  _sys_lang: 'es' as const,
+};
+
 describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)', () => {
   beforeEach(() => {
     // Interceptar scrollIntoView y scrollTo que no están implementados en jsdom
@@ -97,6 +104,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
         ok: true,
         status: 200,
         json: async () => ({
+          ...triageOutcomeBase,
           status: 'CASUAL_DIALOGUE',
           dialogueMessage: '¡Hola! Qué bien tenerte por aquí. Tómate las cosas con calma en Barcelona.',
           score: 0,
@@ -161,6 +169,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
           ok: true,
           status: 200,
           json: async () => ({
+            ...triageOutcomeBase,
             status: 'INCOMPLETE_REPROMPT',
             score: 75,
             survivalThreshold: 70,
@@ -200,6 +209,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
           ok: true,
           status: 200,
           json: async () => ({
+            ...triageOutcomeBase,
             status: 'INCOMPLETE_REPROMPT',
             score: 30,
             survivalThreshold: 60,
