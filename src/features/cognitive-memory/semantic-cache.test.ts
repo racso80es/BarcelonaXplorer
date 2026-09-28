@@ -22,7 +22,7 @@ describe('LanceDbSemanticCacheAdapter (Vía del Yunque S+)', () => {
     };
     adapter = new LanceDbSemanticCacheAdapter(
       mockVectorStore as unknown as IVectorStorePort,
-      0.95,
+      0.98,
       24,
     );
   });
@@ -34,7 +34,7 @@ describe('LanceDbSemanticCacheAdapter (Vía del Yunque S+)', () => {
     expect(mockVectorStore.search).not.toHaveBeenCalled();
   });
 
-  it('CA-1 & CA-2: debe recuperar el resultado cacheado si la similitud es >= 0.95 y no ha expirado', async () => {
+  it('CA-1 & CA-2: debe recuperar el resultado cacheado si la similitud es >= 0.98 y no ha expirado', async () => {
     const cachedPayload = {
       status: 'CASUAL_DIALOGUE',
       response: '¡Hola! Veo que estás agotado...',
@@ -53,19 +53,19 @@ describe('LanceDbSemanticCacheAdapter (Vía del Yunque S+)', () => {
             tokensSaved: 850,
           },
         },
-        score: 0.98, // Supera 0.95
+        score: 0.99, // Supera 0.98
       },
     ]);
 
     const result = await adapter.get([0.1, 0.2]);
     expect(result).not.toBeNull();
     expect(result?.prompt).toBe('estoy muy cansado');
-    expect(result?.similarity).toBe(0.98);
+    expect(result?.similarity).toBe(0.99);
     expect(result?.tokensSaved).toBe(850);
     expect(result?.result).toEqual(cachedPayload);
   });
 
-  it('CA-1 & CA-2: debe descartar el resultado si la similitud es inferior a 0.95', async () => {
+  it('CA-1 & CA-2: debe descartar el resultado si la similitud es inferior a 0.98', async () => {
     mockVectorStore.search.mockResolvedValueOnce([
       {
         document: {
@@ -77,7 +77,7 @@ describe('LanceDbSemanticCacheAdapter (Vía del Yunque S+)', () => {
             createdAt: new Date().toISOString(),
           },
         },
-        score: 0.89, // Menor a 0.95
+        score: 0.89, // Menor a 0.98
       },
     ]);
 

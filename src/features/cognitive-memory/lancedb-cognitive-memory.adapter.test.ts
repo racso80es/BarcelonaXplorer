@@ -75,10 +75,11 @@ describe('LanceDbCognitiveMemoryAdapter (LanceDB RAG S+ Grade)', () => {
       score: 80,
       survivalThreshold: 60,
     });
-    const vector2 = new Array(768).fill(0.8);
+    const vector2 = Array.from({ length: 768 }, (_, i) => (i === 1 ? 1 : 0));
     await adapter.persistMemory(matrix2, vector2);
 
-    const matches = await adapter.searchSimilarMemories(new Array(768).fill(0.8), { limit: 2 });
+    const queryVector = Array.from({ length: 768 }, (_, i) => (i === 1 ? 1 : 0));
+    const matches = await adapter.searchSimilarMemories(queryVector, { limit: 2 });
     expect(matches.length).toBeGreaterThanOrEqual(1);
     expect(matches[0].matrix.propsSnapshot.sessionId).toBe('sess-user-2');
     expect(matches[0].score).toBeGreaterThan(0.5);

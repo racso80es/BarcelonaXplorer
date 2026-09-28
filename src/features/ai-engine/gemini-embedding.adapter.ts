@@ -1,27 +1,68 @@
 import { GoogleGenAI } from '@google/genai';
-import { IEmbeddingPort } from '@/features/ai-engine';
+import { IEmbeddingPort, EmbeddingGenerationResult } from '@/features/ai-engine/embedding.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
+import {
+  buildDeterministicFallbackVector,
+  EMBEDDING_DIMENSIONS,
+} from '@/features/ai-engine/deterministic-embedding-fallback';
+
+const DEFAULT_EMBEDDING_MODEL = 'embedding-001';
+
+type EmbeddingFailureKind = 'permanent' | 'transient';
+
+function resolveEmbeddingModelName(override?: string): string {
+  const fromEnv = process.env.GEMINI_EMBEDDING_MODEL?.trim();
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv;
+  }
+  if (override && override.trim().length > 0) {
+    return override.trim();
+  }
+  return DEFAULT_EMBEDDING_MODEL;
+}
+
+function classifyEmbeddingError(err: unknown): {
+  kind: EmbeddingFailureKind;
+  httpCode?: number;
+  message: string;
+} {
+  const message = err instanceof Error ? err.message : String(err);
+  const codeMatch = message.match(/\b(401|403|404|429|5\d{2})\b/);
+  const httpCode = codeMatch ? Number.parseInt(codeMatch[1], 10) : undefined;
+
+  if (httpCode === 401 || httpCode === 403 || httpCode === 404) {
+    return { kind: 'permanent', httpCode, message };
+  }
+
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('fetch failed') ||
+    lower.includes('timeout') ||
+    lower.includes('econnreset') ||
+    lower.includes('network') ||
+    (httpCode !== undefined && httpCode >= 500) ||
+    httpCode === 429
+  ) {
+    return { kind: 'transient', httpCode, message };
+  }
+
+  return { kind: 'transient', httpCode, message };
+}
 
 /**
  * Adaptador de Infraestructura para generación de embeddings sobre Google GenAI.
- * 
- * Principios Arquitectónicos S+ Grade:
- * 1. Resiliencia Térmica y Fail-Soft: Si la API de embeddings falla (cuota, red o entorno local sin clave),
- *    genera un vector determinista pseudo-aleatorio normalizado (L2) basado en hash,
- *    impidiendo que la degradación del proveedor externo bloquee el flujo conversacional.
- * 2. Inmutabilidad y Cero Fugas: Vector de 768 dimensiones estándar para text-embedding-004.
  */
 export class GeminiEmbeddingAdapter implements IEmbeddingPort {
   private readonly ai?: GoogleGenAI;
   private readonly modelName: string;
-  private readonly dimensions: number = 768;
+  private readonly dimensions: number = EMBEDDING_DIMENSIONS;
   private readonly telemetryRepo?: TelemetryRepositoryPort;
 
   constructor(
     clientOrTelemetry?: GoogleGenAI | TelemetryRepositoryPort,
     telemetryRepo?: TelemetryRepositoryPort,
-    modelName: string = 'text-embedding-004',
+    modelName?: string,
   ) {
     if (clientOrTelemetry && 'log' in clientOrTelemetry) {
       this.telemetryRepo = clientOrTelemetry;
@@ -32,7 +73,7 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
       this.telemetryRepo = telemetryRepo;
     }
 
-    this.modelName = modelName;
+    this.modelName = resolveEmbeddingModelName(modelName);
 
     if (!this.ai) {
       const apiKey = process.env.GEMINI_API_KEY;
@@ -46,10 +87,10 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
     return this.dimensions;
   }
 
-  async generateEmbedding(text: string): Promise<number[]> {
+  async generateEmbedding(text: string): Promise<EmbeddingGenerationResult> {
     const trimmed = text.trim();
     if (trimmed.length === 0) {
-      return this.generateDeterministicFallback('empty');
+      return this.fallbackResult('empty');
     }
 
     if (this.ai) {
@@ -57,61 +98,67 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
         const response = await this.ai.models.embedContent({
           model: this.modelName,
           contents: trimmed,
+          config: {
+            outputDimensionality: this.dimensions,
+          },
         });
 
-        // La respuesta puede contener embeddings array o embedding único según versión del SDK
-        const res = response as { embedding?: { values?: number[] }; embeddings?: Array<{ values?: number[] }> };
+        const res = response as {
+          embedding?: { values?: number[] };
+          embeddings?: Array<{ values?: number[] }>;
+        };
         const values =
           res.embedding?.values ??
           (res.embeddings && res.embeddings.length > 0
             ? res.embeddings[0]?.values
             : undefined);
 
+        if (values && Array.isArray(values) && values.length === this.dimensions) {
+          return { vector: values, source: 'provider' };
+        }
+
         if (values && Array.isArray(values) && values.length > 0) {
-          return values;
+          this.emitTelemetry(
+            'ERROR',
+            `[GeminiEmbeddingAdapter] Dimensión inesperada del proveedor (${values.length} ≠ ${this.dimensions}). Vector descartado.`,
+            {
+              model: this.modelName,
+              provider: 'google_genai',
+              receivedLength: values.length,
+            },
+          );
         }
       } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        this.emitTelemetry(
-          'WARN',
-          `[GeminiEmbeddingAdapter Fail-Soft] Error invocando modelo ${this.modelName}: ${errorMsg}. Activado fallback determinista.`,
-          { textSnippet: trimmed.slice(0, 100), error: errorMsg },
-        );
+        const classified = classifyEmbeddingError(err);
+        const level = classified.kind === 'permanent' ? 'ERROR' : 'WARN';
+        const prefix =
+          classified.kind === 'permanent'
+            ? '[GeminiEmbeddingAdapter] Error permanente del proveedor'
+            : '[GeminiEmbeddingAdapter Fail-Soft] Error transitorio';
+
+        this.emitTelemetry(level, `${prefix} (${this.modelName}): ${classified.message}`, {
+          textSnippet: trimmed.slice(0, 100),
+          error: classified.message,
+          provider: 'google_genai',
+          model: this.modelName,
+          httpCode: classified.httpCode,
+        });
       }
     }
 
-    return this.generateDeterministicFallback(trimmed);
+    return this.fallbackResult(trimmed);
   }
 
-  /**
-   * Generador determinista de respaldo basado en hashing y normalización L2.
-   * Garantiza que el mismo texto siempre genere el mismo vector de 768 dimensiones
-   * con norma euclidiana = 1, compatible con métricas de similitud coseno de LanceDB.
-   */
+  /** Expuesto para purga LanceDB y tests (PBI-STEEL-002). */
   public generateDeterministicFallback(seedText: string): number[] {
-    const vector = new Array<number>(this.dimensions);
-    let hash = 0;
-    for (let i = 0; i < seedText.length; i++) {
-      hash = (hash << 5) - hash + seedText.charCodeAt(i);
-      hash |= 0;
-    }
+    return buildDeterministicFallbackVector(seedText, this.dimensions);
+  }
 
-    let sumSq = 0;
-    for (let i = 0; i < this.dimensions; i++) {
-      // Generador pseudo-aleatorio congruencial lineal (LCG)
-      hash = (hash * 1664525 + 1013904223) | 0;
-      const val = (hash / 0x7fffffff);
-      vector[i] = val;
-      sumSq += val * val;
-    }
-
-    // Normalización L2
-    const norm = Math.sqrt(sumSq) || 1;
-    for (let i = 0; i < this.dimensions; i++) {
-      vector[i] = vector[i] / norm;
-    }
-
-    return vector;
+  private fallbackResult(seedText: string): EmbeddingGenerationResult {
+    return {
+      vector: buildDeterministicFallbackVector(seedText, this.dimensions),
+      source: 'fallback',
+    };
   }
 
   private emitTelemetry(

@@ -14,7 +14,7 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
 
   constructor(
     private readonly vectorStore: IVectorStorePort = new LanceDbVectorAdapter(),
-    private readonly similarityThreshold: number = 0.95,
+    private readonly similarityThreshold: number = 0.98,
     private readonly maxAgeHours: number = 24,
   ) {}
 

@@ -73,7 +73,11 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
     const db = await this.getDb();
     const table = await db.openTable(tableName);
 
-    const rows = await table.vectorSearch(queryVector).limit(limit).toArray();
+    const rows = await table
+      .vectorSearch(queryVector)
+      .distanceType('cosine')
+      .limit(limit)
+      .toArray();
 
     return rows.map((row) => {
       let parsedMetadata: Record<string, unknown> = {};
@@ -88,8 +92,8 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
       }
 
       const distance = typeof row._distance === 'number' ? row._distance : 0;
-      // Convertir distancia L2 a score normalizado [0, 1]
-      const score = 1 / (1 + distance);
+      // Distancia coseno LanceDB ∈ [0, 2]; similitud = 1 - distancia (PBI-STEEL-002 CA-7)
+      const score = 1 - distance;
 
       return {
         document: {

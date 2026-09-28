@@ -136,35 +136,40 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     let promptVector: number[] | undefined;
     if (this.semanticCache && this.embeddingPort) {
       try {
-        promptVector = await this.embeddingPort.generateEmbedding(trimmedPrompt);
-        const cached = await this.semanticCache.get(promptVector);
-        if (cached && typeof cached.result === 'object' && cached.result !== null) {
-          const outcomeDto = cached.result as unknown as TriageOutcomeDto;
-          const cachedOutcome = TriageOutcome.fromDto({
-            ...outcomeDto,
-            sessionId: input.sessionId,
-            matrixId,
-            durationMs: Date.now() - startTime,
-            _sys_lang: sovereignLang,
-          });
-
-          this.emitTelemetry({
-            level: 'INFO',
-            context: 'SECURITY_PERIMETER',
-            message: '[Aduana] Consulta interceptada por Caché Semántica Vectorial',
-            statusCode: 200,
-            durationMs: Date.now() - startTime,
-            payload: {
-              eventType: 'TRIAGE_ROUTED',
+        const embeddingResult = await this.embeddingPort.generateEmbedding(trimmedPrompt);
+        if (embeddingResult.source === 'fallback') {
+          promptVector = undefined;
+        } else {
+          promptVector = embeddingResult.vector;
+          const cached = await this.semanticCache.get(promptVector);
+          if (cached && typeof cached.result === 'object' && cached.result !== null) {
+            const outcomeDto = cached.result as unknown as TriageOutcomeDto;
+            const cachedOutcome = TriageOutcome.fromDto({
+              ...outcomeDto,
               sessionId: input.sessionId,
-              cacheHit: true,
-              tokensSaved: cached.tokensSaved,
-              similarity: cached.similarity,
-              prompt: trimmedPrompt,
-            },
-          });
+              matrixId,
+              durationMs: Date.now() - startTime,
+              _sys_lang: sovereignLang,
+            });
 
-          return cachedOutcome;
+            this.emitTelemetry({
+              level: 'INFO',
+              context: 'SECURITY_PERIMETER',
+              message: '[Aduana] Consulta interceptada por Caché Semántica Vectorial',
+              statusCode: 200,
+              durationMs: Date.now() - startTime,
+              payload: {
+                eventType: 'TRIAGE_ROUTED',
+                sessionId: input.sessionId,
+                cacheHit: true,
+                tokensSaved: cached.tokensSaved,
+                similarity: cached.similarity,
+                prompt: trimmedPrompt,
+              },
+            });
+
+            return cachedOutcome;
+          }
         }
       } catch {
         // Fail-soft en lectura de caché semántica
@@ -437,10 +442,12 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
 
     if (this.cognitiveMemory && this.embeddingPort) {
       try {
-        const vector = await this.embeddingPort.generateEmbedding(
+        const memoryEmbedding = await this.embeddingPort.generateEmbedding(
           denseMatrix.toDensePromptString(),
         );
-        await this.cognitiveMemory.persistMemory(denseMatrix, vector);
+        if (memoryEmbedding.source !== 'fallback') {
+          await this.cognitiveMemory.persistMemory(denseMatrix, memoryEmbedding.vector);
+        }
       } catch (err) {
         // Fail-soft: la falla de persistencia vectorial no debe abortar la generación del itinerario
         this.emitTelemetry({

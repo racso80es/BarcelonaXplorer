@@ -228,6 +228,46 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       );
     });
 
+    it('PBI-STEEL-002: no debe persistir memoria cognitiva si el embedding es fallback', async () => {
+      const persistMemory = vi.fn().mockResolvedValue(undefined);
+      const mockCognitiveMemory = {
+        persistMemory,
+        getLatestSessionMemory: vi.fn().mockResolvedValue(null),
+        searchSimilarMemories: vi.fn().mockResolvedValue([]),
+        getRecentMemories: vi.fn().mockResolvedValue([]),
+        clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.01),
+          source: 'fallback' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const steelUseCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        undefined,
+        undefined,
+        mockCognitiveMemory,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+      );
+
+      await steelUseCase.execute({
+        sessionId: 'sess-steel-002',
+        prompt: 'Tengo 3 horas para ver la Sagrada Familia en pareja',
+      });
+
+      expect(persistMemory).not.toHaveBeenCalled();
+      expect(mockRouteUseCase.execute).toHaveBeenCalled();
+    });
+
     it('HU-10: debe propagar thermalState "saturated" al enriquecedor y persistir en MySQL al saturar al 100%', async () => {
       const result = await useCase.execute({
         sessionId: 'sess-logistics-saturated',
@@ -257,7 +297,7 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
     });
 
 
-    it('CA-3 (PBI-COGN-CACHE-001): debe interceptar por caché semántica vectorial si similitud >= 0.95 y emitir telemetría con tokensSaved', async () => {
+    it('CA-3 (PBI-COGN-CACHE-001): debe interceptar por caché semántica vectorial si similitud >= 0.98 y emitir telemetría con tokensSaved', async () => {
       const mockTelemetry = {
         log: vi.fn().mockResolvedValue(undefined),
         getRecentLogs: vi.fn().mockResolvedValue([]),
@@ -285,7 +325,10 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.1),
+          source: 'provider' as const,
+        }),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 

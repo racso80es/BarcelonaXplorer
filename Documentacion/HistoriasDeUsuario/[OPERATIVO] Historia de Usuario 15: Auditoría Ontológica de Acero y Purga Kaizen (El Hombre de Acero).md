@@ -1,6 +1,6 @@
 # [OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen (El Hombre de Acero)
 
-- **Estatus:** Escenario 1 cumplido ([`AUD-OPS-STEEL-001`](../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md)) / Escenario 2 en curso (clúster Nivel 1: **1/9** realizado en repo — `PBI-STEEL-001`; CA-8 Nodo 11 tras despliegue)
+- **Estatus:** Escenario 1 cumplido ([`AUD-OPS-STEEL-001`](../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md)) / Escenario 2 en curso (clúster Nivel 1: **2/9** en repo — `STEEL-001`–`002`; operación Nodo 11: CA-8/CA-6 pendientes)
 - **Fecha de Revisión:** 2026-09-28
 - **Autor:** Orquestador Tormentosa / Vértice Biológico (Racso)
 - **Módulo:** Gobernanza de IA, QA Arquitectónico y Ciclo de Vida del Software
@@ -152,7 +152,7 @@ Documentos forjados el 2026-09-28 en `Documentacion/PBI/Pendiente/`:
 | Orden | PBI | Hallazgos | Ámbito principal | Prioridad |
 |---|---|---|---|---|
 | 1 | ✅ [`PBI-STEEL-001` — Blindaje Fail‑Closed de la patrulla Telegram y definición del secreto](../PBI/Realizado/PBI%20-%20Blindaje%20Fail-Closed%20de%20la%20Patrulla%20Telegram%20y%20Definici%C3%B3n%20del%20Secreto%20%28P0%29.md) | F-01, T-01, F-08 (solo la ruta de patrulla) | `app/api/telegram/patrol/`, `deploy.sh`, `.env.example` | P0 — Realizado (CA-8 post-deploy) |
-| 2 | [`PBI-STEEL-002` — Restauración del motor de embeddings y purga de vectores de fallback en LanceDB](../PBI/Pendiente/PBI%20-%20Restauraci%C3%B3n%20del%20Motor%20de%20Embeddings%20y%20Purga%20de%20Vectores%20de%20Fallback%20en%20LanceDB%20%28P1%29.md) | F-02, F-21 | `ai-engine/gemini-embedding.adapter.ts`, `cognitive-memory/`, script de purga | P1 |
+| 2 | ✅ [`PBI-STEEL-002` — Restauración del motor de embeddings y purga de vectores de fallback en LanceDB](../PBI/Realizado/PBI%20-%20Restauraci%C3%B3n%20del%20Motor%20de%20Embeddings%20y%20Purga%20de%20Vectores%20de%20Fallback%20en%20LanceDB%20%28P1%29.md) | F-02, F-21 | `ai-engine/gemini-embedding.adapter.ts`, `cognitive-memory/`, scripts de ping/purga | P1 — Realizado (CA-6 post-deploy) |
 | 3 | [`PBI-STEEL-003` — Aislamiento de sesión en la caché semántica](../PBI/Pendiente/PBI%20-%20Aislamiento%20de%20Sesi%C3%B3n%20en%20la%20Cach%C3%A9%20Sem%C3%A1ntica%20del%20Triaje%20%28P1%29.md) | F-03, T-06, deuda TC-TS-001 | `triage/triage-input.use-case.ts`, `cognitive-memory/lancedb-semantic-cache.adapter.ts` | P1 |
 | 4 | [`PBI-STEEL-004` — Perímetro de tasa e identidad en triaje y streaming](../PBI/Pendiente/PBI%20-%20Per%C3%ADmetro%20de%20Tasa%20e%20Identidad%20de%20Sesi%C3%B3n%20en%20Triaje%20y%20Streaming%20%28P1%29.md) | F-04, F-18, T-04 (parcial) | `app/api/triage/route.ts`, `app/api/triage/ignition/route.ts`. El CA-3 (streaming) no aplica | P1 |
 | 5 | [`PBI-STEEL-005` — Erradicación del streaming fingido y entrega única desde el triaje](../PBI/Pendiente/PBI%20-%20Erradicaci%C3%B3n%20del%20Endpoint%20de%20Streaming%20Fingido%20y%20Entrega%20%C3%9Anica%20desde%20el%20Triaje%20%28P1%29.md) | F-06, F-11 | `app/api/orchestrator/stream/`, `app/orchestrator/page.tsx`, `playwright-e2e/` | P1 |
