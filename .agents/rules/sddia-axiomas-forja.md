@@ -14,3 +14,5 @@ Toda Entidad Productiva Digital en Antigravity debe cumplir de forma estricta lo
 Documentos canónicos vinculantes:
 - [Axiomas Detallados S+](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/%5BARQUITECTURA%5D%20Anexo%20Constitucional:%20Axiomas%20de%20Forja%20S+%20Grade%20%28Optimizaci%C3%B3n%20para%20IA%29.md)
 - [Estándar de Gobernanza YAML](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/Estandar-Formato-Configuracion.yml)
+
+**Inyección de Códice Tecnológico:** Antes de crear o modificar código fuente, lee `.SddIA/library/codexes/tech-master-nextjs-prisma.md`. Si tu propuesta contradice un fundamento `TC-*`, no la emitas: señala el fundamento afectado y propone una alternativa conforme. Los fundamentos del Códice prevalecen sobre tu conocimiento previo del stack.

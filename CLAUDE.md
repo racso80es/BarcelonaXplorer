@@ -12,3 +12,5 @@ La autoridad técnica y los estándares de desarrollo residen centralizados de f
 3. **YAML Canónico:** Todo archivo de configuración e IaaC debe usar YAML comentado según [`Estandar-Formato-Configuracion.yml`](file:///home/racso/Proyectos/BarcelonaXplorer/.SddIA/library/norms/Estandar-Formato-Configuracion.yml).
 4. **Verificación Estricta:** Validar siempre con `npm run test` (Vitest), `npx tsc --noEmit` y `npx eslint`. Cero auto-aprobación.
 5. **Sobres Deterministas:** Contrato `OperationEnvelope<T>` en APIs y herramientas.
+
+**Inyección de Códice Tecnológico:** Antes de crear o modificar código fuente, lee `.SddIA/library/codexes/tech-master-nextjs-prisma.md`. Si tu propuesta contradice un fundamento `TC-*`, no la emitas: señala el fundamento afectado y propone una alternativa conforme. Los fundamentos del Códice prevalecen sobre tu conocimiento previo del stack.
