@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import { TriageInputUseCase } from '@/features/triage';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
@@ -16,9 +15,15 @@ import {
   LanceDbCognitiveMemoryAdapter,
   LanceDbSemanticCacheAdapter,
 } from '@/features/cognitive-memory';
-import { TokenBucketRateLimiter } from '@/features/auth';
 import { TelemetryEntry } from '@/features/telemetry';
 import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
+import {
+  enforcePublicLlmRateLimit,
+} from '@/features/triage/public-llm-rate-limit';
+import {
+  resolveBxSessionFromRequest,
+  applyBxSessionCookie,
+} from '@/features/triage/session-perimeter';
 import { SupportedLanguageVo } from '@/features/i18n';
 
 export const runtime = 'nodejs';
@@ -27,13 +32,6 @@ export const runtime = 'nodejs';
 const densityMatrixRepo = new InMemoryDensityMatrixRepository();
 const cognitiveMemory = new LanceDbCognitiveMemoryAdapter();
 const semanticCache = new LanceDbSemanticCacheAdapter();
-
-// Instancia compartida del limitador de tasa Token Bucket (PBI-SEC-RATE-001)
-// 10 fichas de capacidad, recarga de 1 ficha cada 6 segundos (10 por minuto)
-const triageRateLimiter = new TokenBucketRateLimiter({
-  capacity: 10,
-  refillRatePerSecond: 10 / 60,
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,32 +45,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extracción de la Identidad Sombra (Cookie perimetral, Header o UUID nuevo)
-    const existingCookie = req.cookies.get('bx_session_id')?.value;
-    const isNewSession = !existingCookie;
-    const sessionId =
-      existingCookie ||
-      req.headers.get('x-session-id') ||
-      body?.sessionId ||
-      randomUUID();
+    const { sessionId, isNewSession } = resolveBxSessionFromRequest(req);
 
-    // Verificación de Rate Limiting por Token Bucket (PBI-SEC-RATE-001)
-    const clientIp =
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-      req.headers.get('x-real-ip') ||
-      'unknown-client';
-    const rateLimitKey = `${clientIp}:${existingCookie || 'anon'}`;
-
-    const rateLimitResult = triageRateLimiter.consume(rateLimitKey);
+    const rateLimitResult = enforcePublicLlmRateLimit();
     if (!rateLimitResult.allowed) {
       const telemetryRepo = new PrismaTelemetryRepository();
       await telemetryRepo.log(
         new TelemetryEntry(
           'WARN',
           'SECURITY_PERIMETER',
-          '[Aduana /api/triage] Límite de tasa excedido por Token Bucket',
+          '[Aduana /api/triage] Límite de tasa excedido por Token Bucket (cubo global)',
           {
-            clientIp: clientIp.replace(/(\d+)\.(\d+)\.(\d+)\.(\d+)/, '$1.$2.xxx.xxx'),
             retryAfterSeconds: rateLimitResult.retryAfterSeconds,
           },
           429,
@@ -147,12 +130,7 @@ export async function POST(req: NextRequest) {
 
     // Si la sesión no existía en cookies, la inyectamos como cookie de sesión efímera
     if (isNewSession) {
-      response.cookies.set('bx_session_id', sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-      });
+      applyBxSessionCookie(response, sessionId);
     }
 
     response.cookies.set(
@@ -170,11 +148,25 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: unknown) {
     console.error('[API /api/triage Error]:', error);
+    try {
+      const telemetryRepo = new PrismaTelemetryRepository();
+      await telemetryRepo.log(
+        new TelemetryEntry(
+          'ERROR',
+          'SECURITY_PERIMETER',
+          '[Aduana /api/triage] Fallo interno no expuesto al cliente',
+          {
+            message: error instanceof Error ? error.message : String(error),
+          },
+          500,
+          0,
+        ),
+      );
+    } catch {
+      // fail-soft telemetría
+    }
     return NextResponse.json(
-      {
-        error: 'Fallo interno en la Aduana Universal de Triaje.',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-      },
+      { error: 'Fallo interno en la Aduana Universal de Triaje.' },
       { status: 500 },
     );
   }

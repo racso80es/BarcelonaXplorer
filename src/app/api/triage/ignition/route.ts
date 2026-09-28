@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import {
   ContextualIgnitionUseCase,
   OpenMeteoWeatherAdapter,
@@ -9,6 +8,12 @@ import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
 import { SupportedLanguageVo } from '@/features/i18n';
+import { enforcePublicLlmRateLimit } from '@/features/triage/public-llm-rate-limit';
+import {
+  resolveBxSessionFromRequest,
+  applyBxSessionCookie,
+} from '@/features/triage/session-perimeter';
+import { TelemetryEntry } from '@/features/telemetry';
 
 export const runtime = 'nodejs';
 
@@ -18,12 +23,23 @@ const cognitiveMemory = new LanceDbCognitiveMemoryAdapter();
 
 export async function GET(req: NextRequest) {
   try {
-    const existingCookie = req.cookies.get('bx_session_id')?.value;
-    const isNewSession = !existingCookie;
-    const sessionId =
-      existingCookie ||
-      req.headers.get('x-session-id') ||
-      randomUUID();
+    const rateLimitResult = enforcePublicLlmRateLimit();
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Demasiadas peticiones. Límite de tasa excedido.',
+          retryAfterSeconds: rateLimitResult.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimitResult.retryAfterSeconds),
+          },
+        },
+      );
+    }
+
+    const { sessionId, isNewSession } = resolveBxSessionFromRequest(req);
 
     const userAgent = req.headers.get('user-agent');
     const language =
@@ -57,13 +73,7 @@ export async function GET(req: NextRequest) {
 
     // Fijar la cookie perimetral de identidad si es una sesión nueva
     if (isNewSession) {
-      response.cookies.set('bx_session_id', sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60, // 30 días
-      });
+      applyBxSessionCookie(response, sessionId);
     }
 
     const resolvedLang = SupportedLanguageVo.from(
@@ -80,11 +90,25 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (error: unknown) {
     const errMessage = error instanceof Error ? error.message : 'Error inesperado en ignición contextual';
+    try {
+      const telemetryRepo = new PrismaTelemetryRepository();
+      await telemetryRepo.log(
+        new TelemetryEntry(
+          'ERROR',
+          'SECURITY_PERIMETER',
+          '[Aduana /api/triage/ignition] Fallo interno no expuesto al cliente',
+          { message: errMessage },
+          500,
+          0,
+        ),
+      );
+    } catch {
+      // fail-soft
+    }
     return NextResponse.json(
       {
         success: false,
         exitCode: 1,
-        errors: [errMessage],
         feedback: 'Fallo al ejecutar la ignición contextual',
       },
       { status: 500 },

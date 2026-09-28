@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from './route';
+import { resetPublicLlmRateLimitForTests } from '@/features/triage/public-llm-rate-limit';
 
 vi.mock('@/features/ai-engine/groq/groq-conversational-slm.adapter', () => {
   return {
@@ -35,6 +36,7 @@ vi.mock('@/features/telemetry', () => {
 
 describe('GET /api/triage/ignition', () => {
   beforeEach(() => {
+    resetPublicLlmRateLimitForTests();
     vi.clearAllMocks();
   });
 
