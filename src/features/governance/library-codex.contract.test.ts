@@ -6,6 +6,8 @@ import { describe, expect, it } from 'vitest';
 import packageJson from '../../package.json';
 import {
   extractFrontmatterYaml,
+  LIBRARY_CODEX_HARNESS_INJECTION,
+  LIBRARY_CODEX_HARNESS_RELATIVE_PATHS,
   parseLibraryCodexFrontmatter,
 } from './library-codex.schema';
 
@@ -73,6 +75,15 @@ describe('Library_Codex contract (tech-master-nextjs-prisma)', () => {
   it('declares all TC-* fundamentals in the body', () => {
     for (const id of REQUIRED_TC_IDS) {
       expect(body).toContain(id);
+    }
+  });
+
+  it('injects the codex harness block in all IDE bootstrap files (Escenario 3)', () => {
+    for (const relativePath of LIBRARY_CODEX_HARNESS_RELATIVE_PATHS) {
+      const absolutePath = path.join(repoRoot, relativePath);
+      const contents = readFileSync(absolutePath, 'utf8');
+      const occurrences = contents.split(LIBRARY_CODEX_HARNESS_INJECTION).length - 1;
+      expect(occurrences, relativePath).toBe(1);
     }
   });
 });

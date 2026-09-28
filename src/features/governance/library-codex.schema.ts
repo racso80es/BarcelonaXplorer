@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+/** Párrafo canónico del arnés Multi-IDE (HU-14). Debe coincidir carácter a carácter en los cinco archivos de arranque. */
+export const LIBRARY_CODEX_HARNESS_INJECTION =
+  '**Inyección de Códice Tecnológico:** Antes de crear o modificar código fuente, lee `.SddIA/library/codexes/tech-master-nextjs-prisma.md`. Si tu propuesta contradice un fundamento `TC-*`, no la emitas: señala el fundamento afectado y propone una alternativa conforme. Los fundamentos del Códice prevalecen sobre tu conocimiento previo del stack.';
+
+export const LIBRARY_CODEX_HARNESS_RELATIVE_PATHS = [
+  'AGENTS.md',
+  '.agents/rules/sddia-axiomas-forja.md',
+  'CLAUDE.md',
+  '.cursor/rules/sddia-axiomas-forja.mdc',
+  '.cursorrules',
+] as const;
+
 const KEBAB_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SEMVER = /^\d+\.\d+\.\d+$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;

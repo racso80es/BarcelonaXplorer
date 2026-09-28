@@ -12,3 +12,5 @@
 # Consulta canónica obligatoria:
 # - /.SddIA/library/norms/[ARQUITECTURA] Anexo Constitucional: Axiomas de Forja S+ Grade (Optimización para IA).md
 # - /.SddIA/library/norms/Estandar-Formato-Configuracion.yml
+
+**Inyección de Códice Tecnológico:** Antes de crear o modificar código fuente, lee `.SddIA/library/codexes/tech-master-nextjs-prisma.md`. Si tu propuesta contradice un fundamento `TC-*`, no la emitas: señala el fundamento afectado y propone una alternativa conforme. Los fundamentos del Códice prevalecen sobre tu conocimiento previo del stack.
