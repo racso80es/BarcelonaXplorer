@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { OrchestratorBlock } from '@/components/OrchestratorBlock';
 import { TacticalSpark, TacticalSparkProps } from '@/components/TacticalSpark';
 import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
@@ -33,29 +34,18 @@ type Turn = {
   sparks: Omit<TacticalSparkProps, 'icon'>[];
   status: 'pending' | 'orchestrating' | 'completed';
   aiResponse?: TurnAiResponse;
+  createdAt: Date;
+  orchestratingAt?: Date;
+  completedAt?: Date;
 };
 
 export default function OrchestratorPage() {
   const [turns, setTurns] = useState<Turn[]>([]);
-  const [inputValue, setInputValue] = useState('');
   const [activeItinerary, setActiveItinerary] = useState<EnrichedRoute | null>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('session_restored') === 'true') {
-        return {
-          type: 'success',
-          message: '🛡️ ¡Sesión restaurada con éxito desde Telegram! Tu itinerario ha sido recuperado.',
-        };
-      } else if (params.get('auth_error')) {
-        return {
-          type: 'error',
-          message: '⚠️ El enlace de acceso no es válido o ha expirado. Solicita uno nuevo en Telegram.',
-        };
-      }
-    }
-    return null;
-  });
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [ignitionState, setIgnitionState] = useState<{
     greeting: string;
     sparks: Omit<TacticalSparkProps, 'icon'>[];
@@ -79,9 +69,34 @@ export default function OrchestratorPage() {
     matrixId: 'default',
   });
   const [sysLang, setSysLang] = useState<SupportedLanguage>('es');
+  const [ignitionGreetingAt, setIgnitionGreetingAt] = useState<Date | null>(null);
   const ui = getUiDictionary(sysLang);
   const scrollRef = useRef<HTMLDivElement>(null);
   const promptFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const restored = params.get('session_restored') === 'true';
+    const authError = params.get('auth_error');
+    if (!restored && !authError) {
+      return;
+    }
+    queueMicrotask(() => {
+      if (restored) {
+        setNotification({
+          type: 'success',
+          message:
+            '🛡️ ¡Sesión restaurada con éxito desde Telegram! Tu itinerario ha sido recuperado.',
+        });
+      } else {
+        setNotification({
+          type: 'error',
+          message:
+            '⚠️ El enlace de acceso no es válido o ha expirado. Solicita uno nuevo en Telegram.',
+        });
+      }
+    });
+  }, []);
 
   // Ignición Contextual proactiva al montar la página (PBI-TRIAGE-IGN-003)
   useEffect(() => {
@@ -97,6 +112,7 @@ export default function OrchestratorPage() {
           if (typeof outcome._sys_lang === 'string') {
             setSysLang(SupportedLanguageVo.from(outcome._sys_lang).value);
           }
+          setIgnitionGreetingAt(new Date());
           setIgnitionState({
             greeting: outcome.greeting,
             sparks: (outcome.sparks || []).map(
@@ -147,33 +163,32 @@ export default function OrchestratorPage() {
       promptField instanceof HTMLTextAreaElement
         ? promptField.value.trim()
         : '';
-    const resolvedPrompt = formPrompt || inputValue.trim();
-    if (!resolvedPrompt) return;
-
-    if (resolvedPrompt !== inputValue) {
-      setInputValue(resolvedPrompt);
-    }
+    if (!formPrompt) return;
 
     const newTurnId = `turn-${Date.now()}`;
+    const createdAt = new Date();
     const newTurn: Turn = {
       id: newTurnId,
-      userPrompt: resolvedPrompt,
+      userPrompt: formPrompt,
       sparks: [],
       status: 'pending',
+      createdAt,
     };
 
     setTurns((prev) => [...prev, newTurn]);
-    setInputValue('');
     form.reset();
 
     setTimeout(() => {
+      const orchestratingAt = new Date();
       setTurns((prev) =>
         prev.map((t) =>
-          t.id === newTurnId ? { ...t, status: 'orchestrating' } : t,
+          t.id === newTurnId
+            ? { ...t, status: 'orchestrating', orchestratingAt }
+            : t,
         ),
       );
     }, 400);
-  }, [inputValue]);
+  }, []);
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_E2E_DISPATCH_HOOK !== '1') {
@@ -226,6 +241,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: {
                         kind: 'message',
                         text:
@@ -291,6 +307,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: { kind: 'message', text: bounceMsg },
                     }
                   : t,
@@ -311,6 +328,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: { kind: 'message', text: dialogueMsg },
                     }
                   : t,
@@ -331,6 +349,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: { kind: 'message', text: repromptMsg },
                     }
                   : t,
@@ -351,6 +370,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: { kind: 'message', text: claudicationMsg },
                     }
                   : t,
@@ -374,6 +394,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: { kind: 'message', text: summary },
                     }
                   : t,
@@ -396,6 +417,7 @@ export default function OrchestratorPage() {
                   ? {
                       ...t,
                       status: 'completed',
+                      completedAt: new Date(),
                       aiResponse: { kind: 'route', route: routePayload },
                     }
                   : t,
@@ -416,6 +438,7 @@ export default function OrchestratorPage() {
                 ? {
                     ...t,
                     status: 'completed',
+                    completedAt: new Date(),
                     aiResponse: {
                       kind: 'message',
                       text:
@@ -447,7 +470,7 @@ export default function OrchestratorPage() {
     }
   };
 
-  const handleSelectOption = (nodeId: string, optionId: string) => {
+  const handleSelectOption = useCallback((nodeId: string, optionId: string) => {
     setActiveItinerary((prev) => {
       if (!prev) return null;
       return {
@@ -464,53 +487,83 @@ export default function OrchestratorPage() {
         }),
       };
     });
-  };
+  }, []);
 
-  const handleTimeShift = (
-    nodeId: string,
-    newStartTime: string,
-    newEndTime?: string,
-  ) => {
-    setActiveItinerary((prev) => {
-      if (!prev) return null;
-      try {
-        const recalculated = ChronologicalPropagator.propagate(
-          prev.waypoints,
-          nodeId,
-          newStartTime,
-          newEndTime,
-        );
-        setNotification({
-          type: 'success',
-          message: '⏱️ Horario actualizado. Eventos posteriores recalculados automáticamente.',
+  const handleTimeShift = useCallback(
+    (nodeId: string, newStartTime: string, newEndTime?: string) => {
+      let notificationPayload: {
+        type: 'success' | 'error';
+        message: string;
+      } | null = null;
+
+      flushSync(() => {
+        setActiveItinerary((prev) => {
+          if (!prev) {
+            return null;
+          }
+          try {
+            const recalculated = ChronologicalPropagator.propagate(
+              prev.waypoints,
+              nodeId,
+              newStartTime,
+              newEndTime,
+            );
+            notificationPayload = {
+              type: 'success',
+              message:
+                '⏱️ Horario actualizado. Eventos posteriores recalculados automáticamente.',
+            };
+            return {
+              ...prev,
+              waypoints: recalculated,
+            };
+          } catch (err) {
+            notificationPayload = {
+              type: 'error',
+              message:
+                err instanceof Error
+                  ? err.message
+                  : 'Error al recalcular horario.',
+            };
+            return prev;
+          }
         });
-        return {
-          ...prev,
-          waypoints: recalculated,
-        };
-      } catch (err) {
-        setNotification({
-          type: 'error',
-          message: err instanceof Error ? err.message : 'Error al recalcular horario.',
-        });
-        return prev;
+      });
+
+      if (notificationPayload) {
+        setNotification(notificationPayload);
       }
-    });
-  };
+    },
+    [],
+  );
+
+  const handleCloseItinerary = useCallback(() => {
+    setActiveItinerary(null);
+  }, []);
+
+  const canvasThermalState =
+    thermalState.score >= 100 ? 'saturated' : 'operational';
 
   const handleForceDispatch = () => {
     if (!thermalState.isThresholdSatisfied || isLocked) return;
     const newTurnId = `turn-${Date.now()}`;
+    const createdAt = new Date();
     const newTurn: Turn = {
       id: newTurnId,
       userPrompt: 'Por favor, forja la ruta táctica inmediata con el contexto actual.',
       sparks: [],
       status: 'pending',
+      createdAt,
     };
     setTurns((prev) => [...prev, newTurn]);
     setTimeout(() => {
+      const orchestratingAt = new Date();
       setTurns((prev) =>
-        prev.map((t) => (t.id === newTurnId ? { ...t, status: 'orchestrating' } : t)),
+        prev.map((t) =>
+          t.id === newTurnId
+            ? { ...t, status: 'orchestrating', orchestratingAt }
+            : t,
+        ),
       );
     }, 400);
   };
@@ -582,7 +635,7 @@ export default function OrchestratorPage() {
                       <span>{ignitionState.greeting}</span>
                     </div>
                   }
-                  timestamp={new Date()}
+                  timestamp={ignitionGreetingAt ?? new Date(0)}
                 />
               </div>
             </div>
@@ -600,7 +653,7 @@ export default function OrchestratorPage() {
               <OrchestratorBlock
                 role="user"
                 content={turn.userPrompt}
-                timestamp={new Date()}
+                timestamp={turn.createdAt}
               />
 
               {/* Chispas de este turno (Fase 2+) */}
@@ -626,7 +679,7 @@ export default function OrchestratorPage() {
                      role="ai"
                      status="orchestrating"
                      content="Asimilando entropía y trazando ruta..."
-                     timestamp={new Date()}
+                     timestamp={turn.orchestratingAt ?? turn.createdAt}
                    />
                  </div>
               )}
@@ -693,7 +746,7 @@ export default function OrchestratorPage() {
                          <div className="text-zinc-500 italic">No se pudo forjar la ruta.</div>
                        )
                      }
-                     timestamp={new Date()}
+                     timestamp={turn.completedAt ?? turn.orchestratingAt ?? turn.createdAt}
                    />
 
                    {/* Drop de Anclaje Táctico y Alertas en Telegram tras completar ruta */}
@@ -732,7 +785,6 @@ export default function OrchestratorPage() {
               rows={2}
               placeholder={ui.chat.inputPlaceholder}
               defaultValue=""
-              onChange={(e) => setInputValue(e.target.value)}
               disabled={isLocked}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -768,8 +820,8 @@ export default function OrchestratorPage() {
         itinerary={activeItinerary}
         onSelectOption={handleSelectOption}
         onTimeShift={handleTimeShift}
-        onClose={() => setActiveItinerary(null)}
-        thermalState={thermalState.score >= 100 ? 'saturated' : 'operational'}
+        onClose={handleCloseItinerary}
+        thermalState={canvasThermalState}
         lang={sysLang}
       />
     )}

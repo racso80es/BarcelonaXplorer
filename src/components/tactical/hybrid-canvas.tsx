@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import {
   Clock,
   ExternalLink,
@@ -72,7 +72,7 @@ function resolveAffiliateCta(
   return dict.hybridCanvas.selectOption;
 }
 
-export function HybridCanvas({
+function HybridCanvasComponent({
   itinerary,
   onSelectOption,
   onTimeShift,
@@ -464,3 +464,5 @@ export function HybridCanvas({
     </aside>
   );
 }
+
+export const HybridCanvas = memo(HybridCanvasComponent);

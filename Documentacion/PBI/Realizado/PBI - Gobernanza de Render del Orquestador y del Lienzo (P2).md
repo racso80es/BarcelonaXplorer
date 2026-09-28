@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Gobernanza de Render del Orquestador y del Lienzo
 
 **Identificador:** PBI-STEEL-015
-**Estatus:** Pendiente (Backlog diferido — no se ejecuta antes de cerrar PBI-STEEL-001 a 009)
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-28
 **Historia de Usuario Relacionada:** [[OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20Historia%20de%20Usuario%2015%3A%20Auditor%C3%ADa%20Ontol%C3%B3gica%20de%20Acero%20y%20Purga%20Kaizen%20%28El%20Hombre%20de%20Acero%29.md)
 **Origen:** [`AUD-OPS-STEEL-001`](../../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md) · F-14, y la fila TC-NEXT-001 de `page.tsx` en el Códice
@@ -34,11 +34,11 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Campo de texto):** el input deja de ser la fuente de un `useState` de la página. El envío sigue leyendo el formulario. Un test de pulsación demuestra que `HybridCanvas` no se vuelve a renderizar por cada carácter.
-- [ ] **CA-2 (Lienzo estable):** `HybridCanvas` se memoiza. `handleSelectOption` y `handleTimeShift` no se recrean en cada render de la página.
-- [ ] **CA-3 (Notificación fuera del actualizador):** `setNotification` no se llama dentro de la función pasada a `setActiveItinerary`. El test cubre que una sola acción produce una sola notificación.
-- [ ] **CA-4 (Marca de tiempo):** el `Date` se crea al añadir el turno y se guarda en el dato del turno. Re-renderizar la página no cambia el texto de la hora.
-- [ ] **CA-5 (TC-NEXT-001 en esta página):** desaparece la lectura de `window.location` durante el estado inicial. La query se obtiene en un efecto o desde el Server Component, como ya pide el Códice. Al cerrar, la fila de deuda TC-NEXT-001 de `page.tsx` se borra. La de `telegram-anchor-drop.tsx` se queda: es otro fichero y no entra aquí.
+- [x] **CA-1 (Campo de texto):** el input deja de ser la fuente de un `useState` de la página. El envío sigue leyendo el formulario. Un test de pulsación demuestra que `HybridCanvas` no se vuelve a renderizar por cada carácter.
+- [x] **CA-2 (Lienzo estable):** `HybridCanvas` se memoiza. `handleSelectOption` y `handleTimeShift` no se recrean en cada render de la página.
+- [x] **CA-3 (Notificación fuera del actualizador):** `setNotification` no se llama dentro de la función pasada a `setActiveItinerary`. El test cubre que una sola acción produce una sola notificación.
+- [x] **CA-4 (Marca de tiempo):** el `Date` se crea al añadir el turno y se guarda en el dato del turno. Re-renderizar la página no cambia el texto de la hora.
+- [x] **CA-5 (TC-NEXT-001 en esta página):** desaparece la lectura de `window.location` durante el estado inicial. La query se obtiene en un efecto o desde el Server Component, como ya pide el Códice. Al cerrar, la fila de deuda TC-NEXT-001 de `page.tsx` se borra. La de `telegram-anchor-drop.tsx` se queda: es otro fichero y no entra aquí.
 
 ---
 
@@ -51,4 +51,4 @@
 
 ## 4. Evidencia de Certificación
 
-Pendiente de forja.
+Vitest 479 tests; `render-governance.test.tsx` (CA-1 y CA-3); `HybridCanvas` con `memo`; notificación de `handleTimeShift` vía `flushSync` + `setNotification` fuera del updater; Códice sin deuda TC-NEXT-001 en `page.tsx`.
