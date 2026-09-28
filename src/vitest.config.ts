@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
@@ -19,6 +19,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['../tests/**/*.test.{ts,tsx}', './**/*.test.{ts,tsx}'],
+    exclude: [...configDefaults.exclude, '**/playwright-e2e/**'],
   },
   resolve: {
     alias: {
