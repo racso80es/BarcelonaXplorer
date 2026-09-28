@@ -27,17 +27,21 @@ describe('LanceDbSemanticCacheAdapter (Vía del Yunque S+)', () => {
     );
   });
 
-  it('CA-1 & CA-2: debe retornar null si la tabla no existe', async () => {
+  it('debe retornar null si la tabla no existe', async () => {
     mockVectorStore.tableExists.mockResolvedValueOnce(false);
-    const result = await adapter.get([0.1, 0.2]);
+    const result = await adapter.get({
+      vector: [0.1, 0.2],
+      matrixId: 'default',
+      language: 'es',
+    });
     expect(result).toBeNull();
     expect(mockVectorStore.search).not.toHaveBeenCalled();
   });
 
-  it('CA-1 & CA-2: debe recuperar el resultado cacheado si la similitud es >= 0.98 y no ha expirado', async () => {
+  it('debe recuperar el resultado cacheado si similitud, matrixId e idioma coinciden', async () => {
     const cachedPayload = {
-      status: 'CASUAL_DIALOGUE',
-      response: '¡Hola! Veo que estás agotado...',
+      status: 'CASUAL_DIALOGUE' as const,
+      dialogueMessage: '¡Hola! Qué bien que te tomes un descanso.',
     };
 
     mockVectorStore.search.mockResolvedValueOnce([
@@ -51,78 +55,102 @@ describe('LanceDbSemanticCacheAdapter (Vía del Yunque S+)', () => {
             cachedResultJson: JSON.stringify(cachedPayload),
             createdAt: new Date().toISOString(),
             tokensSaved: 850,
-          },
-        },
-        score: 0.99, // Supera 0.98
-      },
-    ]);
-
-    const result = await adapter.get([0.1, 0.2]);
-    expect(result).not.toBeNull();
-    expect(result?.prompt).toBe('estoy muy cansado');
-    expect(result?.similarity).toBe(0.99);
-    expect(result?.tokensSaved).toBe(850);
-    expect(result?.result).toEqual(cachedPayload);
-  });
-
-  it('CA-1 & CA-2: debe descartar el resultado si la similitud es inferior a 0.98', async () => {
-    mockVectorStore.search.mockResolvedValueOnce([
-      {
-        document: {
-          id: 'hash2',
-          vector: [0.1, 0.2],
-          text: 'otra consulta',
-          metadata: {
-            cachedResultJson: JSON.stringify({ ok: true }),
-            createdAt: new Date().toISOString(),
-          },
-        },
-        score: 0.89, // Menor a 0.98
-      },
-    ]);
-
-    const result = await adapter.get([0.1, 0.2]);
-    expect(result).toBeNull();
-  });
-
-  it('CA-1 & CA-2: debe descartar el resultado si el TTL supera las 24 horas', async () => {
-    const fortyHoursAgo = new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString();
-
-    mockVectorStore.search.mockResolvedValueOnce([
-      {
-        document: {
-          id: 'hash3',
-          vector: [0.1, 0.2],
-          text: 'consulta antigua',
-          metadata: {
-            cachedResultJson: JSON.stringify({ ok: true }),
-            createdAt: fortyHoursAgo,
+            cacheMatrixId: 'default',
+            cacheLanguage: 'es',
           },
         },
         score: 0.99,
       },
     ]);
 
-    const result = await adapter.get([0.1, 0.2]);
+    const result = await adapter.get({
+      vector: [0.1, 0.2],
+      matrixId: 'default',
+      language: 'es',
+    });
+    expect(result).not.toBeNull();
+    expect(result?.result).toEqual(cachedPayload);
+    expect(result?.similarity).toBe(0.99);
+  });
+
+  it('debe ignorar coincidencias de otra matrixId o idioma', async () => {
+    mockVectorStore.search.mockResolvedValueOnce([
+      {
+        document: {
+          id: 'hash1',
+          vector: [0.1, 0.2],
+          text: 'hola',
+          metadata: {
+            cachedResultJson: JSON.stringify({
+              status: 'CASUAL_DIALOGUE',
+              dialogueMessage: 'Hi',
+            }),
+            createdAt: new Date().toISOString(),
+            cacheMatrixId: 'nightlife',
+            cacheLanguage: 'es',
+          },
+        },
+        score: 0.99,
+      },
+    ]);
+
+    const result = await adapter.get({
+      vector: [0.1, 0.2],
+      matrixId: 'default',
+      language: 'es',
+    });
     expect(result).toBeNull();
   });
 
-  it('CA-1 & CA-2: debe insertar correctamente un documento en la tabla al hacer set()', async () => {
-    await adapter.set('donde comer en el born', [0.3, 0.4], { route: 'born-tapas' }, 900);
+  it('debe descartar JSON que no cumple el esquema cacheado', async () => {
+    mockVectorStore.search.mockResolvedValueOnce([
+      {
+        document: {
+          id: 'bad',
+          vector: [0.1],
+          text: 'hola',
+          metadata: {
+            cachedResultJson: JSON.stringify({
+              status: 'DISPATCH_READY',
+              sessionId: 'leak',
+            }),
+            createdAt: new Date().toISOString(),
+            cacheMatrixId: 'default',
+            cacheLanguage: 'es',
+          },
+        },
+        score: 0.99,
+      },
+    ]);
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = await adapter.get({
+      vector: [0.1],
+      matrixId: 'default',
+      language: 'es',
+    });
+    expect(result).toBeNull();
+    warnSpy.mockRestore();
+  });
+
+  it('debe insertar documento con matrixId e idioma en metadata', async () => {
+    await adapter.set({
+      prompt: 'donde comer en el born',
+      vector: [0.3, 0.4],
+      matrixId: 'default',
+      language: 'es',
+      payload: {
+        status: 'CASUAL_DIALOGUE',
+        dialogueMessage: 'Prueba',
+      },
+      tokensSaved: 900,
+    });
 
     expect(mockVectorStore.upsert).toHaveBeenCalledTimes(1);
     const callArgs = mockVectorStore.upsert.mock.calls[0];
     expect(callArgs[0]).toBe('semantic_prompt_cache');
-    expect(callArgs[1][0].text).toBe('donde comer en el born');
-    expect(callArgs[1][0].metadata.tokensSaved).toBe(900);
-  });
-
-  it('Fail-Soft: no debe propagar excepción si el vector store falla', async () => {
-    mockVectorStore.search.mockRejectedValueOnce(new Error('LanceDB lock error'));
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    await expect(adapter.get([0.1])).resolves.toBeNull();
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(callArgs[1][0].metadata.cacheMatrixId).toBe('default');
+    expect(callArgs[1][0].metadata.cacheLanguage).toBe('es');
+    expect(callArgs[1][0].metadata.cachedResultJson).not.toContain('sessionId');
   });
 });

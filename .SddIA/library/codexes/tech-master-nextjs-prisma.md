@@ -148,4 +148,3 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 | Fundamento | Archivo | Trato |
 |---|---|---|
 | TC-NEXT-001 | `src/app/orchestrator/page.tsx`, `src/components/tactical/telegram-anchor-drop.tsx` | Deuda de HU-15. Si un cambio posterior toca el archivo, el código nuevo cumple TC-NEXT-001. |
-| TC-TS-001 | `src/features/triage/triage-input.use-case.ts` (cast de `cached.result`) | Deuda de HU-15. La excepción del singleton de Prisma no cubre esta línea. |

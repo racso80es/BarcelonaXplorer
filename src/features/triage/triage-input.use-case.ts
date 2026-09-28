@@ -22,10 +22,14 @@ import { TriageOutcome } from './triage-outcome.vo';
 import { GeographicScope } from '@/features/planner';
 import { TelemetryEntry } from '@/features/telemetry';
 
-import { ICognitiveMemoryPort, ISemanticCachePort } from '@/features/cognitive-memory';
+import {
+  ICognitiveMemoryPort,
+  ISemanticCachePort,
+  CachedSemanticTriageResult,
+  TRIAGE_SEMANTIC_CACHE_POLICY,
+} from '@/features/cognitive-memory';
 import { IEmbeddingPort } from '@/features/ai-engine';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
-import { TriageOutcomeDto } from './triage.schema';
 import { SupportedLanguage, SupportedLanguageVo } from '@/features/i18n';
 import {
   buildRouteLanguageDirective,
@@ -123,6 +127,13 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       input.clientLanguage,
     );
 
+    const sessionAgnosticCacheWrites = Object.keys(priorPayload).length === 0;
+    const cacheContext = {
+      matrixId,
+      language: sovereignLang,
+      sessionAgnosticCacheWrites,
+    };
+
     // 2. Preparar contexto inmutable para Jev AI (System One)
     const stateContext = JSON.stringify({
       sessionId: input.sessionId,
@@ -141,15 +152,21 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
           promptVector = undefined;
         } else {
           promptVector = embeddingResult.vector;
-          const cached = await this.semanticCache.get(promptVector);
-          if (cached && typeof cached.result === 'object' && cached.result !== null) {
-            const outcomeDto = cached.result as unknown as TriageOutcomeDto;
-            const cachedOutcome = TriageOutcome.fromDto({
-              ...outcomeDto,
-              sessionId: input.sessionId,
-              matrixId,
-              durationMs: Date.now() - startTime,
-              _sys_lang: sovereignLang,
+          const cached = await this.semanticCache.get({
+            vector: promptVector,
+            matrixId,
+            language: sovereignLang,
+          });
+          const cachedOutcome = this.buildOutcomeFromSemanticCache(cached?.result, {
+            sessionId: input.sessionId,
+            matrixId,
+            sovereignLang,
+            startTime,
+          });
+
+          if (cached && cachedOutcome) {
+            await this.matrixRepo.saveMatrixPayload(input.sessionId, matrixId, {
+              language: sovereignLang,
             });
 
             this.emitTelemetry({
@@ -169,6 +186,17 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
             });
 
             return cachedOutcome;
+          }
+
+          if (cached && !cachedOutcome) {
+            this.emitTelemetry({
+              level: 'WARN',
+              context: 'SECURITY_PERIMETER',
+              message: '[Aduana] Acierto de caché semántica descartado por esquema inválido',
+              statusCode: 200,
+              durationMs: Date.now() - startTime,
+              payload: { sessionId: input.sessionId, matrixId },
+            });
           }
         }
       } catch {
@@ -359,7 +387,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         _sys_lang: sovereignLang,
       });
 
-      this.saveToSemanticCache(trimmedPrompt, promptVector, casualOutcome);
+      this.saveToSemanticCache(trimmedPrompt, promptVector, casualOutcome, cacheContext);
       return casualOutcome;
     }
 
@@ -568,7 +596,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       _sys_lang: sovereignLang,
     });
 
-    this.saveToSemanticCache(trimmedPrompt, promptVector, dispatchOutcome);
+    this.saveToSemanticCache(trimmedPrompt, promptVector, dispatchOutcome, cacheContext);
     return dispatchOutcome;
   }
 
@@ -770,13 +798,98 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     });
   }
 
+  private buildOutcomeFromSemanticCache(
+    payload: CachedSemanticTriageResult | undefined,
+    ctx: {
+      sessionId: string;
+      matrixId: string;
+      sovereignLang: SupportedLanguage;
+      startTime: number;
+    },
+  ): TriageOutcome | null {
+    if (!payload) {
+      return null;
+    }
+
+    const durationMs = Date.now() - ctx.startTime;
+
+    if (payload.status === 'CASUAL_DIALOGUE' && payload.dialogueMessage) {
+      return TriageOutcome.createCasualDialogue({
+        sessionId: ctx.sessionId,
+        matrixId: ctx.matrixId,
+        dialogueMessage: payload.dialogueMessage,
+        durationMs,
+        partialPayload: { language: ctx.sovereignLang },
+        _sys_lang: ctx.sovereignLang,
+      });
+    }
+
+    if (payload.status === 'REBOUND_OUT_OF_SCOPE' && payload.bounceMessage) {
+      return TriageOutcome.createReboundOutOfScope({
+        sessionId: ctx.sessionId,
+        matrixId: ctx.matrixId,
+        bounceMessage: payload.bounceMessage,
+        rejectedEntity: payload.rejectedEntity,
+        durationMs,
+        _sys_lang: ctx.sovereignLang,
+      });
+    }
+
+    return null;
+  }
+
+  private toCacheablePayload(outcome: TriageOutcome): CachedSemanticTriageResult | null {
+    if (!TRIAGE_SEMANTIC_CACHE_POLICY[outcome.status].cacheable) {
+      return null;
+    }
+
+    if (outcome.status === 'CASUAL_DIALOGUE' && outcome.dialogueMessage) {
+      return {
+        status: 'CASUAL_DIALOGUE',
+        dialogueMessage: outcome.dialogueMessage,
+      };
+    }
+
+    if (outcome.status === 'REBOUND_OUT_OF_SCOPE' && outcome.bounceMessage) {
+      return {
+        status: 'REBOUND_OUT_OF_SCOPE',
+        bounceMessage: outcome.bounceMessage,
+        rejectedEntity: outcome.rejectedEntity,
+      };
+    }
+
+    return null;
+  }
+
   private saveToSemanticCache(
     prompt: string,
     vector: number[] | undefined,
     outcome: TriageOutcome,
+    ctx: {
+      matrixId: string;
+      language: SupportedLanguage;
+      sessionAgnosticCacheWrites: boolean;
+    },
   ): void {
-    if (!this.semanticCache || !vector) return;
-    this.semanticCache.set(prompt, vector, outcome.toDto(), 850).catch(() => {});
+    if (!this.semanticCache || !vector || !ctx.sessionAgnosticCacheWrites) {
+      return;
+    }
+
+    const payload = this.toCacheablePayload(outcome);
+    if (!payload) {
+      return;
+    }
+
+    this.semanticCache
+      .set({
+        prompt,
+        vector,
+        matrixId: ctx.matrixId,
+        language: ctx.language,
+        payload,
+        tokensSaved: 850,
+      })
+      .catch(() => {});
   }
 }
 

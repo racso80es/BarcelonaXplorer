@@ -1,13 +1,22 @@
+import { createHash } from 'node:crypto';
+import {
+  CachedSemanticTriageResultSchema,
+  SemanticCacheLookupSchema,
+  SemanticCacheStoreSchema,
+  type SemanticCacheLookup,
+  type SemanticCacheStore,
+} from './cached-triage.schema';
 import { ISemanticCachePort, CachedTriageResult } from './semantic-cache.port';
 import { IVectorStorePort, VectorDocument } from './vector-store.port';
 import { LanceDbVectorAdapter } from './lancedb-vector.adapter';
 
+function buildCacheDocumentId(matrixId: string, language: string, prompt: string): string {
+  const normalized = `${matrixId}\0${language}\0${prompt.trim().toLowerCase()}`;
+  return createHash('sha256').update(normalized).digest('hex').slice(0, 32);
+}
+
 /**
  * Adaptador de Caché Semántica Vectorial sobre LanceDB (Apache Arrow).
- * Protocolo de Acero — Grado S+
- * Axioma I: Localidad de Comportamiento
- * Axioma II: Tolerancia Cero a la Inferencia
- * Axioma V: Ejecución Encapsulada con Fail-Soft ante indisponibilidad del motor vectorial
  */
 export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
   public static readonly TABLE_NAME = 'semantic_prompt_cache';
@@ -18,7 +27,14 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
     private readonly maxAgeHours: number = 24,
   ) {}
 
-  async get(vector: number[]): Promise<CachedTriageResult | null> {
+  async get(lookup: SemanticCacheLookup): Promise<CachedTriageResult | null> {
+    const parsedLookup = SemanticCacheLookupSchema.safeParse(lookup);
+    if (!parsedLookup.success) {
+      return null;
+    }
+
+    const { vector, matrixId, language } = parsedLookup.data;
+
     try {
       const exists = await this.vectorStore.tableExists(LanceDbSemanticCacheAdapter.TABLE_NAME);
       if (!exists) {
@@ -28,60 +44,80 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
       const results = await this.vectorStore.search(
         LanceDbSemanticCacheAdapter.TABLE_NAME,
         vector,
-        1,
+        8,
       );
 
-      if (results.length === 0) {
-        return null;
+      for (const top of results) {
+        if (top.score < this.similarityThreshold) {
+          continue;
+        }
+
+        const metadata = top.document.metadata as {
+          prompt?: string;
+          cachedResultJson?: string;
+          createdAt?: string;
+          tokensSaved?: number;
+          cacheMatrixId?: string;
+          cacheLanguage?: string;
+        };
+
+        if (metadata.cacheMatrixId !== matrixId || metadata.cacheLanguage !== language) {
+          continue;
+        }
+
+        if (!metadata || typeof metadata.cachedResultJson !== 'string') {
+          continue;
+        }
+
+        const createdAt = metadata.createdAt ? new Date(metadata.createdAt) : new Date(0);
+        const ageHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+        if (ageHours > this.maxAgeHours) {
+          continue;
+        }
+
+        let parsedJson: unknown;
+        try {
+          parsedJson = JSON.parse(metadata.cachedResultJson);
+        } catch {
+          continue;
+        }
+
+        const payload = CachedSemanticTriageResultSchema.safeParse(parsedJson);
+        if (!payload.success) {
+          console.warn(
+            '[LanceDbSemanticCacheAdapter] Entrada cacheada inválida descartada:',
+            payload.error.message,
+          );
+          continue;
+        }
+
+        return {
+          prompt: metadata.prompt ?? top.document.text,
+          result: payload.data,
+          similarity: top.score,
+          tokensSaved: metadata.tokensSaved ?? 850,
+          createdAt,
+        };
       }
 
-      const top = results[0];
-      if (top.score < this.similarityThreshold) {
-        return null;
-      }
-
-      const metadata = top.document.metadata as {
-        prompt?: string;
-        cachedResultJson?: string;
-        createdAt?: string;
-        tokensSaved?: number;
-      };
-
-      if (!metadata || typeof metadata.cachedResultJson !== 'string') {
-        return null;
-      }
-
-      const createdAt = metadata.createdAt ? new Date(metadata.createdAt) : new Date(0);
-      const ageHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-      if (ageHours > this.maxAgeHours) {
-        return null; // TTL caducado
-      }
-
-      const result = JSON.parse(metadata.cachedResultJson) as Record<string, unknown>;
-
-      return {
-        prompt: metadata.prompt ?? top.document.text,
-        result,
-        similarity: top.score,
-        tokensSaved: metadata.tokensSaved ?? 850,
-        createdAt,
-      };
+      return null;
     } catch (err) {
-      // Fail-soft: la falla de caché nunca debe detener la inferencia principal
       console.warn('[LanceDbSemanticCacheAdapter get Fallback Error]:', err);
       return null;
     }
   }
 
-  async set(
-    prompt: string,
-    vector: number[],
-    result: Record<string, unknown>,
-    tokensSaved: number = 850,
-  ): Promise<void> {
+  async set(entry: SemanticCacheStore): Promise<void> {
+    const parsed = SemanticCacheStoreSchema.safeParse(entry);
+    if (!parsed.success) {
+      console.warn('[LanceDbSemanticCacheAdapter set] Entrada rechazada:', parsed.error.message);
+      return;
+    }
+
+    const { prompt, vector, matrixId, language, payload, tokensSaved } = parsed.data;
+
     try {
-      // Generar ID determinista basado en el prompt
-      const id = Buffer.from(prompt.trim().toLowerCase()).toString('base64').slice(0, 32);
+      const id = buildCacheDocumentId(matrixId, language, prompt);
 
       const doc: VectorDocument = {
         id,
@@ -89,15 +125,16 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
         text: prompt.trim(),
         metadata: {
           prompt: prompt.trim(),
-          cachedResultJson: JSON.stringify(result),
+          cachedResultJson: JSON.stringify(payload),
           createdAt: new Date().toISOString(),
-          tokensSaved,
+          tokensSaved: tokensSaved ?? 850,
+          cacheMatrixId: matrixId,
+          cacheLanguage: language,
         },
       };
 
       await this.vectorStore.upsert(LanceDbSemanticCacheAdapter.TABLE_NAME, [doc]);
     } catch (err) {
-      // Fail-soft
       console.warn('[LanceDbSemanticCacheAdapter set Fallback Error]:', err);
     }
   }

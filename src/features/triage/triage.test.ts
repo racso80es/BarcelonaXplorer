@@ -309,13 +309,7 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
           prompt: 'Hola, estoy cansado',
           result: {
             status: 'CASUAL_DIALOGUE',
-            sessionId: 'sess-cached',
-            matrixId: 'default',
-            score: 0,
-            survivalThreshold: 60,
-            isThresholdSatisfied: false,
             dialogueMessage: '¡Hola! Qué bien que te tomes un descanso.',
-            durationMs: 12,
           },
           similarity: 0.98,
           tokensSaved: 850,
@@ -364,6 +358,99 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
           }),
         }),
       );
+      expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalledWith(
+        'sess-cached',
+        'default',
+        expect.objectContaining({ language: 'es' }),
+      );
+    });
+
+    it('PBI-STEEL-003: no cachea diálogo casual si la sesión ya tenía borrador de matriz', async () => {
+      mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({
+        time_window: '2 horas',
+      });
+
+      const mockSemanticCache = {
+        get: vi.fn().mockResolvedValue(null),
+        set: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.1),
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const uc = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        undefined,
+        undefined,
+        undefined,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+        mockSemanticCache,
+      );
+
+      await uc.execute({
+        sessionId: 'sess-with-draft',
+        prompt: 'hola',
+      });
+
+      expect(mockSemanticCache.set).not.toHaveBeenCalled();
+    });
+
+    it('PBI-STEEL-003: sesión B no recibe payload de matriz ajena en acierto de caché', async () => {
+      const mockSemanticCache = {
+        get: vi.fn().mockResolvedValue({
+          prompt: 'hola',
+          result: {
+            status: 'CASUAL_DIALOGUE',
+            dialogueMessage: 'Respuesta genérica cacheada',
+          },
+          similarity: 0.99,
+          tokensSaved: 850,
+          createdAt: new Date(),
+        }),
+        set: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.2),
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const uc = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        undefined,
+        undefined,
+        undefined,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+        mockSemanticCache,
+      );
+
+      const result = await uc.execute({
+        sessionId: 'sess-b-empty',
+        prompt: 'hola',
+      });
+
+      expect(result.status).toBe('CASUAL_DIALOGUE');
+      expect(result.sessionId).toBe('sess-b-empty');
+      expect(result.partialPayload).toEqual({ language: 'es' });
+      expect(result.partialPayload).not.toHaveProperty('time_window');
     });
 
     it('debe migrar limpiamente variables universales al transicionar de matriz (PBI-CORE-TRIAGE-003)', async () => {
