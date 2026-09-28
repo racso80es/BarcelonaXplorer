@@ -25,7 +25,7 @@
 **Quiero** instanciar Playwright como el motor canónico de pruebas **End‑to‑End (E2E) de navegador**, integrado en la tubería de Integración Continua (CI) y regido por normas de crecimiento simbiótico,
 **Para** garantizar que ninguna funcionalidad crítica (orquestación del Lienzo Híbrido `HybridCanvas`, Escudo Anti‑Trampas, rutas `/Admin` protegidas por el `middleware.ts`) colapse por regresiones ocultas, bloqueando atómicamente la promoción del código hacia el Nodo 11 si el sistema no supera la auditoría empírica automatizada.
 
-> **Precisión de estado (forjado):** `@playwright/test` es **devDependency** en `src/package.json` con script `test:e2e`; el motor vive en `src/playwright.config.ts` (`testDir: './playwright-e2e'`). Los specs E2E de navegador están en `src/playwright-e2e/*.spec.ts`; Vitest sigue reservado a `tests/e2e/*.e2e.test.ts` y a `**/*.test.ts` con exclusión `**/playwright-e2e/**`. El cuádruple oráculo (`eslint → tsc → vitest → playwright`) corre en `scripts/audit-anchor.sh` y la Aduana Empírica precede a Ansistrano en `src/deploy.sh`.
+> **Precisión de estado (forjado):** `@playwright/test` es **devDependency** en `src/package.json` con script `test:e2e`; el motor vive en `src/playwright.config.ts` (`testDir: './playwright-e2e'`). Los specs E2E de navegador están en `src/playwright-e2e/*.spec.ts`. Vitest cubre `**/*.test.ts` excluyendo `playwright-e2e/` y los E2E *en vivo* `tests/e2e/*.e2e.test.ts` (opt-in con `npm run test:live` y credenciales en `.env.local`). El cuádruple oráculo (`eslint → tsc → vitest → playwright`) corre en `scripts/audit-anchor.sh` y la Aduana Empírica precede a Ansistrano en `src/deploy.sh`.
 
 ---
 

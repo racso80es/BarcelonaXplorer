@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:live": "vitest run ../tests/e2e",
     "test:e2e": "playwright test"
   },
   "dependencies": {

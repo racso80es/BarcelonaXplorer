@@ -19,7 +19,12 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['../tests/**/*.test.{ts,tsx}', './**/*.test.{ts,tsx}'],
-    exclude: [...configDefaults.exclude, '**/playwright-e2e/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      '**/playwright-e2e/**',
+      // E2E en vivo (JEV/Groq): fuera del cuádruple oráculo; usar npm run test:live
+      '../tests/e2e/**/*.e2e.test.ts',
+    ],
   },
   resolve: {
     alias: {
