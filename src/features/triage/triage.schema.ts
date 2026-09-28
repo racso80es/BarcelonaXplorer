@@ -9,6 +9,7 @@ export const TriageStatusSchema = z.enum([
   'REBOUND_OUT_OF_SCOPE',
   'INCOMPLETE_REPROMPT',
   'DISPATCH_READY',
+  'DISPATCH_CLAUDICATION',
   'CASUAL_DIALOGUE',
 ]);
 
@@ -64,6 +65,7 @@ export const TriageOutcomeDtoSchema = z.object({
   bounceMessage: z.string().optional(),
   repromptMessage: z.string().optional(),
   dialogueMessage: z.string().optional(),
+  claudicationMessage: z.string().optional(),
   missingVariable: z.string().optional(),
   rejectedEntity: z.string().optional(),
   detectedDistricts: z.array(z.string()).optional(),

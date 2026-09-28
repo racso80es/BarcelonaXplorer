@@ -506,6 +506,40 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       });
     }
 
+    if (typeof forgedRoute === 'string') {
+      const providerCodeMatch = forgedRoute.match(/\b(503|429)\b/);
+      const providerStatusCode = providerCodeMatch
+        ? Number.parseInt(providerCodeMatch[1], 10)
+        : 503;
+      this.emitTelemetry({
+        level: 'WARN',
+        context: 'SECURITY_PERIMETER',
+        message: `[Triage] Claudicación del proveedor (${providerStatusCode}): ${forgedRoute.slice(0, 200)}`,
+        statusCode: providerStatusCode,
+        durationMs: Date.now() - startTime,
+        payload: {
+          eventType: 'LLM_ENGINE',
+          sessionId: input.sessionId,
+          matrixId,
+          providerStatusCode,
+        },
+      });
+      await this.matrixRepo.clearMatrixPayload(input.sessionId, matrixId);
+      const durationMs = Date.now() - startTime;
+      return TriageOutcome.createDispatchClaudication({
+        sessionId: input.sessionId,
+        matrixId,
+        score: density.score,
+        survivalThreshold: density.survivalThreshold,
+        claudicationMessage: forgedRoute,
+        payload: mergedPayload,
+        geographicScope,
+        detectedDistricts,
+        durationMs,
+        _sys_lang: sovereignLang,
+      });
+    }
+
     // CA-3: Cruce asíncrono con Proveedores de Afiliados (TheFork / Civitatis)
     let enrichedItinerary: unknown = undefined;
     if (

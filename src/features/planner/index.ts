@@ -21,4 +21,3 @@ export * from './chronological-propagator';
 export * from './itinerary-persistence.port';
 export * from './prisma-itinerary.repository';
 export * from './streaming-events.schema';
-export * from './stream-consumer';

@@ -18,6 +18,7 @@ export class TriageOutcome {
     public readonly bounceMessage?: string,
     public readonly repromptMessage?: string,
     public readonly dialogueMessage?: string,
+    public readonly claudicationMessage?: string,
     public readonly missingVariable?: string,
     public readonly rejectedEntity?: string,
     public readonly payload?: DefaultDensityPayload | Partial<DefaultDensityPayload>,
@@ -58,6 +59,7 @@ export class TriageOutcome {
       undefined,
       undefined,
       undefined,
+      undefined,
       params.rejectedEntity,
       undefined,
       undefined,
@@ -91,6 +93,7 @@ export class TriageOutcome {
       false,
       undefined,
       params.repromptMessage,
+      undefined,
       undefined,
       params.missingVariable,
       undefined,
@@ -128,7 +131,43 @@ export class TriageOutcome {
       params.dialogueMessage,
       undefined,
       undefined,
+      undefined,
       params.partialPayload,
+      undefined,
+      undefined,
+      params.geographicScope,
+      params.detectedDistricts,
+      params.durationMs,
+      params._sys_lang ?? 'es',
+    );
+  }
+
+  public static createDispatchClaudication(params: {
+    sessionId: string;
+    matrixId: string;
+    score: number;
+    survivalThreshold: number;
+    claudicationMessage: string;
+    payload: DefaultDensityPayload;
+    geographicScope?: GeographicScope;
+    detectedDistricts?: readonly string[];
+    durationMs: number;
+    _sys_lang?: SupportedLanguage;
+  }): TriageOutcome {
+    return new TriageOutcome(
+      'DISPATCH_CLAUDICATION',
+      params.sessionId,
+      params.matrixId,
+      params.score,
+      params.survivalThreshold,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      params.claudicationMessage,
+      undefined,
+      undefined,
+      params.payload,
       undefined,
       undefined,
       params.geographicScope,
@@ -163,6 +202,7 @@ export class TriageOutcome {
       undefined,
       undefined,
       undefined,
+      undefined,
       params.payload,
       params.route,
       params.itinerary,
@@ -184,6 +224,7 @@ export class TriageOutcome {
       dto.bounceMessage,
       dto.repromptMessage,
       dto.dialogueMessage,
+      dto.claudicationMessage,
       dto.missingVariable,
       dto.rejectedEntity,
       dto.payload,
@@ -207,6 +248,7 @@ export class TriageOutcome {
       bounceMessage: this.bounceMessage,
       repromptMessage: this.repromptMessage,
       dialogueMessage: this.dialogueMessage,
+      claudicationMessage: this.claudicationMessage,
       missingVariable: this.missingVariable,
       rejectedEntity: this.rejectedEntity,
       detectedDistricts: this.detectedDistricts

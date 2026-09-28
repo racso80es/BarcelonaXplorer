@@ -512,8 +512,18 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         clearMatrixPayload: vi.fn().mockResolvedValue(undefined),
       };
 
+      const mockRoute = new TacticalRoute('r-i18n', 'Ruta i18n', [
+        new TacticalWaypoint(
+          'wp-i18n',
+          'Born',
+          'Paseo',
+          undefined,
+          new TimeSpan('10:00', '12:00'),
+        ),
+      ]);
+
       mockRouteUseCase = {
-        execute: vi.fn().mockResolvedValue('ruta'),
+        execute: vi.fn().mockResolvedValue(mockRoute),
       } as unknown as GenerateTacticalRouteUseCase;
 
       useCase = new TriageInputUseCase(

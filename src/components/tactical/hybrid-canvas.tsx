@@ -29,7 +29,6 @@ interface HybridCanvasProps {
   onSelectOption: (nodeId: string, optionId: string) => void;
   onTimeShift: (nodeId: string, newStartTime: string, newEndTime?: string) => void;
   onClose?: () => void;
-  isStreaming?: boolean;
   thermalState?: 'operational' | 'saturated';
   lang?: SupportedLanguage;
 }
@@ -78,7 +77,6 @@ export function HybridCanvas({
   onSelectOption,
   onTimeShift,
   onClose,
-  isStreaming,
   thermalState,
   lang = 'es',
 }: HybridCanvasProps) {
@@ -160,11 +158,6 @@ export function HybridCanvas({
               <span className="text-[10px] font-mono uppercase bg-emerald-900/40 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-800/40">
                 {isSaturated ? 'S+ Grade' : 'Base'}
               </span>
-              {isStreaming && (
-                <span className="text-[10px] font-mono uppercase bg-amber-900/40 text-amber-300 px-1.5 py-0.5 rounded border border-amber-700/50 animate-pulse">
-                  Streaming
-                </span>
-              )}
             </h2>
             <p className="text-xs text-zinc-400 line-clamp-1">{itinerary.summary}</p>
           </div>
@@ -204,11 +197,6 @@ export function HybridCanvas({
 
       {/* LISTA DE NODOS / PARCELAS */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {itinerary.waypoints.length === 0 && isStreaming && (
-          <div className="p-6 text-center text-zinc-400 text-xs font-mono border border-dashed border-zinc-800 rounded-xl bg-zinc-950/40 animate-pulse">
-            [ Sintetizando y enriqueciendo paradas en tiempo real... ]
-          </div>
-        )}
         {itinerary.waypoints.map((wp, index) => {
           const isExpanded = expandedNodeId === wp.id;
           const isEditingTime = editingNodeId === wp.id;
@@ -472,12 +460,6 @@ export function HybridCanvas({
           );
         })}
 
-        {isStreaming && itinerary.waypoints.length > 0 && (
-          <div className="p-3 text-center text-emerald-400 text-xs font-mono border border-emerald-900/40 rounded-lg bg-emerald-950/20 flex items-center justify-center gap-2 animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Transmitiendo próximas paradas y enriquecimiento de afiliados...</span>
-          </div>
-        )}
       </div>
     </aside>
   );

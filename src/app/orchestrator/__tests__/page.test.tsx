@@ -19,9 +19,13 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
           status: 200,
           json: async () => ({
             status: 'DISPATCH_READY',
+            sessionId: 'sess-mock',
+            matrixId: 'default',
             score: 100,
             survivalThreshold: 60,
             isThresholdSatisfied: true,
+            durationMs: 42,
+            _sys_lang: 'es',
             route: {
               id: 'route-mock',
               summary: 'Ruta Táctica Consolidada mock',
@@ -81,11 +85,9 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(await screen.findByText(/Matriz saturada/i, {}, { timeout: 2000 })).toBeDefined();
 
     // Debe mostrar la resolución final (Fase 3)
-    expect(await screen.findByText(/Ruta Táctica Consolidada/i, {}, { timeout: 4500 })).toBeDefined();
-
-    // Debe desplegar el Lienzo Lateral Híbrido
-    expect(await screen.findByText(/Itinerario Táctico/i, {}, { timeout: 2000 })).toBeDefined();
-    expect(screen.getByText(/Itinerario Híbrido Enriquecido/i)).toBeDefined();
+    // Debe desplegar el Lienzo Lateral Híbrido (itinerario inline desde /api/triage)
+    expect(await screen.findByText(/Itinerario Táctico/i, {}, { timeout: 4500 })).toBeDefined();
+    expect(await screen.findByText(/Inicio Seguro/i, {}, { timeout: 2000 })).toBeDefined();
     expect(screen.getByText(/Entrada General/i)).toBeDefined();
   }, 10000);
 

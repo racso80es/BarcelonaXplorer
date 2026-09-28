@@ -24,6 +24,7 @@ export const TRIAGE_SEMANTIC_CACHE_POLICY: Record<
   REBOUND_OUT_OF_SCOPE: { cacheable: true },
   INCOMPLETE_REPROMPT: { cacheable: false },
   DISPATCH_READY: { cacheable: false },
+  DISPATCH_CLAUDICATION: { cacheable: false },
 };
 
 export const SemanticCacheLookupSchema = z.object({
