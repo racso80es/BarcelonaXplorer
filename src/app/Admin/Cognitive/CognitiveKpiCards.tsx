@@ -36,17 +36,22 @@ export async function CognitiveKpiCards({
   let tokensSavedTotal = 0;
 
   try {
-    const [fetchedMetrics, fetchedPing, triageLogs] = await Promise.all([
+    const [fetchedMetrics, fetchedPing] = await Promise.all([
       metricsPort.getCognitiveMetrics(),
       vectorStorePort.ping(),
-      prisma.telemetryLog.findMany({
-        where: { context: 'SECURITY_PERIMETER' },
-        take: 50,
-        select: { payload: true },
-      }),
     ]);
     metrics = fetchedMetrics;
     ping = fetchedPing;
+  } catch (error) {
+    console.warn('[CognitiveKpiCards] Error recuperando métricas cognitivas:', error);
+  }
+
+  try {
+    const triageLogs = await prisma.telemetryLog.findMany({
+      where: { context: 'SECURITY_PERIMETER' },
+      take: 50,
+      select: { payload: true },
+    });
 
     for (const log of triageLogs) {
       if (typeof log.payload === 'object' && log.payload !== null) {
@@ -57,7 +62,7 @@ export async function CognitiveKpiCards({
       }
     }
   } catch (error) {
-    console.warn('[CognitiveKpiCards] Error recuperando métricas cognitivas:', error);
+    console.warn('[CognitiveKpiCards] Telemetría de tokens no disponible:', error);
   }
 
   // 1. Tendencia y semáforo Zeigarnik Score (MySQL)

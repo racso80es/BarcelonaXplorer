@@ -7,7 +7,21 @@ import { TelemetryLogInputSchema } from '@/features/telemetry';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('Auditoría Integral del Órgano Sensorial y Telemetría Centralizada', () => {
+const hasDatabaseUrl = (): boolean => {
+  if (process.env.DATABASE_URL) {
+    return true;
+  }
+  const envPath = path.resolve(__dirname, '../../src/.env.local');
+  if (!fs.existsSync(envPath)) {
+    return false;
+  }
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  return /DATABASE_URL=/.test(envContent);
+};
+
+describe.skipIf(!hasDatabaseUrl())(
+  'Auditoría Integral del Órgano Sensorial y Telemetría Centralizada',
+  () => {
   let prisma: PrismaClient;
   let repository: PrismaTelemetryRepository;
 

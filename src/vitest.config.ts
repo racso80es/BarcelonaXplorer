@@ -24,6 +24,8 @@ export default defineConfig({
       '**/playwright-e2e/**',
       // E2E en vivo (JEV/Groq): fuera del cuádruple oráculo; usar npm run test:live
       '../tests/e2e/**/*.e2e.test.ts',
+      // Integración MySQL: requiere DATABASE_URL; usar npm run test:integration
+      '../tests/integration/**',
     ],
   },
   resolve: {
