@@ -11,6 +11,8 @@ services:
   # Servicio Web: PWA Next.js 16 (App Router + Standalone Output)
   # ─────────────────────────────────────────────────────────────
   web:
+    # Axioma II: etiqueta inmutable por release (PBI-STEEL-008) — BX_RELEASE_TAG en hook Ansistrano
+    image: barcelonaxplorer-web:${BX_RELEASE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile

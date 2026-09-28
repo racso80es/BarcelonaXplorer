@@ -9,16 +9,25 @@
 # ═══════════════════════════════════════════════════════════════
 
 # Axioma V: Ejecución Encapsulada y Aislamiento de Fallos (Build-Before-Swap)
-# Paso 1: Compilar la imagen Docker de la aplicación web antes de alterar cualquier contenedor en ejecución
-- name: Compilar imagen web de forma aislada previa a la sustitución (Build-Before-Swap)
-  ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer build web
+# Paso 1: Etiquetar release, compilar imagen inmutable y conservar al menos 2 tags (PBI-STEEL-008)
+- name: Registrar etiqueta de release y compilar imagen web etiquetada (Build-Before-Swap)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    export BX_RELEASE_TAG="{{ ansistrano_release_path | basename }}"
+    echo "$BX_RELEASE_TAG" > .bx_release_tag
+    docker compose --env-file .env.production -p barcelonaxplorer build web
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
+  environment:
+    BX_RELEASE_TAG: "{{ ansistrano_release_path | basename }}"
 
 # Axioma III: Convergencia declarativa sin derribo destructivo previo (Zero-Downtime)
 # Paso 2: Sustituir de forma atómica y transparente únicamente los contenedores cuya imagen ha cambiado
 - name: Orquestar convergencia declarativa de contenedores Zero-Downtime
-  ansible.builtin.shell: docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
+  ansible.builtin.shell: |
+    set -euo pipefail
+    export BX_RELEASE_TAG="$(cat .bx_release_tag)"
+    docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
 
@@ -168,13 +177,23 @@
       ansible.builtin.debug:
         msg: "CRITICAL: La nueva release no responde satisfactoriamente tras 10 intentos. Iniciando reversión determinista automatizada..."
 
-    - name: Conmutar symlink current a la release anterior y restaurar servicios
+    - name: Conmutar symlink current a la release anterior y restaurar imagen etiquetada
       ansible.builtin.shell: |
+        set -euo pipefail
         PREV_RELEASE=$(ls -1td {{ ansistrano_deploy_to }}/releases/* | sed -n '2p')
         if [ -n "$PREV_RELEASE" ] && [ -d "$PREV_RELEASE" ]; then
           echo "Revirtiendo symlink current a release previa: $PREV_RELEASE"
           ln -sfn "$PREV_RELEASE" {{ ansistrano_deploy_to }}/current
           cd {{ ansistrano_deploy_to }}/current
+          if [ ! -f .bx_release_tag ]; then
+            echo "ADVERTENCIA: release previa sin .bx_release_tag; abortando rescate determinista."
+            exit 1
+          fi
+          export BX_RELEASE_TAG="$(cat .bx_release_tag)"
+          if ! docker image inspect "barcelonaxplorer-web:${BX_RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Imagen ${BX_RELEASE_TAG} ausente; reconstruyendo desde release previa..."
+            docker compose --env-file .env.production -p barcelonaxplorer build web
+          fi
           docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
         else
           echo "ADVERTENCIA: No se localizó release previa para restaurar."
