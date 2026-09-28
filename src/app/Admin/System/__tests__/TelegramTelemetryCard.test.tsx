@@ -8,11 +8,11 @@ import {
   TelegramTelemetryCard,
   TelegramTelemetryCardSkeleton,
 } from '@/app/Admin/System/TelegramTelemetryCard';
-import { AuditTelegramBotHealthUseCasePort } from '@/features/telegram';
-import { AuditTelegramBotHealthUseCase } from '@/features/telegram';
+import type { AuditTelegramBotHealthUseCasePort } from '@/features/telegram';
+import { AuditTelegramBotHealthUseCase } from '@/features/telegram/server';
 
-vi.mock('@/features/telegram', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/telegram')>();
+vi.mock('@/features/telegram/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/telegram/server')>();
   return {
     ...actual,
     AuditTelegramBotHealthUseCase: vi.fn(),

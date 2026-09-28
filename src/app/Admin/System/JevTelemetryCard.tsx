@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cpu } from 'lucide-react';
-import {
+import type {
   AuditJevHealthUseCasePort,
   AuditJevHealthResult,
 } from '@/features/ai-engine';
-import { AuditJevHealthUseCase } from '@/features/ai-engine';
-import { JevClient } from '@/features/ai-engine/jev/jevClient';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { AuditJevHealthUseCase, JevClient } from '@/features/ai-engine/server';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 
 export interface JevTelemetryCardProps {
   useCase?: AuditJevHealthUseCasePort;

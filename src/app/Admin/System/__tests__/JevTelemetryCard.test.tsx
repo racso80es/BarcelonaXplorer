@@ -8,11 +8,13 @@ import {
   JevTelemetryCard,
   JevTelemetryCardSkeleton,
 } from '@/app/Admin/System/JevTelemetryCard';
-import { AuditJevHealthUseCasePort } from '@/features/ai-engine';
-import { AuditJevHealthUseCase } from '@/features/ai-engine';
+import type { AuditJevHealthUseCasePort } from '@/features/ai-engine';
+import { AuditJevHealthUseCase } from '@/features/ai-engine/server';
 
-vi.mock('@/features/ai-engine', () => {
+vi.mock('@/features/ai-engine/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/ai-engine/server')>();
   return {
+    ...actual,
     AuditJevHealthUseCase: vi.fn(),
   };
 });

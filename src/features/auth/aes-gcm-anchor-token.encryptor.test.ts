@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AesGcmAnchorTokenEncryptor } from '@/features/auth';
+import { AesGcmAnchorTokenEncryptor } from './aes-gcm-anchor-token.encryptor';
 import { DomainException } from '@/shared/exceptions/domain.exception';
 
 describe('AesGcmAnchorTokenEncryptor', () => {

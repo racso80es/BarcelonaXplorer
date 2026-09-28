@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Send } from 'lucide-react';
-import {
+import type {
   AuditTelegramBotHealthUseCasePort,
   AuditTelegramBotHealthResult,
 } from '@/features/telegram';
-import { AuditTelegramBotHealthUseCase } from '@/features/telegram';
-import { TelegramBotApiGateway } from '@/features/telegram';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import {
+  AuditTelegramBotHealthUseCase,
+  TelegramBotApiGateway,
+} from '@/features/telegram/server';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 
 export interface TelegramTelemetryCardProps {
   useCase?: AuditTelegramBotHealthUseCasePort;

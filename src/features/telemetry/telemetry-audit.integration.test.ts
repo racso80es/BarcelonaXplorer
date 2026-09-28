@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
-import { PruneTelemetryUseCase } from '@/features/telemetry';
+import {
+  PrismaTelemetryRepository,
+  PruneTelemetryUseCase,
+} from '@/features/telemetry/server';
 import { TelemetryEntry } from '@/features/telemetry';
 import { TelemetryLogInputSchema } from '@/features/telemetry';
 import * as fs from 'fs';

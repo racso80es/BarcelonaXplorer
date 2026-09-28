@@ -1,8 +1,8 @@
-import {
+import type {
   AuditTelegramBotHealthUseCasePort,
   AuditTelegramBotHealthResult,
   TelegramBotHealthState,
-} from '@/features/telegram';
+} from './audit-telegram-bot-health.use-case.port';
 import { TelegramBotGatewayPort } from './telegram-bot-gateway.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';

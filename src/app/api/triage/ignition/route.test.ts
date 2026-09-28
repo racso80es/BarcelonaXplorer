@@ -27,7 +27,7 @@ vi.mock('@/features/triage/open-meteo-weather.adapter', () => ({
   },
 }));
 
-vi.mock('@/features/cognitive-memory', () => {
+vi.mock('@/features/cognitive-memory/server', () => {
   return {
     LanceDbCognitiveMemoryAdapter: class {
       getLatestSessionMemory() {
@@ -37,13 +37,18 @@ vi.mock('@/features/cognitive-memory', () => {
   };
 });
 
-vi.mock('@/features/telemetry', () => {
+vi.mock('@/features/telemetry/server', () => {
   return {
     PrismaTelemetryRepository: class {
       log() {
         return Promise.resolve();
       }
     },
+  };
+});
+
+vi.mock('@/features/telemetry', () => {
+  return {
     TelemetryEntry: class {},
   };
 });

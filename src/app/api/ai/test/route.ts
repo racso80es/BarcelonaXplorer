@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { GeminiClient } from '@/features/ai-engine';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { GeminiClient } from '@/features/ai-engine/server';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
-import { GeminiClient } from '@/features/ai-engine';
+import { GeminiClient } from '@/features/ai-engine/server';
 
 /**
  * Extrae un mensaje de error legible para humanos, sin exponer

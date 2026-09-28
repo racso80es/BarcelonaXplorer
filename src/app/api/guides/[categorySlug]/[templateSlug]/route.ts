@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   GetPublishedTemplateBySlugUseCase,
   PrismaGuideTemplateRepository,
-} from '@/features/guide-templates';
+} from '@/features/guide-templates/server';
 
 export const runtime = 'nodejs';
 

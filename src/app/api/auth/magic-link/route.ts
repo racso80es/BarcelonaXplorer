@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RestoreSessionFromMagicLinkUseCase } from '@/features/auth';
-import { HmacMagicLinkSigner } from '@/features/auth';
-import { PrismaMagicLinkNonceRepository } from '@/features/auth';
-import { PrismaUserAnchorRepository } from '@/features/auth';
+import {
+  RestoreSessionFromMagicLinkUseCase,
+  HmacMagicLinkSigner,
+  PrismaMagicLinkNonceRepository,
+  PrismaUserAnchorRepository,
+} from '@/features/auth/server';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const token = request.nextUrl.searchParams.get('token');

@@ -4,9 +4,11 @@ import {
   AuditLanceDbHealthUseCasePort,
   AuditLanceDbHealthResult,
 } from '@/features/cognitive-memory';
-import { AuditLanceDbHealthUseCase } from '@/features/cognitive-memory';
-import { LanceDbVectorAdapter } from '@/features/cognitive-memory';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import {
+  AuditLanceDbHealthUseCase,
+  LanceDbVectorAdapter,
+} from '@/features/cognitive-memory/server';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 
 export interface LanceDbTelemetryCardProps {
   useCase?: AuditLanceDbHealthUseCasePort;

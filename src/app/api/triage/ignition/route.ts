@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   ContextualIgnitionUseCase,
   OpenMeteoWeatherAdapter,
-} from '@/features/triage';
+} from '@/features/triage/server';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
-import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory/server';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
 import { SupportedLanguageVo } from '@/features/i18n';
 import { enforcePublicLlmRateLimit } from '@/features/triage/public-llm-rate-limit';

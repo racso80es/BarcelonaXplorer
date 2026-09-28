@@ -6,7 +6,7 @@ import type {
 import { FastInsight } from '@/features/ai-engine';
 import { FastInsightZodSchema } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import { TelemetryEntry } from '@/features/telemetry';
 
 /**

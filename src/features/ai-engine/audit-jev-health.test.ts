@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuditJevHealthUseCase } from '@/features/ai-engine';
+import { AuditJevHealthUseCase } from './audit-jev-health.use-case';
 import { ITypedDecisionEngine } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 

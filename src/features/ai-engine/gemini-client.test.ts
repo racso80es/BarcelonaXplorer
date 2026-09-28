@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { GeminiClient } from '@/features/ai-engine';
+import { GeminiClient } from './gemini-client';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 

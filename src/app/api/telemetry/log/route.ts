@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelemetryLogInputSchema } from '@/features/telemetry';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import { TelemetryEntry } from '@/features/telemetry';
 
 export const runtime = 'nodejs';

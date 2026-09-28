@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { GeminiEmbeddingAdapter } from '@/features/ai-engine';
+import { GeminiEmbeddingAdapter } from './gemini-embedding.adapter';
 import { GoogleGenAI } from '@google/genai';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 

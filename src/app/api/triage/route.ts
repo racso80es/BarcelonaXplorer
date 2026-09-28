@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TriageInputUseCase } from '@/features/triage';
+import { TriageInputUseCase } from '@/features/triage/server';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import {
@@ -8,13 +8,12 @@ import {
   PrismaItineraryRepository,
   AffiliateEnricherService,
 } from '@/features/planner/server';
-import { GeminiClient } from '@/features/ai-engine';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
-import { GeminiEmbeddingAdapter } from '@/features/ai-engine';
+import { GeminiClient, GeminiEmbeddingAdapter } from '@/features/ai-engine/server';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import {
   LanceDbCognitiveMemoryAdapter,
   LanceDbSemanticCacheAdapter,
-} from '@/features/cognitive-memory';
+} from '@/features/cognitive-memory/server';
 import { TelemetryEntry } from '@/features/telemetry';
 import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
 import {

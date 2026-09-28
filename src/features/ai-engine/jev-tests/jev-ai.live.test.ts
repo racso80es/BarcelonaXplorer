@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { JevClient } from '@/features/ai-engine/jev/jevClient';
-import { AuditJevHealthUseCase } from '@/features/ai-engine';
+import { AuditJevHealthUseCase } from '@/features/ai-engine/server';
 import { JevTelemetryCard } from '@/app/Admin/System/JevTelemetryCard';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { getJevConfig } from '@/features/ai-engine/jev/config';

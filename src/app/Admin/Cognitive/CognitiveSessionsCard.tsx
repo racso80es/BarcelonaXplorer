@@ -4,7 +4,7 @@ import {
   ICognitiveMemoryPort,
   CognitiveMemoryItem,
 } from '@/features/cognitive-memory';
-import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory';
+import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory/server';
 import { CognitiveTableClient } from './CognitiveTableClient';
 
 export interface CognitiveSessionsCardProps {

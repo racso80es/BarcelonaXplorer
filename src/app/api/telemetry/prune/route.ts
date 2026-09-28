@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaTelemetryRepository } from '@/features/telemetry';
-import { PruneTelemetryUseCase } from '@/features/telemetry';
+import {
+  PrismaTelemetryRepository,
+  PruneTelemetryUseCase,
+} from '@/features/telemetry/server';
 import { constantTimeEqual } from '@/features/auth';
 
 export const runtime = 'nodejs';

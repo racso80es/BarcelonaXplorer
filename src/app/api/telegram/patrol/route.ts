@@ -10,15 +10,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { constantTimeEqual } from '@/features/auth';
-import { PrismaUserAnchorRepository } from '@/features/auth/prisma-user-anchor.repository';
-import { TelegramBotApiGateway } from '@/features/telegram';
-import { OpenMeteoWeatherAdapter } from '@/features/triage';
+import { PrismaUserAnchorRepository } from '@/features/auth/server';
+import { OpenMeteoWeatherAdapter } from '@/features/triage/server';
 import {
+  TelegramBotApiGateway,
   ReactivePatrolUseCase,
-  PatrolWaypointInput,
-} from '@/features/telegram';
-import { PrismaItineraryRepository } from '@/features/planner/prisma-itinerary.repository';
-import { PrismaTelemetryRepository, TelemetryEntry } from '@/features/telemetry';
+} from '@/features/telegram/server';
+import type { PatrolWaypointInput } from '@/features/telegram';
+import { PrismaItineraryRepository } from '@/features/planner/server';
+import { TelemetryEntry } from '@/features/telemetry';
+import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import { prisma } from '@/shared/persistence/prisma';
 import {
   createErrorEnvelope,

@@ -4,8 +4,8 @@ import { POST } from './route';
 import { resetPublicLlmRateLimitForTests } from '@/features/triage/public-llm-rate-limit';
 import { TriageOutcome } from '@/features/triage/triage-outcome.vo';
 
-vi.mock('@/features/triage', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/triage')>();
+vi.mock('@/features/triage/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/triage/server')>();
   return {
     ...actual,
     TriageInputUseCase: class {
@@ -35,20 +35,22 @@ vi.mock('@/features/planner/server', () => ({
   PrismaItineraryRepository: class {},
   AffiliateEnricherService: class {},
 }));
-vi.mock('@/features/ai-engine', () => ({
+vi.mock('@/features/ai-engine/server', () => ({
   GeminiClient: class {},
   GeminiEmbeddingAdapter: class {},
 }));
-vi.mock('@/features/cognitive-memory', () => ({
+vi.mock('@/features/cognitive-memory/server', () => ({
   LanceDbCognitiveMemoryAdapter: class {},
   LanceDbSemanticCacheAdapter: class {},
 }));
-vi.mock('@/features/telemetry', () => ({
+vi.mock('@/features/telemetry/server', () => ({
   PrismaTelemetryRepository: class {
     log() {
       return Promise.resolve();
     }
   },
+}));
+vi.mock('@/features/telemetry', () => ({
   TelemetryEntry: class {},
 }));
 

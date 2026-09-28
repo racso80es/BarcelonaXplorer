@@ -1,11 +1,11 @@
 import 'server-only';
-import {
+import type {
   IVectorStorePort,
   VectorDocument,
   VectorSearchResult,
   VectorStorePingResult,
   VectorDeleteFilter,
-} from '@/features/cognitive-memory';
+} from './vector-store.port';
 import { getLanceDbConnection, resolveLanceDbUri } from './lancedb-client';
 import * as lancedb from '@lancedb/lancedb';
 import fs from 'fs';

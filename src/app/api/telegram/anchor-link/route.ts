@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AesGcmAnchorTokenEncryptor } from '@/features/auth';
+import { AesGcmAnchorTokenEncryptor } from '@/features/auth/server';
 import { DomainException } from '@/shared/exceptions/domain.exception';
 
 /**

@@ -25,18 +25,16 @@ vi.mock('@/features/auth/prisma-user-anchor.repository', () => {
   };
 });
 
-vi.mock('@/features/telemetry', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/telemetry')>();
+vi.mock('@/features/telemetry/server', () => {
   return {
-    ...actual,
     PrismaTelemetryRepository: class {
       log = mockTelemetryLog;
     },
   };
 });
 
-vi.mock('@/features/telegram', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/telegram')>();
+vi.mock('@/features/telegram/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/telegram/server')>();
   return {
     ...actual,
     TelegramBotApiGateway: class {
@@ -55,8 +53,8 @@ vi.mock('@/features/planner/prisma-itinerary.repository', () => {
   };
 });
 
-vi.mock('@/features/triage', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/triage')>();
+vi.mock('@/features/triage/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/triage/server')>();
   return {
     ...actual,
     OpenMeteoWeatherAdapter: class {

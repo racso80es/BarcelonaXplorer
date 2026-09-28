@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GET } from '@/app/api/auth/magic-link/route';
 import { NextRequest } from 'next/server';
-import { RestoreSessionFromMagicLinkUseCase } from '@/features/auth';
+import { RestoreSessionFromMagicLinkUseCase } from '@/features/auth/server';
 
 describe('GET /api/auth/magic-link', () => {
   afterEach(() => {

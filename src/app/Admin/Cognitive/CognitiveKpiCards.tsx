@@ -5,9 +5,11 @@ import {
   ICognitiveMetricsPort,
   CognitiveMetricsSummary,
 } from '@/features/cognitive-memory';
-import { PrismaCognitiveMetricsRepository } from '@/features/cognitive-memory';
+import {
+  PrismaCognitiveMetricsRepository,
+  LanceDbVectorAdapter,
+} from '@/features/cognitive-memory/server';
 import { IVectorStorePort, VectorStorePingResult } from '@/features/cognitive-memory';
-import { LanceDbVectorAdapter } from '@/features/cognitive-memory';
 
 export interface CognitiveKpiCardsProps {
   readonly metricsPort?: ICognitiveMetricsPort;
