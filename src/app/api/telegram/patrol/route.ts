@@ -170,20 +170,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           lat: wp.coordinates?.lat ?? null,
           lng: wp.coordinates?.lng ?? null,
           isOutdoor:
-            wp.tacticalMetadata?.environmentalConditions?.rainFriendly === false ||
-            wp.category === 'ACTIVITY' ||
-            wp.category === 'GENERAL',
+            wp.tacticalMetadata?.environmentalConditions?.rainFriendly === false,
         }));
 
-        let completedWaypoints: PatrolWaypointInput[];
-        let nextWaypoint: PatrolWaypointInput | null = null;
-
-        if (mappedWaypoints.length >= 2) {
-          completedWaypoints = mappedWaypoints.slice(0, mappedWaypoints.length - 1);
-          nextWaypoint = mappedWaypoints[mappedWaypoints.length - 1];
-        } else {
-          completedWaypoints = mappedWaypoints;
-        }
+        // PBI-STEEL-013: sin registro de progreso real, no se asume avance ni fatiga
+        const completedWaypoints: PatrolWaypointInput[] = [];
+        const nextWaypoint: PatrolWaypointInput | null = null;
 
         const patrolOutcome = await patrolUseCase.execute({
           sessionId: anchor.sessionId,

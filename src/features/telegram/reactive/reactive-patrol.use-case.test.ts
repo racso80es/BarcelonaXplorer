@@ -38,6 +38,20 @@ describe('ReactivePatrolUseCase (Historia de Usuario 11 - EDA S+ Grade)', () => 
     useCase = new ReactivePatrolUseCase(mockTelegramGateway, mockWeatherPort);
   });
 
+  it('PBI-STEEL-013: sin progreso registrado no dispara drop de fatiga', async () => {
+    const res = await useCase.execute({
+      sessionId: 'sess-no-progress',
+      telegramChatId: 'chat-no-progress',
+      completedWaypoints: [],
+      nextWaypoint: null,
+      fatigueThresholdKm: 0.1,
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.result?.dispatched).toBe(false);
+    expect(mockTelegramGateway.sendMessage).not.toHaveBeenCalled();
+  });
+
   it('retorna error envelope si falta sessionId o telegramChatId', async () => {
     const res = await useCase.execute({
       sessionId: '',

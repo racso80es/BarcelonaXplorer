@@ -149,7 +149,7 @@ describe('POST /api/telegram/patrol (PBI-STEEL-001)', () => {
     expect(JSON.stringify(body)).not.toMatch(/telegramChatId/);
   });
 
-  it('ejecuta la patrulla y despacha drop sin filtrar identificadores en la respuesta', async () => {
+  it('PBI-STEEL-013: evalúa anclajes sin inventar progreso ni drop de fatiga', async () => {
     mockFindRecentActive.mockResolvedValue([
       {
         sessionId: 'sess-fatigue-999',
@@ -185,11 +185,11 @@ describe('POST /api/telegram/patrol (PBI-STEEL-001)', () => {
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(body.result.totalAnchorsChecked).toBe(1);
-    expect(body.result.dropsDispatched).toBe(1);
+    expect(body.result.dropsDispatched).toBe(0);
     expect(body.result.statusCounts.EVALUATED).toBe(1);
     expect(JSON.stringify(body)).not.toContain('chat-tg-999');
     expect(JSON.stringify(body)).not.toContain('telegramChatId');
-    expect(mockSendMessage).toHaveBeenCalledTimes(1);
+    expect(mockSendMessage).not.toHaveBeenCalled();
   });
 
   it('despacha refugio por lluvia sin exponer telegramChatId', async () => {
