@@ -18,7 +18,7 @@
 - **Entropía Asimilada (Filtros A, B y C):**
   - *Filtro A (Rigor Técnico y Cero Alucinación):* Erradicación de la asunción ingenua de que LanceDB es un servicio de red autónomo o que cualquier Bind Mount hereda automáticamente permisos de escritura. En contenedores sin privilegios (`USER nextjs` UID 1001 en Alpine), el motor de Rust falla con `EACCES` si el host anfitrión no define propiedad o permisos de grupo compatibles. Asimismo, se descarta el paquete deprecado `vectordb` a favor del SDK nativo `@lancedb/lancedb`, aislando sus binarios en `serverExternalPackages` para evitar que Next.js Standalone corrompa el empaquetado de producción.
   - *Filtro B (Determinismo y Soberanía IaaC):* El ciclo de vida de Ansistrano (`releases/`, `shared/`, `current`) no debe almacenar los índices vectoriales dentro de los artefactos versionados efímeros. Se prescribe el volumen de inmunidad `/home/racso/Despliegues/BarcelonaXplorer/lancedb_data` al mismo nivel de persistencia que `mysql_data`, gobernado estrictamente por tareas de Ansible que aseguran permisos `0775` y titularidad `1001:1001` previas a la ignición del contenedor.
-  - *Filtro C (Eficiencia Térmica y Cero Sobrecarga de Contenedores):* Cumplimiento estricto del dogma de *Cero Contenedores Paralelos*: se aniquila el consumo de RAM (500MB - 1.5GB) y el costo de CPU que impondría un clúster de Qdrant, Milvus o Chroma. LanceDB opera en el mismo espacio de direcciones que Node.js ejecutando búsquedas sobre disco mediante Apache Arrow, manteniendo la topología del Nodo 11 en exactamente dos contenedores (`barcelonaxplorer_nginx`/`web` y `barcelonaxplorer_mysql`).
+  - *Filtro C (Eficiencia Térmica y Cero Sobrecarga de Contenedores):* Cumplimiento estricto del dogma de *Cero Contenedores Paralelos*: se aniquila el consumo de RAM (500MB - 1.5GB) y el costo de CPU que impondría un clúster de Qdrant, Milvus o Chroma. LanceDB opera en el mismo espacio de direcciones que Node.js ejecutando búsquedas sobre disco mediante Apache Arrow, manteniendo la topología del Nodo 11 en exactamente dos contenedores (`barcelonaxplorer_web`/`web` y `barcelonaxplorer_mysql`).
 
 ---
 
@@ -141,7 +141,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: barcelonaxplorer_nginx
+    container_name: barcelonaxplorer_web
     ports:
       - "8080:3000"
     restart: unless-stopped
@@ -150,7 +150,7 @@ services:
       - NODE_ENV=production
       - TELEGRAM_ENABLED=true
       - TELEGRAM_WEBHOOK_URL=https://barcelonaxplorer.com/api/telegram/webhook
-      - DATABASE_URL=mysql://bx_admin:bx_secure_pass@db:3306/barcelonaxplorer_db
+      - DATABASE_URL=${DATABASE_URL}
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
       - NODE_OPTIONS=--dns-result-order=ipv4first
@@ -246,7 +246,7 @@ export interface IVectorStorePort {
 Dado que el monolito de BarcelonaXplorer está desplegado en el Nodo 11
 Cuando el operador ejecuta "docker ps --format '{{.Names}}'"
 Entonces la salida del comando lista exactamente dos contenedores:
-  | barcelonaxplorer_nginx |
+  | barcelonaxplorer_web |
   | barcelonaxplorer_mysql |
 Y ningún contenedor secundario tipo Qdrant, Chroma, Milvus o Weaviate se encuentra activo
 Y las operaciones vectoriales se resuelven en memoria del proceso Node.js sin tráfico TCP adicional.
@@ -370,7 +370,7 @@ flowchart TD
 
 | Hito / Prueba | Comando / Endpoint de Verificación | Resultado Empírico Observado | Veredicto |
 | :--- | :--- | :--- | :--- |
-| **Topología Estricta (Cero Contenedores Paralelos)** | `ssh racso@10.0.10.11 'docker ps'` | Exactamente 2 contenedores: `barcelonaxplorer_nginx` y `barcelonaxplorer_mysql` | 🟢 Certificado |
+| **Topología Estricta (Cero Contenedores Paralelos)** | `ssh racso@10.0.10.11 'docker ps'` | Exactamente 2 contenedores: `barcelonaxplorer_web` y `barcelonaxplorer_mysql` | 🟢 Certificado |
 | **Aprovisionamiento IaaC y Permisos** | `ssh racso@10.0.10.11 'ls -ld .../lancedb_data'` | `drwxrwxrwx 3 racso racso 4096 .../lancedb_data` (Permisos `0777`) | 🟢 Certificado |
 | **Escritura y Persistencia en Bind Mount** | Test in-container Node.js + `ls -la lancedb_data` en host | Carpeta `health_probe.lance` creada con UID `1001` sin errores `EACCES` | 🟢 Certificado |
 | **Sonda Sensorial en Sala de Control** | `/Admin/System` | Tarjeta `Persistencia Vectorial` activa con semáforo verde (`ok`), `7 Sondas Activas` | 🟢 Certificado |

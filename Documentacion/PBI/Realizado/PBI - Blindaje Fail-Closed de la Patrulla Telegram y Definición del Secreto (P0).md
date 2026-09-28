@@ -42,7 +42,7 @@
 - [x] **CA-5 (TC-PRISMA-001):** la ruta deja de instanciar `PrismaClient`. Los anclajes se obtienen con `findRecentActive({ limit, sessionId? })` en `PrismaUserAnchorRepository`; itinerarios usan el singleton de `src/shared/persistence/prisma.ts`.
 - [x] **CA-6 (Aduana de despliegue):** `src/deploy.sh` aborta si `.env.production` no define `PATROL_SECRET_TOKEN` con al menos 32 caracteres, o si su valor es el literal histórico.
 - [x] **CA-7 (Tests):** `route.test.ts` cubre secreto ausente (503), token incorrecto (401), literal histórico (401), cuerpo inválido (400) y la ausencia de `telegramChatId` en la respuesta (7 tests).
-- [ ] **CA-8 (Verificación en el Nodo 11):** el despliegue incluye el código Fail-Closed y el `.env.production` que ya define el secreto. Tras desplegar, `PATROL_SECRET_TOKEN=SET` en `barcelonaxplorer_nginx` (comprobación `SET/UNSET`, sin leer el valor) y un `POST` con el literal histórico devuelve `401`. *Pendiente hasta el siguiente despliegue de Escenario 2.*
+- [ ] **CA-8 (Verificación en el Nodo 11):** el despliegue incluye el código Fail-Closed y el `.env.production` que ya define el secreto. Tras desplegar, `PATROL_SECRET_TOKEN=SET` en `barcelonaxplorer_web` (comprobación `SET/UNSET`, sin leer el valor) y un `POST` con el literal histórico devuelve `401`. *Pendiente hasta el siguiente despliegue de Escenario 2.*
 - [x] **CA-9 (Sin invocador nuevo):** no se crea cron, workflow ni cliente. `route.ts` documenta en comentario que la ruta no tiene invocador en el repositorio: se llama a mano o desde infraestructura externa, con la cabecera `x-telegram-patrol-token`.
 - [x] **CA-10 (Sonda `getMe`, solo revisión):** documentado en notas de forja; sin cambio de código en la sonda (revisión operativa en Nodo 11 junto con CA-8).
 

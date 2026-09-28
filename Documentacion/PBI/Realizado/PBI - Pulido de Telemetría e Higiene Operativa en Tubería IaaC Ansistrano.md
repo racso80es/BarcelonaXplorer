@@ -160,7 +160,7 @@ Ajuste de la coreografía de ignición de Docker con pausa térmica de 5 segundo
     prompt: "Aguardando estabilización del socket de InnoDB en el Nodo 11..."
 
 - name: Esperar a que el motor MySQL esté saludable
-  ansible.builtin.shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -ubx_admin -pbx_secure_pass --silent
+  ansible.builtin.shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" --silent
   register: mysql_ping
   until: mysql_ping.rc == 0
   retries: 20
@@ -169,7 +169,7 @@ Ajuste de la coreografía de ignición de Docker con pausa térmica de 5 segundo
 
 - name: Sincronizar esquemas de MySQL (TelemetryLog, user_anchors, magic_link_nonces, SystemConfig)
   ansible.builtin.shell: |
-    docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'
+    docker exec -i barcelonaxplorer_mysql mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" << 'EOF'
     CREATE TABLE IF NOT EXISTS `SystemConfig` (
         `id` INTEGER NOT NULL AUTO_INCREMENT,
         `key` VARCHAR(191) NOT NULL,

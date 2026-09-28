@@ -208,7 +208,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: barcelonaxplorer_nginx
+    container_name: barcelonaxplorer_web
     # Puerto 8080 externo → 3000 interno (Next.js standalone)
     ports:
       - "8080:3000"

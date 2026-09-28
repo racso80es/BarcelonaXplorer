@@ -254,5 +254,5 @@ La verificación empírica de este PBI se apoya en 18 pruebas automatizadas ejec
 
 - [x] **Aislamiento del Dominio:** Ni la entidad de dominio ni los casos de uso importan dependencias de `@lancedb/lancedb` ni módulos nativos de Node.js (`fs`, `path`).
 - [x] **Tolerancia Cero a Primitivos Sueltos y Tipado `any`:** Todos los resultados se tipan estrictamente mediante interfaces inmutables (`AuditLanceDbHealthResult`, `VectorStorePingResult`).
-- [x] **Cero Contenedores Paralelos:** El motor opera *in-process* mediante Apache Arrow en el contenedor web Next.js (`barcelonaxplorer_nginx`), sin requerir instancias externas de Qdrant ni Chroma.
+- [x] **Cero Contenedores Paralelos:** El motor opera *in-process* mediante Apache Arrow en el contenedor web Next.js (`barcelonaxplorer_web`), sin requerir instancias externas de Qdrant ni Chroma.
 - [x] **Inmunidad IaaC:** El volumen reside en `/home/racso/Despliegues/BarcelonaXplorer/lancedb_data` sobreviviendo a las rotaciones de releases de Ansistrano.

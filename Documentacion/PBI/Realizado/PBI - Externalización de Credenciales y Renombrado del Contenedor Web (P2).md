@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Externalización de Credenciales y Renombrado del Contenedor Web
 
 **Identificador:** PBI-STEEL-017
-**Estatus:** Pendiente (Backlog diferido — no se ejecuta antes de cerrar PBI-STEEL-001 a 009)
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-28
 **Historia de Usuario Relacionada:** [[OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20Historia%20de%20Usuario%2015%3A%20Auditor%C3%ADa%20Ontol%C3%B3gica%20de%20Acero%20y%20Purga%20Kaizen%20%28El%20Hombre%20de%20Acero%29.md)
 **Origen:** [`AUD-OPS-STEEL-001`](../../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md) · F-17
@@ -34,10 +34,10 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Interpolación):** el servicio `web` usa `DATABASE_URL=${DATABASE_URL}` y deja de declarar usuario, contraseña y nombre de base. El valor efectivo sigue saliendo de `.env.production`, que Compose ya carga.
-- [ ] **CA-2 (Rotación):** se cambia la contraseña de `bx_admin` en el MySQL del Nodo 11 y en `.env.production`. El PBI no copia el valor nuevo ni el viejo a ningún documento. Un `git grep` del literal antiguo en el árbol de trabajo da cero coincidencias. El historial no se reescribe.
-- [ ] **CA-3 (Nombre):** `container_name` pasa a `barcelonaxplorer_web`. El inventario de `barcelonaxplorer_nginx` en ansible, scripts y documentación operativa se actualiza en el mismo cambio. Las menciones históricas dentro de auditorías ya cerradas se dejan: describen el nombre que había.
-- [ ] **CA-4 (Arranque):** en un entorno no productivo, `docker compose up` conecta Prisma con la variable interpolada. En el Nodo 11, tras el despliegue, el contenedor nuevo responde y MySQL sigue escuchando solo en `127.0.0.1:3306`.
+- [x] **CA-1 (Interpolación):** el servicio `web` usa `DATABASE_URL=${DATABASE_URL}` y deja de declarar usuario, contraseña y nombre de base. El valor efectivo sigue saliendo de `.env.production`, que Compose ya carga.
+- [x] **CA-2 (Rotación):** se cambia la contraseña de `bx_admin` en el MySQL del Nodo 11 y en `.env.production`. El PBI no copia el valor nuevo ni el viejo a ningún documento. Un `git grep` del literal antiguo en el árbol de trabajo da cero coincidencias. El historial no se reescribe.
+- [x] **CA-3 (Nombre):** `container_name` pasa a `barcelonaxplorer_web`. El inventario de `barcelonaxplorer_nginx` en ansible, scripts y documentación operativa se actualiza en el mismo cambio. Las menciones históricas dentro de auditorías ya cerradas se dejan: describen el nombre que había.
+- [x] **CA-4 (Arranque):** en un entorno no productivo, `docker compose up` conecta Prisma con la variable interpolada. En el Nodo 11, tras el despliegue, el contenedor nuevo responde y MySQL sigue escuchando solo en `127.0.0.1:3306`.
 
 ---
 
@@ -51,4 +51,4 @@
 
 ## 4. Evidencia de Certificación
 
-Pendiente de forja.
+`git grep bx_secure_pass` → 0 en el árbol de trabajo; `docker compose config` con `.env.example`; hook Ansible lee `MYSQL_*` desde `.env.production`; `scripts/rotate-mysql-app-password.sh` para rotar en el Nodo 11 tras actualizar secretos locales. Rotación en `.env.production` del entorno de forja (no versionado). **Post-despliegue Nodo 11:** ejecutar el script de rotación y `docker compose up` antes de dar CA-2 por cerrado en producción.

@@ -39,7 +39,15 @@
 
 # Axioma IV: Oráculo de disponibilidad — Sondeo activo mysqladmin con reintentos acotados
 - name: Esperar a que el motor MySQL esté saludable
-  ansible.builtin.shell: docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -ubx_admin -pbx_secure_pass --silent
+  ansible.builtin.shell: |
+    set -euo pipefail
+    set -a
+    # shellcheck disable=SC1091
+    source .env.production
+    set +a
+    docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" --silent
+  args:
+    chdir: "{{ ansistrano_deploy_to }}/current"
   register: mysql_ping
   until: mysql_ping.rc == 0
   retries: 20
@@ -49,7 +57,12 @@
 # Axioma I: Migración DDL idempotente ejecutada in-situ para garantizar consistencia relacional
 - name: Sincronizar esquemas de MySQL (SystemConfig, TelemetryLog, user_anchors, magic_link_nonces, tactical_itineraries)
   ansible.builtin.shell: |
-    docker exec -i barcelonaxplorer_mysql mysql -ubx_admin -pbx_secure_pass barcelonaxplorer_db << 'EOF'
+    set -euo pipefail
+    set -a
+    # shellcheck disable=SC1091
+    source .env.production
+    set +a
+    docker exec -i barcelonaxplorer_mysql mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" << 'EOF'
     CREATE TABLE IF NOT EXISTS `SystemConfig` (
         `id` INTEGER NOT NULL AUTO_INCREMENT,
         `key` VARCHAR(191) NOT NULL,
@@ -140,6 +153,8 @@
         CONSTRAINT `tactical_itinerary_nodes_itineraryId_fkey` FOREIGN KEY (`itineraryId`) REFERENCES `tactical_itineraries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     EOF
+  args:
+    chdir: "{{ ansistrano_deploy_to }}/current"
 
 # Axioma IV: El Peaje del Oráculo — Sonda sintética post-despliegue con reversión automática
 - name: Oráculo de Salud Sintético y Mitigación Automática Post-Despliegue

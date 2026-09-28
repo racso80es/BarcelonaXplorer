@@ -16,7 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: barcelonaxplorer_nginx
+    container_name: barcelonaxplorer_web
     # Axioma III: Publicación declarativa de puertos (8080 host -> 3000 contenedor)
     ports:
       - "8080:3000"
@@ -27,7 +27,7 @@ services:
       - NODE_ENV=production
       - TELEGRAM_ENABLED=true
       - TELEGRAM_WEBHOOK_URL=https://barcelonaxplorer.com/api/telegram/webhook
-      - DATABASE_URL=mysql://bx_admin:bx_secure_pass@db:3306/barcelonaxplorer_db
+      - DATABASE_URL=${DATABASE_URL}
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
       # Estabilización de resolución DNS en Node.js (prioridad IPv4 para APIs externas)
