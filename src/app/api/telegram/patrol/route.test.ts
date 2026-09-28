@@ -2,25 +2,35 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const {
-  mockFindMany,
+  mockFindRecentActive,
   mockSendMessage,
   mockGetItineraryBySessionId,
   mockGetBarcelonaWeather,
+  mockTelemetryLog,
 } = vi.hoisted(() => {
   return {
-    mockFindMany: vi.fn(),
+    mockFindRecentActive: vi.fn(),
     mockSendMessage: vi.fn().mockResolvedValue(undefined),
     mockGetItineraryBySessionId: vi.fn(),
     mockGetBarcelonaWeather: vi.fn(),
+    mockTelemetryLog: vi.fn().mockResolvedValue(undefined),
   };
 });
 
-vi.mock('@prisma/client', () => {
+vi.mock('@/features/auth/prisma-user-anchor.repository', () => {
   return {
-    PrismaClient: class {
-      userAnchor = {
-        findMany: mockFindMany,
-      };
+    PrismaUserAnchorRepository: class {
+      findRecentActive = mockFindRecentActive;
+    },
+  };
+});
+
+vi.mock('@/features/telemetry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/telemetry')>();
+  return {
+    ...actual,
+    PrismaTelemetryRepository: class {
+      log = mockTelemetryLog;
     },
   };
 });
@@ -57,8 +67,9 @@ vi.mock('@/features/triage', async (importOriginal) => {
 
 import { POST } from './route';
 
-describe('POST /api/telegram/patrol (Aduana y Centinela EDA)', () => {
-  const validSecret = 'test_patrol_secret_123';
+describe('POST /api/telegram/patrol (PBI-STEEL-001)', () => {
+  const validSecret = 'test_patrol_secret_123456789012345678901234567890';
+  const historicalLiteral = 'bcn_patrol_secret_default';
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,43 +82,78 @@ describe('POST /api/telegram/patrol (Aduana y Centinela EDA)', () => {
     });
   });
 
-  it('rechaza con 401 si no se envía la cabecera secreta autorizada', async () => {
+  it('responde 503 si PATROL_SECRET_TOKEN no está configurado', async () => {
+    delete process.env.PATROL_SECRET_TOKEN;
+
     const req = new NextRequest('http://localhost:3000/api/telegram/patrol', {
       method: 'POST',
-      headers: {
-        'x-telegram-patrol-token': 'wrong-secret',
-      },
+      headers: { 'x-telegram-patrol-token': validSecret },
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(mockTelemetryLog).toHaveBeenCalled();
+    expect(mockFindRecentActive).not.toHaveBeenCalled();
+  });
+
+  it('rechaza con 401 si el token es incorrecto', async () => {
+    const req = new NextRequest('http://localhost:3000/api/telegram/patrol', {
+      method: 'POST',
+      headers: { 'x-telegram-patrol-token': 'wrong-secret' },
     });
 
     const res = await POST(req);
     expect(res.status).toBe(401);
-    const text = await res.text();
-    expect(text).toContain('Unauthorized');
   });
 
-  it('retorna 200 con dropsDispatched: 0 si no hay usuarios anclados', async () => {
-    mockFindMany.mockResolvedValue([]);
+  it('rechaza con 401 el literal histórico comprometido', async () => {
+    const req = new NextRequest('http://localhost:3000/api/telegram/patrol', {
+      method: 'POST',
+      headers: { 'x-telegram-patrol-token': historicalLiteral },
+    });
 
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+  });
+
+  it('responde 400 si el cuerpo no cumple el esquema Zod', async () => {
     const req = new NextRequest('http://localhost:3000/api/telegram/patrol', {
       method: 'POST',
       headers: {
         'x-telegram-patrol-token': validSecret,
+        'content-type': 'application/json',
       },
+      body: JSON.stringify({ sessionId: 'not-a-uuid', fatigueThresholdKm: -1 }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it('retorna éxito con dropsDispatched: 0 si no hay usuarios anclados', async () => {
+    mockFindRecentActive.mockResolvedValue([]);
+
+    const req = new NextRequest('http://localhost:3000/api/telegram/patrol', {
+      method: 'POST',
+      headers: { 'x-telegram-patrol-token': validSecret },
     });
 
     const res = await POST(req);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.totalAnchorsChecked).toBe(0);
-    expect(body.dropsDispatched).toBe(0);
+    expect(body.result.totalAnchorsChecked).toBe(0);
+    expect(body.result.dropsDispatched).toBe(0);
+    expect(JSON.stringify(body)).not.toMatch(/telegramChatId/);
   });
 
-  it('ejecuta la patrulla, evalúa fatiga y despacha drop al usuario con ruta > 5km', async () => {
-    mockFindMany.mockResolvedValue([
+  it('ejecuta la patrulla y despacha drop sin filtrar identificadores en la respuesta', async () => {
+    mockFindRecentActive.mockResolvedValue([
       {
         sessionId: 'sess-fatigue-999',
-        telegramChatId: 'chat-tg-999',
+        telegramChatId: { getValue: () => 'chat-tg-999' },
       },
     ]);
 
@@ -130,7 +176,7 @@ describe('POST /api/telegram/patrol (Aduana y Centinela EDA)', () => {
         'x-telegram-patrol-token': validSecret,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ sessionId: 'sess-fatigue-999' }),
+      body: JSON.stringify({ sessionId: '550e8400-e29b-41d4-a716-446655440099' }),
     });
 
     const res = await POST(req);
@@ -138,13 +184,15 @@ describe('POST /api/telegram/patrol (Aduana y Centinela EDA)', () => {
 
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.totalAnchorsChecked).toBe(1);
-    expect(body.dropsDispatched).toBe(1);
-    expect(body.details[0].outcome.result.dropType).toBe('FATIGUE_RELIEF');
+    expect(body.result.totalAnchorsChecked).toBe(1);
+    expect(body.result.dropsDispatched).toBe(1);
+    expect(body.result.statusCounts.EVALUATED).toBe(1);
+    expect(JSON.stringify(body)).not.toContain('chat-tg-999');
+    expect(JSON.stringify(body)).not.toContain('telegramChatId');
     expect(mockSendMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('ejecuta la patrulla y despacha refugio por lluvia inminente', async () => {
+  it('despacha refugio por lluvia sin exponer telegramChatId', async () => {
     mockGetBarcelonaWeather.mockResolvedValue({
       summary: 'Lluvia torrencial',
       temperatureCelsius: 17,
@@ -152,10 +200,10 @@ describe('POST /api/telegram/patrol (Aduana y Centinela EDA)', () => {
       isAdverse: true,
     });
 
-    mockFindMany.mockResolvedValue([
+    mockFindRecentActive.mockResolvedValue([
       {
         sessionId: 'sess-rain-888',
-        telegramChatId: 'chat-rain-888',
+        telegramChatId: { getValue: () => 'chat-rain-888' },
       },
     ]);
 
@@ -171,18 +219,15 @@ describe('POST /api/telegram/patrol (Aduana y Centinela EDA)', () => {
 
     const req = new NextRequest('http://localhost:3000/api/telegram/patrol', {
       method: 'POST',
-      headers: {
-        'x-telegram-patrol-token': validSecret,
-      },
+      headers: { 'x-telegram-patrol-token': validSecret },
     });
 
     const res = await POST(req);
     expect(res.status).toBe(200);
 
     const body = await res.json();
-    expect(body.success).toBe(true);
-    expect(body.dropsDispatched).toBe(1);
-    expect(body.details[0].outcome.result.dropType).toBe('WEATHER_SHELTER');
+    expect(body.result.dropsDispatched).toBe(1);
+    expect(JSON.stringify(body)).not.toContain('chat-rain-888');
     expect(mockSendMessage).toHaveBeenCalledTimes(1);
   });
 });

@@ -101,4 +101,29 @@ export class PrismaUserAnchorRepository implements UserAnchorRepositoryPort {
       where: { telegramChatId: chatId.getValue() },
     });
   }
+
+  async findRecentActive(params: {
+    limit: number;
+    sessionId?: string;
+  }): Promise<UserAnchor[]> {
+    const records = await this.prisma.userAnchor.findMany({
+      where: params.sessionId ? { sessionId: params.sessionId } : undefined,
+      orderBy: { lastInteractionAt: 'desc' },
+      take: params.limit,
+    });
+
+    return records.map(
+      (record) =>
+        new UserAnchor({
+          id: record.id,
+          sessionId: record.sessionId,
+          telegramChatId: new TelegramChatId(record.telegramChatId),
+          telegramUsername: record.telegramUsername,
+          firstName: record.firstName,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+          lastInteractionAt: record.lastInteractionAt,
+        }),
+    );
+  }
 }

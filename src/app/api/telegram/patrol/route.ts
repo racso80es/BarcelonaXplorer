@@ -3,9 +3,14 @@
 // Aduana Perimetral y Despacho de Drops Reactivos (HU-11 / EDA)
 // Marco Constitucional: Protocolo de Acero — Grado S+
 // ═══════════════════════════════════════════════════════════════
+//
+// Invocación: no hay cron, workflow ni script en este repositorio que llame
+// a esta ruta. Se dispara a mano o desde infraestructura externa con la
+// cabecera `x-telegram-patrol-token` y el secreto `PATROL_SECRET_TOKEN`.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { constantTimeEqual } from '@/features/auth';
+import { PrismaUserAnchorRepository } from '@/features/auth/prisma-user-anchor.repository';
 import { TelegramBotApiGateway } from '@/features/telegram';
 import { OpenMeteoWeatherAdapter } from '@/features/triage';
 import {
@@ -13,82 +18,149 @@ import {
   PatrolWaypointInput,
 } from '@/features/telegram';
 import { PrismaItineraryRepository } from '@/features/planner/prisma-itinerary.repository';
+import { PrismaTelemetryRepository, TelemetryEntry } from '@/features/telemetry';
+import { prisma } from '@/shared/persistence/prisma';
+import {
+  createErrorEnvelope,
+  createSuccessEnvelope,
+} from '@/shared/operation-envelope';
+import { PatrolRequestSchema } from './patrol.schema';
 
-const globalForPrisma = globalThis as unknown as {
-  prismaPatrolClient?: PrismaClient;
-};
+export const runtime = 'nodejs';
 
-const prisma = globalForPrisma.prismaPatrolClient ?? new PrismaClient();
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prismaPatrolClient = prisma;
+type PatrolStatusKey = 'SKIPPED_NO_ACTIVE_ROUTE' | 'EVALUATED' | 'ERROR';
+
+interface PatrolSummaryResult {
+  totalAnchorsChecked: number;
+  dropsDispatched: number;
+  statusCounts: Record<PatrolStatusKey, number>;
+}
+
+function emptyStatusCounts(): Record<PatrolStatusKey, number> {
+  return {
+    SKIPPED_NO_ACTIVE_ROUTE: 0,
+    EVALUATED: 0,
+    ERROR: 0,
+  };
+}
+
+function readPatrolSecret(): string | null {
+  const raw = process.env.PATROL_SECRET_TOKEN;
+  if (raw === undefined || raw === null) {
+    return null;
+  }
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+async function logPatrolPerimeter(
+  level: 'ERROR' | 'WARN',
+  message: string,
+  payload: Record<string, unknown>,
+  statusCode: number,
+): Promise<void> {
+  const telemetryRepo = new PrismaTelemetryRepository();
+  await telemetryRepo.log(
+    new TelemetryEntry(level, 'SECURITY_PERIMETER', message, payload, statusCode, 0),
+  );
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // 1. Verificación Perimetral Fail-Closed del Token Secreto
-  const secretHeader =
-    request.headers.get('x-telegram-patrol-token') ||
-    request.headers.get('x-telegram-bot-api-secret-token');
+  const configuredSecret = readPatrolSecret();
 
-  const configuredSecret =
-    process.env.PATROL_SECRET_TOKEN ||
-    process.env.TELEGRAM_BOT_WEBHOOK_SECRET ||
-    'bcn_patrol_secret_default';
-
-  if (!secretHeader || secretHeader !== configuredSecret) {
-    return new NextResponse('Unauthorized: Invalid patrol secret token', {
-      status: 401,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
+  if (!configuredSecret) {
+    await logPatrolPerimeter(
+      'ERROR',
+      '[Patrulla Telegram] Fail-Closed: PATROL_SECRET_TOKEN ausente o vacío',
+      { route: '/api/telegram/patrol' },
+      503,
+    );
+    const envelope = createErrorEnvelope<PatrolSummaryResult>(
+      ['PATROL_SECRET_TOKEN no está configurado en el entorno.'],
+      1,
+      'Servicio de patrulla no disponible.',
+    );
+    return NextResponse.json(envelope, { status: 503 });
   }
 
-  // 2. Parseo de Parámetros Opcionales de Entrada
-  let bodyFilter: { sessionId?: string; fatigueThresholdKm?: number } = {};
+  const secretHeader = request.headers.get('x-telegram-patrol-token');
+  const tokenValid =
+    secretHeader !== null &&
+    secretHeader.length > 0 &&
+    (await constantTimeEqual(secretHeader, configuredSecret));
+
+  if (!tokenValid) {
+    return NextResponse.json(
+      createErrorEnvelope<PatrolSummaryResult>(
+        ['Token de patrulla inválido o ausente.'],
+        1,
+        'No autorizado.',
+      ),
+      { status: 401 },
+    );
+  }
+
+  let rawBody: unknown = {};
   try {
-    const rawBody = await request.json();
-    if (rawBody && typeof rawBody === 'object') {
-      bodyFilter = rawBody;
+    const text = await request.text();
+    if (text.trim().length > 0) {
+      rawBody = JSON.parse(text) as unknown;
     }
   } catch {
-    // Si no se envía JSON en el body, se asume patrulla global sobre todas las sesiones
-    bodyFilter = {};
+    return NextResponse.json(
+      createErrorEnvelope<PatrolSummaryResult>(
+        ['El cuerpo debe ser JSON válido.'],
+        1,
+        'Solicitud inválida.',
+      ),
+      { status: 400 },
+    );
   }
 
+  const parsedBody = PatrolRequestSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      createErrorEnvelope<PatrolSummaryResult>(
+        parsedBody.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`),
+        1,
+        'Cuerpo de patrulla inválido.',
+      ),
+      { status: 400 },
+    );
+  }
+
+  const bodyFilter = parsedBody.data;
+  const anchorRepository = new PrismaUserAnchorRepository(prisma);
   const botGateway = new TelegramBotApiGateway();
   const weatherAdapter = new OpenMeteoWeatherAdapter();
   const itineraryRepo = new PrismaItineraryRepository(prisma);
   const patrolUseCase = new ReactivePatrolUseCase(botGateway, weatherAdapter);
 
   try {
-    // 3. Consulta de Sesiones Ancladas con Telegram Activo
-    const anchors = await prisma.userAnchor.findMany({
-      where: bodyFilter.sessionId ? { sessionId: bodyFilter.sessionId } : undefined,
-      orderBy: { lastInteractionAt: 'desc' },
-      take: 50,
+    const anchors = await anchorRepository.findRecentActive({
+      limit: 50,
+      sessionId: bodyFilter.sessionId,
     });
 
+    const statusCounts = emptyStatusCounts();
+
     if (anchors.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No se encontraron sesiones ancladas activas para patrullar.',
+      const envelope = createSuccessEnvelope<PatrolSummaryResult>({
         totalAnchorsChecked: 0,
         dropsDispatched: 0,
-        details: [],
+        statusCounts,
       });
+      return NextResponse.json(envelope, { status: 200 });
     }
 
-    const executionResults = [];
+    let dropsDispatched = 0;
 
-    // 4. Bucle Resiliente de Patrulla por Sesión (Bulkhead Pattern)
     for (const anchor of anchors) {
       try {
         const itinerary = await itineraryRepo.getItineraryBySessionId(anchor.sessionId);
 
-        if (!itinerary || !itinerary.waypoints || itinerary.waypoints.length === 0) {
-          executionResults.push({
-            sessionId: anchor.sessionId,
-            telegramChatId: anchor.telegramChatId,
-            status: 'SKIPPED_NO_ACTIVE_ROUTE',
-          });
+        if (!itinerary?.waypoints || itinerary.waypoints.length === 0) {
+          statusCounts.SKIPPED_NO_ACTIVE_ROUTE += 1;
           continue;
         }
 
@@ -115,50 +187,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
         const patrolOutcome = await patrolUseCase.execute({
           sessionId: anchor.sessionId,
-          telegramChatId: anchor.telegramChatId,
+          telegramChatId: anchor.telegramChatId.getValue(),
           completedWaypoints,
           nextWaypoint,
           fatigueThresholdKm: bodyFilter.fatigueThresholdKm,
         });
 
-        executionResults.push({
-          sessionId: anchor.sessionId,
-          telegramChatId: anchor.telegramChatId,
-          status: 'EVALUATED',
-          outcome: patrolOutcome,
-        });
-      } catch (userPatrolError) {
-        executionResults.push({
-          sessionId: anchor.sessionId,
-          telegramChatId: anchor.telegramChatId,
-          status: 'ERROR',
-          error:
-            userPatrolError instanceof Error
-              ? userPatrolError.message
-              : String(userPatrolError),
-        });
+        statusCounts.EVALUATED += 1;
+        if (patrolOutcome.success && patrolOutcome.result?.dispatched === true) {
+          dropsDispatched += 1;
+        }
+      } catch {
+        statusCounts.ERROR += 1;
       }
     }
 
-    const dropsCount = executionResults.filter(
-      (r) => r.status === 'EVALUATED' && r.outcome?.result?.dispatched === true
-    ).length;
-
-    return NextResponse.json({
-      success: true,
-      timestamp: Date.now(),
+    const envelope = createSuccessEnvelope<PatrolSummaryResult>({
       totalAnchorsChecked: anchors.length,
-      dropsDispatched: dropsCount,
-      details: executionResults,
+      dropsDispatched,
+      statusCounts,
     });
+
+    return NextResponse.json(envelope, { status: 200 });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: `Fallo inesperado en el centinela de patrulla reactiva: ${errorMsg}`,
-      },
-      { status: 500 }
+    const envelope = createErrorEnvelope<PatrolSummaryResult>(
+      [`Fallo inesperado en el centinela de patrulla reactiva: ${errorMsg}`],
+      1,
     );
+    return NextResponse.json(envelope, { status: 500 });
   }
 }

@@ -21,6 +21,7 @@ describe('RevokeTelegramAnchorUseCase', () => {
       findBySessionId: vi.fn(),
       atomicUpsert: vi.fn(),
       hardDeleteByChatId: vi.fn().mockResolvedValue(undefined),
+      findRecentActive: vi.fn().mockResolvedValue([]),
     };
 
     const mockBotGateway: TelegramBotGatewayPort = {

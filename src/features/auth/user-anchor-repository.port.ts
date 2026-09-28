@@ -19,4 +19,9 @@ export interface UserAnchorRepositoryPort {
    * Amnesia Táctica: Hard-Delete físico de la fila en MySQL.
    */
   hardDeleteByChatId(chatId: TelegramChatId): Promise<void>;
+
+  /**
+   * Sesiones ancladas recientes para la patrulla reactiva (orden descendente por interacción).
+   */
+  findRecentActive(params: { limit: number; sessionId?: string }): Promise<UserAnchor[]>;
 }

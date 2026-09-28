@@ -82,6 +82,22 @@ if ! grep -q "^TELEGRAM_BOT_TOKEN=" "${ENV_PROD}"; then
     echo -e "${RED}[ERROR] ${ENV_PROD} debe definir TELEGRAM_BOT_TOKEN para la activación del canal Telegram.${NC}"
     exit 1
 fi
+PATROL_LINE=$(grep -E '^PATROL_SECRET_TOKEN=' "${ENV_PROD}" | tail -n 1 || true)
+if [[ -z "${PATROL_LINE}" ]]; then
+    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir PATROL_SECRET_TOKEN (mínimo 32 caracteres) para la patrulla Telegram.${NC}"
+    exit 1
+fi
+PATROL_VAL="${PATROL_LINE#PATROL_SECRET_TOKEN=}"
+PATROL_VAL="${PATROL_VAL%\"}"
+PATROL_VAL="${PATROL_VAL#\"}"
+if (( ${#PATROL_VAL} < 32 )); then
+    echo -e "${RED}[ERROR] PATROL_SECRET_TOKEN en ${ENV_PROD} debe tener al menos 32 caracteres.${NC}"
+    exit 1
+fi
+if [[ "${PATROL_VAL}" == "bcn_patrol_secret_default" ]]; then
+    echo -e "${RED}[ERROR] PATROL_SECRET_TOKEN no puede ser el literal histórico comprometido (bcn_patrol_secret_default).${NC}"
+    exit 1
+fi
 if ! grep -q "^TELEGRAM_ENABLED=true" "${ENV_PROD}"; then
     echo -e "${YELLOW}[WARN] TELEGRAM_ENABLED no está definido como 'true' en ${ENV_PROD}.${NC}"
 fi

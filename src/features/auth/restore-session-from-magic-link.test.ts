@@ -40,6 +40,7 @@ describe('RestoreSessionFromMagicLinkUseCase', () => {
       findBySessionId: vi.fn(),
       atomicUpsert: vi.fn().mockResolvedValue(undefined),
       hardDeleteByChatId: vi.fn(),
+      findRecentActive: vi.fn().mockResolvedValue([]),
     };
 
     const useCase = new RestoreSessionFromMagicLinkUseCase(
@@ -73,6 +74,7 @@ describe('RestoreSessionFromMagicLinkUseCase', () => {
       findBySessionId: vi.fn(),
       atomicUpsert: vi.fn(),
       hardDeleteByChatId: vi.fn(),
+      findRecentActive: vi.fn().mockResolvedValue([]),
     };
 
     const useCase = new RestoreSessionFromMagicLinkUseCase(
@@ -103,6 +105,7 @@ describe('RestoreSessionFromMagicLinkUseCase', () => {
       findBySessionId: vi.fn(),
       atomicUpsert: vi.fn(),
       hardDeleteByChatId: vi.fn(),
+      findRecentActive: vi.fn().mockResolvedValue([]),
     };
 
     const useCase = new RestoreSessionFromMagicLinkUseCase(

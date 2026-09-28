@@ -16,6 +16,7 @@ describe('LinkTelegramSessionUseCase', () => {
     const mockRepo: UserAnchorRepositoryPort = {
       findByTelegramChatId: vi.fn().mockResolvedValue(null),
       findBySessionId: vi.fn().mockResolvedValue(null),
+      findRecentActive: vi.fn().mockResolvedValue([]),
       atomicUpsert: vi.fn().mockImplementation(async (anchor: UserAnchor) => {
         savedAnchor = anchor;
       }),
