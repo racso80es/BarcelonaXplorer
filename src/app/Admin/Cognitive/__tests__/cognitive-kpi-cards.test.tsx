@@ -41,24 +41,24 @@ describe('CognitiveKpiCards (Tarjetas de Telemetría Cognitiva)', () => {
     render(Component);
 
     // 1. Zeigarnik Score
-    expect(screen.getByText('Tasa de Saturación (Zeigarnik)')).toBeDefined();
-    expect(screen.getByText('85%')).toBeDefined();
-    expect(screen.getByText('S+ Grade')).toBeDefined();
+    expect(screen.getByText('Tasa de Saturación (Zeigarnik)').textContent).toBe('Tasa de Saturación (Zeigarnik)');
+    expect(screen.getByText('85%').textContent).toBe('85%');
+    expect(screen.getByText('S+ Grade').textContent).toBe('S+ Grade');
 
     // 2. Entropía de Ingestión
-    expect(screen.getByText('Entropía de Ingestión')).toBeDefined();
-    expect(screen.getByText('2.1 t')).toBeDefined();
-    expect(screen.getByText('Eficiencia SLM')).toBeDefined();
+    expect(screen.getByText('Entropía de Ingestión').textContent).toBe('Entropía de Ingestión');
+    expect(screen.getByText('2.1 t').textContent).toBe('2.1 t');
+    expect(screen.getByText('Eficiencia SLM').textContent).toBe('Eficiencia SLM');
 
     // 3. Tasa de Anclaje
-    expect(screen.getByText('Tasa de Anclaje Táctico')).toBeDefined();
-    expect(screen.getByText('40%')).toBeDefined();
-    expect(screen.getByText('Refugio')).toBeDefined();
+    expect(screen.getByText('Tasa de Anclaje Táctico').textContent).toBe('Tasa de Anclaje Táctico');
+    expect(screen.getByText('40%').textContent).toBe('40%');
+    expect(screen.getByText('Refugio').textContent).toBe('Refugio');
 
     // 4. Salud LanceDB
-    expect(screen.getByText('Salud LanceDB (Vector)')).toBeDefined();
-    expect(screen.getByText('OPERATIVO')).toBeDefined();
-    expect(screen.getByText('Apache Arrow')).toBeDefined();
+    expect(screen.getByText('Salud LanceDB (Vector)').textContent).toBe('Salud LanceDB (Vector)');
+    expect(screen.getByText('OPERATIVO').textContent).toBe('OPERATIVO');
+    expect(screen.getByText('Apache Arrow').textContent).toBe('Apache Arrow');
   });
 
   it('debe responder con tolerancia a fallos si los puertos fallan', async () => {
@@ -79,7 +79,7 @@ describe('CognitiveKpiCards (Tarjetas de Telemetría Cognitiva)', () => {
 
     // Debe renderizar valores por defecto sin lanzar excepción
     expect(screen.getAllByText('0%').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('DEGRADADO')).toBeDefined();
+    expect(screen.getByText('DEGRADADO').textContent).toBe('DEGRADADO');
   });
 
   it('debe renderizar el Skeleton pulsante correctamente', () => {

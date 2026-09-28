@@ -9,34 +9,52 @@ describe('UI_DICTIONARY (Cero Disonancia en Cliente)', () => {
   it('debe tener definiciones completas para los 6 idiomas soportados', () => {
     for (const lang of SUPPORTED_LANGUAGES) {
       const dict = UI_DICTIONARY[lang];
-      expect(dict).toBeDefined();
+      expect(typeof dict).toBe('object');
+      expect(dict).not.toBeNull();
 
       // ThermalMeter
-      expect(dict.thermalMeter.title).toBeTruthy();
-      expect(dict.thermalMeter.operational).toBeTruthy();
-      expect(dict.thermalMeter.saturated).toBeTruthy();
-      expect(dict.thermalMeter.forgeRoute).toBeTruthy();
-      expect(dict.thermalMeter.forging).toBeTruthy();
+      expect(typeof dict.thermalMeter.title).toBe('string');
+      expect(dict.thermalMeter.title.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.thermalMeter.operational).toBe('string');
+      expect(dict.thermalMeter.operational.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.thermalMeter.saturated).toBe('string');
+      expect(dict.thermalMeter.saturated.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.thermalMeter.forgeRoute).toBe('string');
+      expect(dict.thermalMeter.forgeRoute.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.thermalMeter.forging).toBe('string');
+      expect(dict.thermalMeter.forging.trim().length).toBeGreaterThan(0);
 
       // Pickpocket
-      expect(dict.pickpocket.levels.LOW).toBeTruthy();
-      expect(dict.pickpocket.levels.MEDIUM).toBeTruthy();
-      expect(dict.pickpocket.levels.HIGH).toBeTruthy();
-      expect(dict.pickpocket.levels.EXTREME).toBeTruthy();
+      expect(typeof dict.pickpocket.levels.LOW).toBe('string');
+      expect(dict.pickpocket.levels.LOW.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.pickpocket.levels.MEDIUM).toBe('string');
+      expect(dict.pickpocket.levels.MEDIUM.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.pickpocket.levels.HIGH).toBe('string');
+      expect(dict.pickpocket.levels.HIGH.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.pickpocket.levels.EXTREME).toBe('string');
+      expect(dict.pickpocket.levels.EXTREME.trim().length).toBeGreaterThan(0);
 
       // Categories
-      expect(dict.categories.CULTURAL).toBeTruthy();
-      expect(dict.categories.GASTRONOMIC).toBeTruthy();
-      expect(dict.categories.LOGISTICS).toBeTruthy();
+      expect(typeof dict.categories.CULTURAL).toBe('string');
+      expect(dict.categories.CULTURAL.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.categories.GASTRONOMIC).toBe('string');
+      expect(dict.categories.GASTRONOMIC.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.categories.LOGISTICS).toBe('string');
+      expect(dict.categories.LOGISTICS.trim().length).toBeGreaterThan(0);
 
       // HybridCanvas
-      expect(dict.hybridCanvas.modifyTime).toBeTruthy();
-      expect(dict.hybridCanvas.secureEntrance).toBeTruthy();
-      expect(dict.hybridCanvas.antiTrapShieldTitle).toBeTruthy();
+      expect(typeof dict.hybridCanvas.modifyTime).toBe('string');
+      expect(dict.hybridCanvas.modifyTime.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.hybridCanvas.secureEntrance).toBe('string');
+      expect(dict.hybridCanvas.secureEntrance.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.hybridCanvas.antiTrapShieldTitle).toBe('string');
+      expect(dict.hybridCanvas.antiTrapShieldTitle.trim().length).toBeGreaterThan(0);
 
       // Affiliates
-      expect(dict.affiliates.theForkDefaultCta).toBeTruthy();
-      expect(dict.affiliates.cabifyDefaultCta).toBeTruthy();
+      expect(typeof dict.affiliates.theForkDefaultCta).toBe('string');
+      expect(dict.affiliates.theForkDefaultCta.trim().length).toBeGreaterThan(0);
+      expect(typeof dict.affiliates.cabifyDefaultCta).toBe('string');
+      expect(dict.affiliates.cabifyDefaultCta.trim().length).toBeGreaterThan(0);
     }
   });
 

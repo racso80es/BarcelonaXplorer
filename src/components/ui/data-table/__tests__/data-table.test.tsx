@@ -67,11 +67,11 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
   it('Escenario 1: Renderizado Genérico y Celdas Personalizadas', () => {
     render(<DataTable<TestItem> data={mockData} columns={mockColumns} pageSize={10} />);
 
-    expect(screen.getByText('Alpha Service')).toBeDefined();
-    expect(screen.getByText('Beta Gateway')).toBeDefined();
+    expect(screen.getByText('Alpha Service').textContent).toBe('Alpha Service');
+    expect(screen.getByText('Beta Gateway').textContent).toBe('Beta Gateway');
     expect(screen.getByTestId('badge-1').textContent).toBe('INFO');
     expect(screen.getByTestId('badge-2').textContent).toBe('ERROR');
-    expect(screen.getByText('Editar 1')).toBeDefined();
+    expect(screen.getByText('Editar 1').textContent).toBe('Editar 1');
   });
 
   it('Escenario 2: Ciclo de Ordenación Tridimensional (asc -> desc -> null) y Atributos ARIA', () => {
@@ -134,17 +134,17 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
     });
 
     // Solo debe aparecer Delta DB
-    expect(screen.getByText('Delta DB')).toBeDefined();
+    expect(screen.getByText('Delta DB').textContent).toBe('Delta DB');
     expect(screen.queryByText('Alpha Service')).toBeNull();
 
     // Seleccionar nivel ERROR (Delta DB es ERROR, sigue visible)
     fireEvent.change(selectFilter, { target: { value: 'ERROR' } });
-    expect(screen.getByText('Delta DB')).toBeDefined();
+    expect(screen.getByText('Delta DB').textContent).toBe('Delta DB');
 
     // Cambiar a nivel INFO (Delta DB no es INFO -> sin resultados)
     fireEvent.change(selectFilter, { target: { value: 'INFO' } });
     expect(screen.queryByText('Delta DB')).toBeNull();
-    expect(screen.getByText(/Bóveda sin coincidencias/i)).toBeDefined();
+    expect(screen.getByText(/Bóveda sin coincidencias/i).textContent).toContain('Bóveda sin coincidencias');
   });
 
   it('Escenario 4: Estado Vacío Resiliente (Empty State) y botón Limpiar Filtros', () => {
@@ -157,7 +157,7 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
       vi.advanceTimersByTime(250);
     });
 
-    expect(screen.getByText(/Bóveda sin coincidencias/i)).toBeDefined();
+    expect(screen.getByText(/Bóveda sin coincidencias/i).textContent).toContain('Bóveda sin coincidencias');
 
     // Botón de limpiar filtros
     const clearBtn = screen.getAllByRole('button', { name: /Limpiar filtros/i })[0];
@@ -168,8 +168,8 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
     });
 
     // Restaura los datos
-    expect(screen.getByText('Alpha Service')).toBeDefined();
-    expect(screen.getByText('Beta Gateway')).toBeDefined();
+    expect(screen.getByText('Alpha Service').textContent).toBe('Alpha Service');
+    expect(screen.getByText('Beta Gateway').textContent).toBe('Beta Gateway');
   });
 
   it('Escenario 5: Skeleton Loader Táctico cuando isLoading={true}', () => {
@@ -177,7 +177,7 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
       <DataTable<TestItem> data={mockData} columns={mockColumns} isLoading={true} pageSize={10} />
     );
 
-    expect(container.querySelector('.animate-pulse')).toBeDefined();
+    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
     expect(screen.queryByText('Alpha Service')).toBeNull();
   });
 
@@ -195,8 +195,8 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
     render(<DataTable<TestItem> data={mockData} columns={mockColumns} pageSize={2} />);
 
     // Solo 2 filas montadas en página 1
-    expect(screen.getByText('Alpha Service')).toBeDefined();
-    expect(screen.getByText('Beta Gateway')).toBeDefined();
+    expect(screen.getByText('Alpha Service').textContent).toBe('Alpha Service');
+    expect(screen.getByText('Beta Gateway').textContent).toBe('Beta Gateway');
     expect(screen.queryByText('Gamma Worker')).toBeNull();
 
     // Avanzar a página 2
@@ -204,16 +204,16 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
     fireEvent.click(nextBtn);
 
     expect(screen.queryByText('Alpha Service')).toBeNull();
-    expect(screen.getByText('Gamma Worker')).toBeDefined();
-    expect(screen.getByText('Delta DB')).toBeDefined();
+    expect(screen.getByText('Gamma Worker').textContent).toBe('Gamma Worker');
+    expect(screen.getByText('Delta DB').textContent).toBe('Delta DB');
 
     // Cambiar tamaño de página a 10
     const pageSizeSelect = screen.getByLabelText('Seleccionar filas por página');
     fireEvent.change(pageSizeSelect, { target: { value: '10' } });
 
     // Ahora todos están montados
-    expect(screen.getByText('Alpha Service')).toBeDefined();
-    expect(screen.getByText('Epsilon Node')).toBeDefined();
+    expect(screen.getByText('Alpha Service').textContent).toBe('Alpha Service');
+    expect(screen.getByText('Epsilon Node').textContent).toBe('Epsilon Node');
   });
 
   it('Escenario 7b: Reset a Página 1 al aplicar filtros o búsqueda', () => {
@@ -221,7 +221,7 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
 
     // Ir a página 2
     fireEvent.click(screen.getByLabelText('Página siguiente'));
-    expect(screen.getByText('Gamma Worker')).toBeDefined();
+    expect(screen.getByText('Gamma Worker').textContent).toBe('Gamma Worker');
 
     // Escribir búsqueda
     const searchInput = screen.getByPlaceholderText('Buscar...');
@@ -232,6 +232,6 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
     });
 
     // Vuelve automáticamente a página 1 y muestra Alpha
-    expect(screen.getByText('Alpha Service')).toBeDefined();
+    expect(screen.getByText('Alpha Service').textContent).toBe('Alpha Service');
   });
 });

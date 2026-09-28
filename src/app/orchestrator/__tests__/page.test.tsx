@@ -73,8 +73,8 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
 
   it('renders initial state correctly (Fase 0)', () => {
     render(<OrchestratorPage />);
-    expect(screen.getByPlaceholderText(/Indica tus preferencias/i)).toBeDefined();
-    expect(screen.getByText(/SISTEMA EN ESPERA/i)).toBeDefined();
+    expect(screen.getByPlaceholderText(/Indica tus preferencias/i).tagName).toBe('TEXTAREA');
+    expect(screen.getByText(/SISTEMA EN ESPERA/i).textContent).toContain('SISTEMA EN ESPERA');
   });
 
   it('transitions from Fase 0 to Fase 3 and displays the Lateral HybridCanvas', async () => {
@@ -86,16 +86,16 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     fireEvent.submit(button);
 
     // Debe mostrar Asimilando (Fase 2)
-    expect(await screen.findByText(/Asimilando entropía/i, {}, { timeout: 1000 })).toBeDefined();
+    expect((await screen.findByText(/Asimilando entropía/i, {}, { timeout: 1000 })).textContent).toContain('Asimilando entropía');
 
     // Debe mostrar la chispa táctica de diagnóstico de aduana
-    expect(await screen.findByText(/Matriz saturada/i, {}, { timeout: 2000 })).toBeDefined();
+    expect((await screen.findByText(/Matriz saturada/i, {}, { timeout: 2000 })).textContent).toContain('Matriz saturada');
 
     // Debe mostrar la resolución final (Fase 3)
     // Debe desplegar el Lienzo Lateral Híbrido (itinerario inline desde /api/triage)
-    expect(await screen.findByText(/Itinerario Táctico/i, {}, { timeout: 4500 })).toBeDefined();
-    expect(await screen.findByText(/Inicio Seguro/i, {}, { timeout: 2000 })).toBeDefined();
-    expect(screen.getByText(/Entrada General/i)).toBeDefined();
+    expect((await screen.findByText(/Itinerario Táctico/i, {}, { timeout: 4500 })).textContent).toContain('Itinerario Táctico');
+    expect((await screen.findByText(/Inicio Seguro/i, {}, { timeout: 2000 })).textContent).toContain('Inicio Seguro');
+    expect(screen.getByText(/Entrada General/i).textContent).toContain('Entrada General');
   }, 10000);
 
   it('handles CASUAL_DIALOGUE empathetically without breaking the interface', async () => {
@@ -121,8 +121,8 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     fireEvent.change(input, { target: { value: 'Hola qué tal' } });
     fireEvent.submit(button);
 
-    expect(await screen.findByText(/Interacción casual interceptada/i, {}, { timeout: 2000 })).toBeDefined();
-    expect(await screen.findByText(/Tómate las cosas con calma en Barcelona/i, {}, { timeout: 2000 })).toBeDefined();
+    expect((await screen.findByText(/Interacción casual interceptada/i, {}, { timeout: 2000 })).textContent).toContain('Interacción casual interceptada');
+    expect((await screen.findByText(/Tómate las cosas con calma en Barcelona/i, {}, { timeout: 2000 })).textContent).toContain('Tómate las cosas con calma en Barcelona');
   });
 
   it('activa la ignición contextual proactiva y muestra el saludo del conserje táctico', async () => {
@@ -158,8 +158,8 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     render(<OrchestratorPage />);
 
     // El saludo y la chispa del conserje deben aparecer de forma asíncrona
-    expect(await screen.findByText(/Amanece con lluvia en Barcelona/i, {}, { timeout: 2000 })).toBeDefined();
-    expect(screen.getByText(/Lluvia en Barcelona \(17ºC\)/i)).toBeDefined();
+    expect((await screen.findByText(/Amanece con lluvia en Barcelona/i, {}, { timeout: 2000 })).textContent).toContain('Amanece con lluvia en Barcelona');
+    expect(screen.getByText(/Lluvia en Barcelona \(17ºC\)/i).textContent).toContain('Lluvia en Barcelona (17ºC)');
   });
 
   it('sincroniza el ThermalMeter reactivamente tras la evaluación de la Aduana Universal', async () => {
@@ -186,7 +186,7 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
 
     // Inicialmente el medidor está en 0%
     const meter = screen.getByTestId('thermal-meter');
-    expect(meter).toBeDefined();
+    expect(meter.getAttribute('data-testid')).toBe('thermal-meter');
     expect(meter.getAttribute('data-thermal-state')).toBe('inert');
 
     // Enviamos un prompt
@@ -197,9 +197,9 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     fireEvent.submit(button);
 
     // Debe recibir 75%, superar el umbral de 70% y transicionar a "operational"
-    expect(await screen.findByText(/Operativo · Itinerario Listo \(70%\)/i, {}, { timeout: 2500 })).toBeDefined();
+    expect((await screen.findByText(/Operativo · Itinerario Listo \(70%\)/i, {}, { timeout: 2500 })).textContent).toContain('Operativo · Itinerario Listo (70%)');
     expect(meter.getAttribute('data-thermal-state')).toBe('operational');
-    expect(screen.getByRole('button', { name: /Forjar Ruta Inmediata/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Forjar Ruta Inmediata/i }).textContent).toContain('Forjar Ruta Inmediata');
   });
 
   it('muta placeholder y ThermalMeter al francés al recibir _sys_lang desde /api/triage', async () => {
@@ -229,10 +229,10 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     fireEvent.submit(screen.getByRole('button', { name: /Enviar/i }));
 
     expect(
-      await screen.findByPlaceholderText(/Indiquez vos préférences/i, {}, { timeout: 2500 }),
-    ).toBeDefined();
+      (await screen.findByPlaceholderText(/Indiquez vos préférences/i, {}, { timeout: 2500 })).tagName,
+    ).toBe('TEXTAREA');
     expect(screen.getByTestId('thermal-meter').getAttribute('data-lang')).toBe('fr');
-    expect(document.querySelector('[data-sys-lang="fr"]')).toBeDefined();
+    expect(document.querySelector('[data-sys-lang="fr"]')).not.toBeNull();
   });
 
   it('CA-3 (PBI-STEEL-019): no contiene frases en castellano al mutar a lang="en"', async () => {
@@ -257,8 +257,8 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     const { container } = render(<OrchestratorPage />);
 
     expect(
-      await screen.findByPlaceholderText(/Enter your preferences/i, {}, { timeout: 2500 }),
-    ).toBeDefined();
+      (await screen.findByPlaceholderText(/Enter your preferences/i, {}, { timeout: 2500 })).tagName,
+    ).toBe('TEXTAREA');
 
     const spanishPhrases = [
       '[ SISTEMA EN ESPERA DE INPUT TÁCTICO ]',
