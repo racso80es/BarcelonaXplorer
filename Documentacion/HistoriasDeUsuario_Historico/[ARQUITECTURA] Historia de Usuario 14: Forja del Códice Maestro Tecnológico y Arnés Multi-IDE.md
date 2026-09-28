@@ -1,6 +1,6 @@
 # [ARQUITECTURA] Historia de Usuario 14: Forja del Códice Maestro Tecnológico y Arnés Multi-IDE (Preparación SddIA)
 
-- **Estatus:** Realizado (S+ Grade) · Forja Culminada — Códice en `draft` hasta evaluación Antigravity (PBI-CODEX-005)
+- **Estatus:** Realizado (S+ Grade) · Forja Culminada — Códice en `active` tras evaluación Antigravity (PBI-CODEX-005)
 - **Fecha de Revisión:** 2026-09-28
 - **Fecha de Culminación:** 2026-09-28
 - **Autor:** Orquestador Tormentosa / Vértice Biológico (Racso)
@@ -199,7 +199,7 @@ Todos los PBIs están en `Documentacion/PBI/Realizado/` (forja 2026-09-28).
 | [PBI-CODEX-002](../PBI/Realizado/PBI%20-%20Contrato%20Zod%20del%20Códice%20y%20Oráculo%20Anti-Deriva%20(P1).md) | Realizado | `src/features/governance/` + `yaml` |
 | [PBI-CODEX-003](../PBI/Realizado/PBI%20-%20Inyección%20del%20Códice%20en%20el%20Arnés%20de%20Antigravity%20y%20Claude%20Code%20(P1).md) | Realizado | `AGENTS.md`, `.agents/`, `CLAUDE.md` |
 | [PBI-CODEX-004](../PBI/Realizado/PBI%20-%20Inyección%20del%20Códice%20en%20el%20Arnés%20de%20Cursor%20y%20Verificación%20del%20Enganche%20(P1).md) | Realizado | `.cursorrules`, `.cursor/rules/`, test Escenario 3 |
-| [PBI-CODEX-005](../PBI/Realizado/PBI%20-%20Evaluación%20Conductual%20del%20Códice%20en%20Cursor%20y%20Antigravity%20(P2).md) | Realizado (Antigravity pendiente) | Propuesta Cursor archivada; Códice sigue `draft` |
+| [PBI-CODEX-005](../PBI/Realizado/PBI%20-%20Evaluación%20Conductual%20del%20Códice%20en%20Cursor%20y%20Antigravity%20(P2).md) | Realizado | Propuestas archivadas; Códice `active` |
 
 ---
 
@@ -239,7 +239,7 @@ Afirmaciones del borrador contrastadas contra el repositorio el 2026-09-28:
 
 ## Anexo B: Artefactos forjados (2026-09-28)
 
-- Códice: [`.SddIA/library/codexes/tech-master-nextjs-prisma.md`](../../.SddIA/library/codexes/tech-master-nextjs-prisma.md) (`status: draft` hasta evaluación Antigravity).
+- Códice: [`.SddIA/library/codexes/tech-master-nextjs-prisma.md`](../../.SddIA/library/codexes/tech-master-nextjs-prisma.md) (`status: active`).
 - Índice: [`.SddIA/library/codexes/index.md`](../../.SddIA/library/codexes/index.md).
 - Oráculo: `src/features/governance/library-codex.contract.test.ts` (4 tests: frontmatter, anti-deriva, `TC-*`, arnés).
 - Arnés: cinco archivos de arranque con inyección canónica (ver `LIBRARY_CODEX_HARNESS_INJECTION`).

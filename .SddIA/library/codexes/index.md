@@ -6,7 +6,7 @@ Registro local de activos de conocimiento tecnológico bajo `.SddIA/library/code
 
 | `uuid` | `slug` | `version` | Ruta | `status` |
 |---|---|---|---|---|
-| `227512a2-b980-4d90-8c45-2fd81017aabd` | `tech-master-nextjs-prisma` | `1.0.0` | [tech-master-nextjs-prisma.md](./tech-master-nextjs-prisma.md) | `draft` |
+| `227512a2-b980-4d90-8c45-2fd81017aabd` | `tech-master-nextjs-prisma` | `1.0.0` | [tech-master-nextjs-prisma.md](./tech-master-nextjs-prisma.md) | `active` |
 
 ## Relación con el manifiesto del workspace
 

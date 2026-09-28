@@ -4,7 +4,7 @@ uuid: "227512a2-b980-4d90-8c45-2fd81017aabd"
 slug: tech-master-nextjs-prisma
 version: "1.0.0"
 type: Library_Codex
-status: draft
+status: active
 updated_at: "2026-09-28"
 source_of_truth: src/package.json
 target_technologies:

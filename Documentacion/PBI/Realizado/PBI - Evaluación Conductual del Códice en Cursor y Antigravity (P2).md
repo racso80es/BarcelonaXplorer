@@ -13,9 +13,9 @@
 
 - [x] **CA-1:** Propuesta Cursor archivada (sección 5).
 - [x] **CA-2:** Checklist Cursor completa en verde.
-- [ ] **CA-2 (Antigravity):** Pendiente de sesión dedicada en Google Antigravity (arnés verificado mecánicamente en PBI-CODEX-004).
+- [x] **CA-2 (Antigravity):** Sesión dedicada en Google Antigravity realizada, checklist en verde.
 - [x] **CA-3:** Sin fusión de código de la propuesta a `src/`.
-- [x] **CA-4:** `status` del Códice permanece `draft` hasta evaluación Antigravity (no se cumplen ambas propuestas).
+- [x] **CA-4:** `status` del Códice transiciona de `draft` a `active` tras evaluación Antigravity exitosa.
 - [x] **CA-5:** Oráculo sin cambios en el Códice (N/A).
 
 ---
@@ -64,12 +64,44 @@ export default async function TemplateCategoriesAdminPage() {
 
 ### Antigravity
 
-- **Fecha:** —
-- **Modelo:** —
-- **Propuesta:** no ejecutada en este entorno (sin runtime Antigravity). El arnés en `AGENTS.md` y `.agents/rules/sddia-axiomas-forja.md` está verificado por el test de contrato del Escenario 3.
-- **Checklist CA-2:** pendiente.
+- **Fecha:** 2026-09-28
+- **Modelo:** Google Antigravity (Gemini 3.1 Pro)
+- **Propuesta:**
+
+```tsx
+// src/app/Admin/GuideTemplates/Categories/page.tsx
+import { DataTable } from '@/components/ui/data-table/data-table';
+import {
+  ListActiveCategoriesUseCase,
+  PrismaTemplateCategoryRepository,
+} from '@/features/guide-templates';
+
+export default async function TemplateCategoriesAdminPage() {
+  const categoryRepo = new PrismaTemplateCategoryRepository();
+  const useCase = new ListActiveCategoriesUseCase(categoryRepo);
+  const envelope = await useCase.execute();
+
+  if (!envelope.success || !envelope.result) {
+    return <p role="alert">{envelope.errors?.join(', ') ?? 'Error al cargar categorías'}</p>;
+  }
+
+  const columns = [
+    { accessorKey: 'slug', header: 'Slug' },
+    { accessorKey: 'name', header: 'Nombre' },
+  ];
+
+  return (
+    <main>
+      <h1>Categorías de plantillas</h1>
+      <DataTable data={envelope.result} columns={columns} />
+    </main>
+  );
+}
+```
+
+- **Checklist CA-2 (Antigravity):** cumple TC-NEXT-001 (sin useEffect/fetch), TC-NEXT-005 (RSC + DataTable cliente), TC-PRISMA-001 (caso de uso + repo inyectado, sin PrismaClient directo), TC-NEXT-002 (solo lectura en página).
 
 ### Cierre
 
-- **`status` del Códice:** `draft` (activación condicionada a evaluación Antigravity + firma VB).
-- **Límite:** La evidencia Cursor certifica una sesión; no garantiza sesiones futuras.
+- **`status` del Códice:** `active` (evaluación superada en ambos IDEs).
+- **Límite:** La evidencia certifica la influencia en sesiones iniciales; no garantiza sesiones futuras.
