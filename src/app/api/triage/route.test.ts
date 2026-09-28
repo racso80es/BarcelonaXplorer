@@ -29,16 +29,12 @@ vi.mock('@/features/ai-engine/jev/jevClient', () => ({
 vi.mock('@/features/ai-engine/groq/groq-conversational-slm.adapter', () => ({
   GroqConversationalSlmAdapter: class {},
 }));
-vi.mock('@/features/planner', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/features/planner')>();
-  return {
-    ...actual,
-    InMemoryDensityMatrixRepository: class {},
-    GenerateTacticalRouteUseCase: class {},
-    PrismaItineraryRepository: class {},
-    AffiliateEnricherService: class {},
-  };
-});
+vi.mock('@/features/planner/server', () => ({
+  InMemoryDensityMatrixRepository: class {},
+  GenerateTacticalRouteUseCase: class {},
+  PrismaItineraryRepository: class {},
+  AffiliateEnricherService: class {},
+}));
 vi.mock('@/features/ai-engine', () => ({
   GeminiClient: class {},
   GeminiEmbeddingAdapter: class {},

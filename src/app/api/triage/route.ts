@@ -7,7 +7,7 @@ import {
   GenerateTacticalRouteUseCase,
   PrismaItineraryRepository,
   AffiliateEnricherService,
-} from '@/features/planner';
+} from '@/features/planner/server';
 import { GeminiClient } from '@/features/ai-engine';
 import { PrismaTelemetryRepository } from '@/features/telemetry';
 import { GeminiEmbeddingAdapter } from '@/features/ai-engine';

@@ -46,7 +46,7 @@ Se adopta **Vertical Slicing con Localidad de Comportamiento** como la **topolog
 A partir de la ejecución de [`PBI-ARCH-APPLY-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/PBI%20-%20Aplicaci%C3%B3n%20Definitiva%20de%20Modificaciones%20Arquitect%C3%B3nicas%20Post-Veredicto.md):
 1. El código de negocio se organizará modularmente bajo `src/features/<modulo>/` (ej. `triage`, `telemetry`, `routes`, `auth`).
 2. Cada vertical funcional encapsulará sus esquemas Zod, Value Objects, casos de uso, interfaces/puertos y sus correspondientes tests unitarios (`<feature>.test.ts`).
-3. Se mantiene intacto el aislamiento hexagonal de dominio y la Clean Architecture: los componentes UI y Server Components consumirán exclusivamente los puertos exportados por el barrel `index.ts` de cada vertical.
+3. Se mantiene intacto el aislamiento hexagonal de dominio y la Clean Architecture: cada vertical expone una **superficie de dominio puro** en `index.ts` (esquemas, entidades, tipos y utilidades cliente-safe, con exports nominales) y, cuando aplica infraestructura de servidor, una **superficie `server.ts`** con `import 'server-only'`. Los componentes cliente y de UI consumen solo `index.ts`; Route Handlers y casos de uso de servidor importan adaptadores desde `server.ts`. Antecedente: PBI‑P0 de barrels y cierre PBI-STEEL-007 (HU-15).
 4. Las pruebas unitarias e integración de cada vertical residirán **colocadas** dentro del mismo directorio de la feature (`src/features/<modulo>/<modulo>.test.ts`), habilitando en `vitest.config.ts` la resolución nativa de `./**/*.test.{ts,tsx}`.
 
 ---

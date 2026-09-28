@@ -1,5 +1,5 @@
 import { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
-import { GeographicScopeResultDto } from '@/features/planner';
+import type { GeographicScopeResultDto } from './geographic-scope.schema';
 import { GeographicScope } from './geographic-scope.vo';
 
 /**

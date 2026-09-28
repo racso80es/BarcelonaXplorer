@@ -1,23 +1,54 @@
 // ═══════════════════════════════════════════════════════════════
-// Vertical Slice: Planner & Tactical Routes (Matriz y Generación de Rutas)
-// Marco Constitucional: Protocolo de Acero — Grado S+
+// Vertical Slice: Planner — superficie de dominio puro (cliente-safe)
+// PBI-STEEL-007: exports nominales; infraestructura en ./server
 // ═══════════════════════════════════════════════════════════════
 
-export * from './matrix';
-export * from './geographic-scope.vo';
-export * from './density-matrix-repository.port';
-export * from './geographic-decision-engine.port';
-export * from './heuristic-geographic-decision-engine';
-export * from './generate-tactical-route.use-case';
-export * from './validate-geographic-scope.use-case';
-export * from './in-memory-density-matrix.repository';
-export * from './tactical-route.entity';
-export * from './geographic-scope.schema';
-export * from './tactical-route.schema';
-export * from './validate-geographic-scope.use-case.port';
-export * from './affiliate/affiliate-enricher.schema';
-export * from './affiliate/affiliate-enricher.service';
-export * from './chronological-propagator';
-export * from './itinerary-persistence.port';
-export * from './prisma-itinerary.repository';
-export * from './streaming-events.schema';
+export {
+  DefaultDensityPayloadSchema,
+  calculateMatrixDensity,
+  type DefaultDensityPayload,
+} from './matrix';
+
+export { GeographicScope } from './geographic-scope.vo';
+export type { DensityMatrixRepositoryPort } from './density-matrix-repository.port';
+export type { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
+export type { GeographicScopeResultDto } from './geographic-scope.schema';
+export {
+  GeographicScopeResultSchema,
+  ValidateGeographicScopeInputSchema,
+  type ValidateGeographicScopeInputDto,
+} from './geographic-scope.schema';
+export type { ValidateGeographicScopeUseCasePort } from './validate-geographic-scope.use-case.port';
+
+export {
+  GeoCoordinates,
+  TimeSpan,
+  TacticalWaypoint,
+  TacticalRoute,
+} from './tactical-route.entity';
+
+export {
+  GeoCoordinatesZodSchema,
+  TimeSpanZodSchema,
+  TacticalWaypointZodSchema,
+  TacticalRouteZodSchema,
+} from './tactical-route.schema';
+
+export {
+  EnrichedRouteSchema,
+  EnrichedWaypointSchema,
+  type EnrichedRoute,
+  type EnrichedWaypoint,
+} from './affiliate/affiliate-enricher.schema';
+
+export type { IAffiliateEnricherService } from './affiliate/affiliate-enricher.service';
+
+export { ChronologicalPropagator } from './chronological-propagator';
+
+export type { ItineraryPersistencePort } from './itinerary-persistence.port';
+
+export {
+  OrchestratorStreamEventSchema,
+  formatSseMessage,
+  type OrchestratorStreamEvent,
+} from './streaming-events.schema';

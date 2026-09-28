@@ -1,4 +1,4 @@
-import { GeographicScopeResultDto } from '@/features/planner';
+import type { GeographicScopeResultDto } from './geographic-scope.schema';
 
 /**
  * Puerto de salida para el Motor de Decisión Determinista (System One / Jev AI).

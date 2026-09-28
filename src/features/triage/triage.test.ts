@@ -5,12 +5,12 @@ import { TriageInputUseCase } from './triage-input.use-case';
 import { ITypedDecisionEngine, IConversationalSLMPort } from '@/features/ai-engine';
 import {
   DensityMatrixRepositoryPort,
-  GenerateTacticalRouteUseCase,
   TacticalRoute,
   TacticalWaypoint,
   TimeSpan,
   ItineraryPersistencePort,
 } from '@/features/planner';
+import type { GenerateTacticalRouteUseCase } from '@/features/planner/server';
 
 describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
   it('debe validar la estructura de entrada de TriageInputSchema localmente', () => {

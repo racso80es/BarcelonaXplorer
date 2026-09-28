@@ -1,5 +1,5 @@
-import { GeographicScope } from '@/features/planner';
-import { ValidateGeographicScopeInputDto } from '@/features/planner';
+import { GeographicScope } from './geographic-scope.vo';
+import type { ValidateGeographicScopeInputDto } from './geographic-scope.schema';
 
 export type GeographicValidationOutcome =
   | {

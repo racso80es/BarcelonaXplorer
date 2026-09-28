@@ -1,6 +1,6 @@
 import { AiGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
-import { TacticalRoute } from '@/features/planner';
+import { TacticalRoute } from './tactical-route.entity';
 import { TelemetryEntry } from '@/features/telemetry';
 import {
   LlmEnvironmentContext,

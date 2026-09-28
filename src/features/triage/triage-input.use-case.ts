@@ -4,8 +4,11 @@ import { IConversationalSLMPort } from '@/features/ai-engine';
 import { DensityMatrixRepositoryPort } from '@/features/planner';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { GeographicDecisionEnginePort } from '@/features/planner';
-import { HeuristicGeographicDecisionEngine } from '@/features/planner';
-import { GenerateTacticalRouteUseCase } from '@/features/planner';
+import {
+  HeuristicGeographicDecisionEngine,
+  GenerateTacticalRouteUseCase,
+  AffiliateEnricherService,
+} from '@/features/planner/server';
 import {
   TriageInputDto,
   TriageInputSchema,
@@ -15,7 +18,6 @@ import {
   DefaultDensityPayload,
   TacticalRoute,
   EnrichedRoute,
-  AffiliateEnricherService,
   IAffiliateEnricherService,
   ItineraryPersistencePort,
 } from '@/features/planner';

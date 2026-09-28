@@ -1,7 +1,7 @@
 import {
   GeographicValidationOutcome,
   ValidateGeographicScopeUseCasePort,
-} from '@/features/planner';
+} from './validate-geographic-scope.use-case.port';
 import { GeographicDecisionEnginePort } from './geographic-decision-engine.port';
 import { GeographicBounceGeneratorPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
@@ -9,7 +9,7 @@ import { GeographicScope } from './geographic-scope.vo';
 import {
   ValidateGeographicScopeInputDto,
   ValidateGeographicScopeInputSchema,
-} from '@/features/planner';
+} from './geographic-scope.schema';
 import { TelemetryEntry } from '@/features/telemetry';
 
 /**

@@ -50,6 +50,13 @@ const eslintConfig = defineConfig([
               message: "Prohibido importar desde el barrel raíz '@/features/triage' en componentes de UI/App. Importa directamente desde sub-rutas como '@/features/triage/components/thermal-meter'.",
             },
           ],
+          patterns: [
+            {
+              group: ["@/features/*/server", "@/features/*/server/*"],
+              message:
+                "Prohibido importar la superficie de servidor de una feature desde UI/cliente (PBI-STEEL-007). Usa el barrel de dominio puro.",
+            },
+          ],
         },
       ],
     },
