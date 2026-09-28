@@ -9,9 +9,6 @@ import {
   PickpocketAlertLevel,
 } from './affiliate-enricher.schema';
 
-import { CircuitBreaker } from './circuit-breaker';
-import { STATIC_AFFILIATE_CATALOG } from './static-affiliate-catalog';
-
 interface TacticalPointKnowledge {
   keywords: string[];
   warnings: string[];
@@ -103,8 +100,6 @@ export interface IAffiliateEnricherService {
 }
 
 export class AffiliateEnricherService implements IAffiliateEnricherService {
-  constructor(private readonly circuitBreaker: CircuitBreaker = new CircuitBreaker()) {}
-
   private readonly gastronomyKeywords = [
     'restaurante',
     'restauran',
@@ -149,80 +144,25 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     'acuari',
   ];
 
-  public getCircuitBreaker(): CircuitBreaker {
-    return this.circuitBreaker;
-  }
-
   async enrichRoute(
     route: TacticalRoute,
     thermalState: 'operational' | 'saturated' = 'operational',
   ): Promise<EnrichedRoute> {
-    const execution = await this.circuitBreaker.execute(
-      async () => {
-        const enrichedWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp, index) =>
-          this.enrichWaypoint(wp, index, thermalState),
-        );
-        return {
-          id: route.id,
-          summary: route.summary,
-          thermalState,
-          waypoints: enrichedWaypoints,
-        };
-      },
-      () => {
-        const fallbackWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp) =>
-          this.fallbackWaypoint(wp, thermalState),
-        );
-        return {
-          id: route.id,
-          summary: `${route.summary} (Catálogo Resiliente)`,
-          thermalState,
-          waypoints: fallbackWaypoints,
-        };
-      },
+    const enrichedWaypoints: EnrichedWaypoint[] = route.waypoints.map((wp, index) =>
+      this.enrichWaypoint(wp, index, thermalState),
     );
-
-    return EnrichedRouteSchema.parse(execution.result);
+    return EnrichedRouteSchema.parse({
+      id: route.id,
+      summary: route.summary,
+      thermalState,
+      waypoints: enrichedWaypoints,
+    });
   }
 
   private matchTacticalKnowledge(textToAnalyze: string): TacticalPointKnowledge | undefined {
     return TACTICAL_KNOWLEDGE_BASE.find((entry) =>
       entry.keywords.some((kw) => textToAnalyze.includes(kw)),
     );
-  }
-
-  private fallbackWaypoint(
-    wp: TacticalWaypoint,
-    thermalState: 'operational' | 'saturated',
-  ): EnrichedWaypoint {
-    const textToAnalyze = `${wp.title} ${wp.description}`.toLowerCase();
-    const isGastronomy = this.gastronomyKeywords.some((kw) => textToAnalyze.includes(kw));
-    const isCultural = this.culturalKeywords.some((kw) => textToAnalyze.includes(kw));
-
-    const category = isGastronomy ? 'GASTRONOMY' : isCultural ? 'CULTURE' : 'ACTIVITY';
-    const fallbackOptions = STATIC_AFFILIATE_CATALOG[category];
-    const primaryOption = fallbackOptions[0];
-
-    const tacticalMatch = this.matchTacticalKnowledge(textToAnalyze);
-    const tacticalMetadata = this.buildTacticalMetadata(tacticalMatch, isGastronomy, thermalState);
-
-    return {
-      id: wp.id,
-      title: wp.title,
-      description: wp.description,
-      category,
-      coordinates: wp.coordinates
-        ? { lat: wp.coordinates.lat, lng: wp.coordinates.lng }
-        : undefined,
-      timeSpan: wp.timeSpan
-        ? { start: wp.timeSpan.start, end: wp.timeSpan.end }
-        : undefined,
-      recommendations: wp.recommendations ?? [],
-      affiliateProvider: primaryOption.provider,
-      affiliateUrl: primaryOption.affiliateUrl,
-      options: fallbackOptions,
-      tacticalMetadata,
-    };
   }
 
   private buildTacticalMetadata(
@@ -264,10 +204,6 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
         pickpocketAlertLevel,
         transitTips,
         realWalkingTimeMinutes: 12,
-      },
-      environmentalConditions: {
-        rainFriendly: true,
-        requiresDaylight: false,
       },
     };
   }
