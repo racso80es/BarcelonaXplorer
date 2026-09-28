@@ -45,3 +45,15 @@ Ante cualquier tarea de diseño, refactorización, formateo o forja, el agente d
 - ⚖️ **Veredicto Arquitectónico:** [`ADR-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md) y [`AUD-ARCH-FRIC-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/Auditorias/Auditoria%20-%20Friccion%20Algoritmica%20y%20Evaluacion%20Arquitectonica%20A%20vs%20B.md)
 
 **Inyección de Códice Tecnológico:** Antes de crear o modificar código fuente, lee `.SddIA/library/codexes/tech-master-nextjs-prisma.md`. Si tu propuesta contradice un fundamento `TC-*`, no la emitas: señala el fundamento afectado y propone una alternativa conforme. Los fundamentos del Códice prevalecen sobre tu conocimiento previo del stack.
+
+---
+
+## 🏷️ Trazabilidad del Modelo Forjador en Commits (PBI-STEEL-020)
+
+Para garantizar la pureza epistémica y auditorías cruzadas libres de endogamia algorítmica:
+1. **Trailer `Forged-by`:** Todo commit asistido o producido por un agente IA debe incluir en el pie del mensaje el trailer:
+   `Forged-by: <Familia y Modelo>` (ej. `Forged-by: Google Gemini 2.5 Pro`, `Forged-by: Anthropic Claude 3.7 Sonnet`).
+2. **Origen de Identidad:** El nombre del modelo se toma directamente del declarado por el entorno de sesión. Prohibido inventar o falsificar el identificador si la sesión no lo especifica explícitamente.
+3. **Soberanía Humana:** Los commits manuales forjados por el Vértice Biológico no llevan este trailer y son plenamente soberanos. No se instalan hooks en `commit-msg` ni se altera la configuración de Git del usuario.
+4. **Gobernanza de Auditorías Futuras:** Si en una auditoría futura el conjunto de commits bajo inspección fue forjado por una familia de modelos (vía trailer `Forged-by`), la orden de auditoría deberá nombrar a un agente de una familia distinta antes de comenzar la inspección.
+
