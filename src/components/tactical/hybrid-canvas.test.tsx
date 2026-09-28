@@ -137,4 +137,71 @@ describe('HybridCanvas Component (PBI-FEAT-CANVAS-SURVIVAL-002 / HU-10)', () => 
     expect(screen.getByText('Culturel')).toBeDefined();
     expect(screen.getByText('Voir tour sur Civitatis')).toBeDefined();
   });
+
+  it('CA-3 (PBI-STEEL-019): render con lang="en" no contiene frases en castellano', () => {
+    const saturatedRoute: EnrichedRoute = {
+      ...baseRoute,
+      thermalState: 'saturated',
+      waypoints: [
+        {
+          ...baseRoute.waypoints[0],
+          tacticalMetadata: {
+            antiTrapShield: {
+              warnings: ['Warning sample'],
+              recommendedAlternatives: ["Bodega L'Estevet"],
+            },
+            microLogistics: {
+              pickpocketAlertLevel: 'HIGH',
+              transitTips: 'Keep bags close.',
+              realWalkingTimeMinutes: 12,
+            },
+          },
+          options: [
+            {
+              ...baseRoute.waypoints[0].options[0],
+              isPriorityAccess: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    const { container } = render(
+      <HybridCanvas
+        itinerary={saturatedRoute}
+        onSelectOption={vi.fn()}
+        onTimeShift={vi.fn()}
+        thermalState="saturated"
+        lang="en"
+      />
+    );
+
+    const spanishPhrases = [
+      'Ruta Operativa Segura',
+      'Completa tu perfil para desbloquear alternativas gastronómicas hiperlocales y pases de acceso prioritario.',
+      'Modo S+ Grade: Escudo de Supervivencia & Curaduría Hiperlocal Activos',
+      'Tip de tránsito',
+      'Carteristas: Alto',
+      'Alternativas Locales Recomendadas (Sin Trampas):',
+      'Opciones Disponibles:',
+      'Verificado vía',
+      'Asegurar Entrada',
+      'Acceso prioritario:',
+    ];
+
+    for (const phrase of spanishPhrases) {
+      expect(container.textContent).not.toContain(phrase);
+    }
+
+    // Y contiene las correspondientes en inglés
+    expect(container.textContent).toContain('S+ Grade Mode: Survival Shield & Hyperlocal Curation Active');
+    expect(container.textContent).toContain('Transit tip');
+    expect(container.textContent).toContain('Pickpockets: High');
+    expect(container.textContent).toContain('Recommended Local Alternatives (Trap-Free):');
+    expect(container.textContent).toContain('Available Options:');
+    expect(container.textContent).toContain('Verified via');
+    expect(container.textContent).toContain('Secure Ticket');
+    expect(container.textContent).toContain('Critical high-congestion spot. Priority access:');
+  });
 });
+

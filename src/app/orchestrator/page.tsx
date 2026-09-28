@@ -245,7 +245,7 @@ export default function OrchestratorPage() {
                       aiResponse: {
                         kind: 'message',
                         text:
-                          'Respuesta de triaje inválida. La aduana rechazó el contrato de datos.',
+                          ui.orchestrator.invalidTriageResponse,
                       },
                     }
                   : t,
@@ -278,12 +278,12 @@ export default function OrchestratorPage() {
           type: triageData.status === 'DISPATCH_READY' ? 'logistics' : 'weather',
           insight:
             triageData.status === 'DISPATCH_READY'
-              ? 'Matriz saturada (>= 60%). Itinerario forjado internamente.'
+              ? ui.orchestrator.sparkMatrixSaturated
               : triageData.status === 'CASUAL_DIALOGUE'
-                ? 'Interacción casual interceptada. Modo empático activo.'
+                ? ui.orchestrator.sparkCasualDialogue
                 : triageData.status === 'INCOMPLETE_REPROMPT'
-                  ? `Matriz incompleta (${triageData.score}%). Variable crítica: ${triageData.missingVariable}`
-                  : 'Petición fuera de perímetro geográfico.',
+                  ? `${ui.orchestrator.sparkIncompleteMatrixPrefix} (${triageData.score}%). ${ui.orchestrator.sparkCriticalVariablePrefix}: ${triageData.missingVariable}`
+                  : ui.orchestrator.sparkOutOfScope,
           urgency: triageData.status === 'REBOUND_OUT_OF_SCOPE' ? 'high' : 'medium',
         };
 
@@ -299,7 +299,7 @@ export default function OrchestratorPage() {
         if (triageRes.status === 422 || triageData.status === 'REBOUND_OUT_OF_SCOPE') {
           const bounceMsg =
             triageData.bounceMessage ||
-            'Destino fuera del perímetro de Barcelona.';
+            ui.orchestrator.defaultBounceMessage;
           if (isSubscribed) {
             setTurns((prev) =>
               prev.map((t) =>
@@ -320,7 +320,7 @@ export default function OrchestratorPage() {
         if (triageData.status === 'CASUAL_DIALOGUE') {
           const dialogueMsg =
             triageData.dialogueMessage ||
-            '¡Me alegra charlar contigo! Disfruta con calma de Barcelona.';
+            ui.orchestrator.defaultDialogueMessage;
           if (isSubscribed) {
             setTurns((prev) =>
               prev.map((t) =>
@@ -341,7 +341,7 @@ export default function OrchestratorPage() {
         if (triageData.status === 'INCOMPLETE_REPROMPT') {
           const repromptMsg =
             triageData.repromptMessage ||
-            '¿Podrías especificar los horarios o tiempo disponible?';
+            ui.orchestrator.defaultRepromptMessage;
           if (isSubscribed) {
             setTurns((prev) =>
               prev.map((t) =>
@@ -362,7 +362,7 @@ export default function OrchestratorPage() {
         if (triageData.status === 'DISPATCH_CLAUDICATION') {
           const claudicationMsg =
             triageData.claudicationMessage ||
-            'El motor de rutas no está disponible temporalmente. Inténtalo más tarde.';
+            ui.orchestrator.defaultClaudicationMessage;
           if (isSubscribed) {
             setTurns((prev) =>
               prev.map((t) =>
@@ -386,7 +386,7 @@ export default function OrchestratorPage() {
 
         if (triageData.status === 'DISPATCH_READY' && triageData.itinerary) {
           const summary =
-            triageData.itinerary.summary || 'Ruta táctica forjada con éxito.';
+            triageData.itinerary.summary || ui.orchestrator.routeForgedSuccess;
           if (isSubscribed) {
             setTurns((prev) =>
               prev.map((t) =>
@@ -442,7 +442,7 @@ export default function OrchestratorPage() {
                     aiResponse: {
                       kind: 'message',
                       text:
-                        'Error de comunicación táctica. Proceda con precaución manual.',
+                        ui.orchestrator.communicationError,
                     },
                   }
                 : t,
@@ -511,7 +511,7 @@ export default function OrchestratorPage() {
             notificationPayload = {
               type: 'success',
               message:
-                '⏱️ Horario actualizado. Eventos posteriores recalculados automáticamente.',
+                ui.orchestrator.timeUpdatedNotice,
             };
             return {
               ...prev,
@@ -523,7 +523,7 @@ export default function OrchestratorPage() {
               message:
                 err instanceof Error
                   ? err.message
-                  : 'Error al recalcular horario.',
+                  : ui.orchestrator.timeUpdateError,
             };
             return prev;
           }
@@ -534,7 +534,7 @@ export default function OrchestratorPage() {
         setNotification(notificationPayload);
       }
     },
-    [],
+    [ui.orchestrator.timeUpdateError, ui.orchestrator.timeUpdatedNotice],
   );
 
   const handleCloseItinerary = useCallback(() => {
@@ -550,7 +550,7 @@ export default function OrchestratorPage() {
     const createdAt = new Date();
     const newTurn: Turn = {
       id: newTurnId,
-      userPrompt: 'Por favor, forja la ruta táctica inmediata con el contexto actual.',
+      userPrompt: ui.orchestrator.defaultForceDispatchPrompt,
       sparks: [],
       status: 'pending',
       createdAt,
@@ -602,7 +602,7 @@ export default function OrchestratorPage() {
               <button
                 onClick={() => setNotification(null)}
                 className="p-1 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white"
-                aria-label="Cerrar notificación"
+                aria-label={ui.orchestrator.closeNotification}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -643,7 +643,7 @@ export default function OrchestratorPage() {
 
           {turns.length === 0 && ignitionState.status !== 'ignited' && (
             <div className="h-full w-full flex items-center justify-center min-h-[50vh] text-zinc-400 font-mono text-xs sm:text-sm">
-              [ SISTEMA EN ESPERA DE INPUT TÁCTICO ]
+              {ui.orchestrator.awaitingInput}
             </div>
           )}
 
@@ -678,7 +678,7 @@ export default function OrchestratorPage() {
                    <OrchestratorBlock
                      role="ai"
                      status="orchestrating"
-                     content="Asimilando entropía y trazando ruta..."
+                     content={ui.orchestrator.orchestratingStatus}
                      timestamp={turn.orchestratingAt ?? turn.createdAt}
                    />
                  </div>
@@ -743,7 +743,7 @@ export default function OrchestratorPage() {
                            );
                          })()
                        ) : (
-                         <div className="text-zinc-500 italic">No se pudo forjar la ruta.</div>
+                         <div className="text-zinc-500 italic">{ui.orchestrator.cannotForgeRoute}</div>
                        )
                      }
                      timestamp={turn.completedAt ?? turn.orchestratingAt ?? turn.createdAt}

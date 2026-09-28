@@ -182,7 +182,7 @@ function HybridCanvasComponent({
         >
           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           <span className="leading-snug">
-            Ruta Operativa Segura. Completa tu perfil para desbloquear alternativas gastronómicas hiperlocales y pases de acceso prioritario.
+            {ui.hybridCanvas.safeOperationalRouteBanner}
           </span>
         </div>
       ) : (
@@ -191,7 +191,7 @@ function HybridCanvasComponent({
           className="mx-4 mt-3 p-2.5 rounded-lg bg-emerald-900/30 border border-emerald-400/40 text-emerald-300 text-xs flex items-center gap-2 shadow-xs font-medium"
         >
           <Zap className="w-4 h-4 text-emerald-400 fill-emerald-400 shrink-0" />
-          <span>Modo S+ Grade: Escudo de Supervivencia & Curaduría Hiperlocal Activos</span>
+          <span>{ui.hybridCanvas.sGradeBanner}</span>
         </div>
       )}
 
@@ -259,7 +259,7 @@ function HybridCanvasComponent({
                       <button
                         onClick={() => handleStartEditTime(wp)}
                         className="text-[11px] text-emerald-400 hover:text-emerald-300 underline underline-offset-2 ml-1 cursor-pointer"
-                        aria-label={`Editar horario de ${wp.title}`}
+                        aria-label={`${ui.hybridCanvas.modifyTime}: ${wp.title}`}
                       >
                         {ui.hybridCanvas.modifyTime}
                       </button>
@@ -272,7 +272,7 @@ function HybridCanvasComponent({
                     setExpandedNodeId(isExpanded ? null : wp.id)
                   }
                   className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
-                  aria-label={isExpanded ? 'Colapsar opciones' : 'Expandir opciones'}
+                  aria-label={isExpanded ? ui.hybridCanvas.collapseOptions : ui.hybridCanvas.expandOptions}
                 >
                   {isExpanded ? (
                     <ChevronUp className="w-4 h-4" />
@@ -333,7 +333,7 @@ function HybridCanvasComponent({
                     ))}
                     {transitTips && (
                       <p className="text-[11px] text-amber-300/80 font-mono mt-1">
-                        💡 Tip de tránsito: {transitTips}
+                        💡 {ui.hybridCanvas.transitTipPrefix}: {transitTips}
                       </p>
                     )}
                   </div>
@@ -348,7 +348,7 @@ function HybridCanvasComponent({
                 >
                   <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
-                    Alternativas Locales Recomendadas (Sin Trampas):
+                    {ui.hybridCanvas.recommendedAlternativesTitle}
                   </div>
                   <ul className="space-y-1 text-zinc-300 text-xs">
                     {alternatives.map((alt, ai) => (
@@ -364,7 +364,7 @@ function HybridCanvasComponent({
               {isExpanded && wp.options.length > 0 && (
                 <div className="p-3 space-y-2 border-t border-zinc-800/60 bg-zinc-900/40">
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Opciones Disponibles:
+                    {ui.hybridCanvas.availableOptionsTitle}
                   </div>
 
                   {wp.options.map((opt) => (
@@ -421,13 +421,13 @@ function HybridCanvasComponent({
                       {opt.affiliateUrl && (
                         <div className="mt-2.5 pt-2 border-t border-zinc-800/60 flex items-center justify-between">
                           <span className="text-[10px] text-zinc-400 font-mono">
-                            Verificado vía{' '}
+                            {ui.hybridCanvas.verifiedVia}{' '}
                             <span className="text-zinc-200 font-semibold">
                               {opt.provider === 'THEFORK'
                                 ? 'TheFork'
                                 : opt.provider === 'CIVITATIS'
                                 ? 'Civitatis'
-                                : 'Proveedor'}
+                                : ui.hybridCanvas.defaultProvider}
                             </span>
                           </span>
                           <a

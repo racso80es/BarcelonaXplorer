@@ -234,6 +234,44 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
     expect(screen.getByTestId('thermal-meter').getAttribute('data-lang')).toBe('fr');
     expect(document.querySelector('[data-sys-lang="fr"]')).toBeDefined();
   });
+
+  it('CA-3 (PBI-STEEL-019): no contiene frases en castellano al mutar a lang="en"', async () => {
+    global.fetch = vi.fn(async (url) => {
+      if (url === '/api/triage/ignition') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            result: {
+              _sys_lang: 'en',
+              greeting: 'Welcome to Barcelona!',
+              sparks: [],
+            },
+          }),
+        } as unknown as Response;
+      }
+      return {} as unknown as Response;
+    });
+
+    const { container } = render(<OrchestratorPage />);
+
+    expect(
+      await screen.findByPlaceholderText(/Enter your preferences/i, {}, { timeout: 2500 }),
+    ).toBeDefined();
+
+    const spanishPhrases = [
+      '[ SISTEMA EN ESPERA DE INPUT TÁCTICO ]',
+      'Asimilando entropía y trazando ruta...',
+      'Ruta táctica forjada con éxito.',
+      'Respuesta de triaje inválida.',
+      'Error de comunicación táctica.',
+    ];
+
+    for (const phrase of spanishPhrases) {
+      expect(container.textContent).not.toContain(phrase);
+    }
+  });
 });
 
 

@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Cierre de i18n en Lienzo y Orquestador
 
 **Identificador:** PBI-STEEL-019
-**Estatus:** Pendiente (Backlog diferido — no se ejecuta antes de cerrar PBI-STEEL-001 a 009)
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-28
 **Historia de Usuario Relacionada:** [[OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20Historia%20de%20Usuario%2015%3A%20Auditor%C3%ADa%20Ontol%C3%B3gica%20de%20Acero%20y%20Purga%20Kaizen%20%28El%20Hombre%20de%20Acero%29.md)
 **Origen:** [`AUD-OPS-STEEL-001`](../../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md) · F-15
@@ -34,9 +34,9 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Inventario posterior):** al forjar, se vuelven a buscar literales en los dos componentes. Las líneas del Log sirven de pista. PBI-STEEL-005 habrá borrado las ramas de streaming, así que parte de esas líneas ya no existirá y no se traducen.
-- [ ] **CA-2 (Diccionario):** cada literal que siga visible pasa a `src/features/i18n/domain/ui-dictionary.ts`, con entrada en castellano y en inglés. No se crea un segundo sistema de traducciones.
-- [ ] **CA-3 (Test):** un render de `HybridCanvas` y de la página con `lang='en'` no contiene las frases en castellano recogidas en CA-1. El test nombra esas frases. No se limita a `toBeDefined`.
+- [x] **CA-1 (Inventario posterior):** inventario exhaustivo de literales en `hybrid-canvas.tsx` (banners didácticos base y S+ Grade, prefijos de transit tips, títulos de alternativas y opciones disponibles, 'Verificado vía', 'Proveedor', aria-labels de colapso y edición) y en `page.tsx` (mensajes de triaje, chispas de diagnóstico, errores de comunicación, notificaciones de propagación horaria, input en espera y estado de orquestación).
+- [x] **CA-2 (Diccionario):** incorporadas todas las claves en `src/features/i18n/domain/ui-dictionary.ts` bajo `hybridCanvas` y `orchestrator`, cubriendo simétricamente los 6 idiomas soportados (`es`, `en`, `fr`, `de`, `it`, `ca`). Sin sistemas secundarios de traducción.
+- [x] **CA-3 (Test):** tests específicos en `hybrid-canvas.test.tsx` y `app/orchestrator/__tests__/page.test.tsx` que renderizan con `lang='en'` y afirman explícitamente (`not.toContain`) la ausencia de cada una de las frases en castellano inventariadas en CA-1, validando la presencia de las correspondientes en inglés.
 
 ---
 
@@ -49,4 +49,8 @@
 
 ## 4. Evidencia de Certificación
 
-Pendiente de forja.
+- **Diccionario unificado:** `src/features/i18n/domain/ui-dictionary.ts` ampliado con sección canónica `orchestrator` y 10 nuevas propiedades en `hybridCanvas` para los 6 idiomas.
+- **Componentes saneados:** `src/components/tactical/hybrid-canvas.tsx` y `src/app/orchestrator/page.tsx` vinculados 100% al diccionario mediante `getUiDictionary(lang)`.
+- **Oráculos en verde:**
+  - `npx vitest run components/tactical/hybrid-canvas.test.tsx app/orchestrator/__tests__/page.test.tsx features/i18n/domain/ui-dictionary.test.ts` → 3 ficheros, 13 tests en verde.
+  - `npx tsc --noEmit && npm run lint` → 0 errores, 0 warnings.
