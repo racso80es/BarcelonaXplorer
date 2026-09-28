@@ -49,12 +49,12 @@ El ecosistema de pruebas no es un bloque estático; es un organismo que debe exp
 
 ### C. La Aduana de Despliegue (Bloqueo Atómico)
 
-Playwright se incrusta como una aduana adicional en el flujo de certificación. Aquí debe distinguirse el estado actual del objetivo de esta historia:
+Playwright actúa como **cuarto oráculo** en dos fronteras complementarias (forjado y verificado):
 
-- **Estado actual (verificado):** `.github/workflows/ci.yml` define un único job `oracle-gate` que ejecuta `scripts/audit-anchor.sh`. Ese script hoy consulta la *Santa Trinidad* — `tsc --noEmit`, `vitest run` (`npm test`) y `eslint` — pero **no** ejecuta Playwright. Además, **el CI no despliega**: no existe ningún paso que invoque `ansible-playbook`. El despliegue al Nodo 11 se dispara manualmente vía `src/deploy.sh`, que a su vez ejecuta `ansible/deploy.yml` (Ansistrano).
-- **Objetivo de esta historia:** añadir el paso E2E de Playwright como **cuarto oráculo** en dos fronteras complementarias:
-  1. En la CI (`oracle-gate` / `audit-anchor.sh`), de modo que un fallo E2E devuelva código de salida ≠ 0 y marque el workflow en rojo sobre `main`/PR.
-  2. En `src/deploy.sh`, **antes** de invocar `ansible-playbook`, de modo que un fallo E2E aborte el despliegue y proteja la versión de producción sana (**Táctica del Refugio / Zero Downtime**).
+1. **CI:** el job `oracle-gate` (`.github/workflows/ci.yml`) ejecuta `scripts/audit-anchor.sh` con orden `eslint → tsc → vitest → CI=1 npm run test:e2e`. Un fallo E2E devuelve exit ≠ 0 y marca el workflow en rojo. **La CI no despliega:** no invoca `ansible-playbook`.
+2. **Despliegue manual:** `src/deploy.sh` aplica **Aduana Física → Aduana Empírica (`CI=1 npm run test:e2e`) → Ignición** (`ansible-playbook` contra `ansible/deploy.yml`). El script arranca con `set -euo pipefail`; el paso E2E debe permanecer en el **hilo principal** sin patrones que traguen el exit code (detalle en **Anexo B**).
+
+> **Matiz operativo:** el aviso `TELEGRAM_ENABLED` en `.env.production` es solo `[WARN]` y no aborta la Aduana Física; eso **no** debilita el E2E: cualquier fallo de Playwright sigue siendo bloqueante antes de Ansible.
 
 ---
 
@@ -72,7 +72,7 @@ Playwright se incrusta como una aduana adicional en el flujo de certificación. 
 ### Escenario 1: Orquestación Determinista y Desacople del LLM
 - **Dado** la ejecución de la suite E2E de Playwright sobre el entorno local o CI.
 - **Cuando** el agente automatizado simula la solicitud de generación de un itinerario completo.
-- **Entonces** Playwright intercepta `GET /api/triage/ignition`, `POST /api/triage` y el stream `GET /api/orchestrator/stream`, anula toda petición de red externa y devuelve DTOs mockeados con latencia constante (objetivo de SLA de mock ≤ 50 ms por respuesta).
+- **Entonces** Playwright intercepta `GET /api/triage/ignition`, `POST /api/triage` y el stream **`POST`** `/api/orchestrator/stream`, anula toda petición de red externa y devuelve DTOs mockeados con latencia constante (objetivo de SLA de mock ≤ 50 ms por respuesta).
 - **Y** la interfaz renderiza el `HybridCanvas` con sus *waypoints* basándose exclusivamente en los mocks, validando la coreografía sin consumir tokens de JEV/Groq/Gemini.
 
 ### Escenario 2: Validación Visual de Saturación Térmica (S+ Grade)
@@ -145,8 +145,53 @@ exclude: [...configDefaults.exclude, '**/tests/e2e/playwright/**'],
 - **Atajo válido (menos frágil):** el cliente solo consume el stream si `/api/triage` responde `DISPATCH_READY` **sin** campo `itinerary`. Si el mock de `/api/triage` incluye un `itinerary` completo en su DTO, el `HybridCanvas` se renderiza directamente y **no** se necesita mockear el SSE. Recomendado para los Escenarios 1/2 salvo que se quiera probar específicamente la ruta de streaming.
 
 ### 5.5 La Frontera CI/CD (Scripts Bash)
-- **`scripts/audit-anchor.sh`:** reordenar los oráculos por peso termodinámico / *Fail‑Fast* → `eslint → tsc → vitest → playwright test`, ejecutados desde `src/`. **Matiz verificado:** el orden actual del script es `tsc → vitest → eslint`; esta HU lo reordena y añade Playwright como **cuarto oráculo**. Situar `playwright test` al final es correcto porque su `webServer` levanta la app (build+start) y es el paso más costoso.
-- **`src/deploy.sh` — Peaje de Infraestructura (orden por coste computacional):** el E2E **no** va en la primera línea. Un ping SSH o la comprobación de comandos (`ansible-playbook`, `rsync`) cuesta milisegundos, mientras que levantar Next y correr Playwright cuesta decenas de segundos. El orden correcto es: **(1) Aduana Física** (variables de entorno, conectividad SSH al Nodo 11, espacio en disco y presencia de Ansistrano) → **(2) Aduana Empírica** (`(cd "${PROJECT_ROOT}/src" && npm run test:e2e)` como oráculo final) → **(3) Ignición** (`ansible-playbook`). Con `set -euo pipefail` (ya presente) un código ≠ 0 aborta antes de desplegar, y nunca se gastan ciclos de CPU probando el código si la red hacia el Nodo 11 está caída.
+- **`scripts/audit-anchor.sh` (forjado):** cuádruple oráculo `eslint → tsc → vitest → CI=1 npm run test:e2e` desde `src/`, con `set -euo pipefail`. Playwright va al final porque su `webServer` compila y levanta la app standalone (paso más costoso).
+- **`src/deploy.sh` — Peaje de Infraestructura:** orden **(1) Aduana Física** (presencia de `ansible-playbook`, inventario/playbook, SSH al Nodo 11, disco, validación de `src/.env.production`) → **(2) Aduana Empírica** (`CI=1 npm run test:e2e` bajo `src/`) → **(3) Ignición** (`ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}"`). El E2E **no** va en la primera línea: un SSH caído debe abortar en milisegundos, no tras un build de Next. El bloqueo atómico del paso 2 se documenta en **Anexo B**.
+
+---
+
+## Anexo B: Diagnóstico de la Fractura (Aduana Bypassable)
+
+### B.1 Intención del peaje
+
+La secuencia acordada en `src/deploy.sh` es: **(1) Aduana Física → (2) Aduana Empírica → (3) Ignición**. El cuarto oráculo solo cumple la **Táctica del Refugio** si un fallo de Playwright **impide** llegar a `ansible-playbook`.
+
+### B.2 Dónde se rompe el bloqueo (anti‑patrones Bash)
+
+Con `set -e` o `set -euo pipefail`, un comando con exit ≠ 0 **debería** abortar el script, pero hay excepciones y malas prácticas que convierten el E2E en un aviso cosmético:
+
+| Patrón | Efecto | ¿Bloquea Ansible? |
+|--------|--------|---------------------|
+| `npm run test:e2e \|\| true` | Fuerza exit 0 | **No** |
+| `if npm run test:e2e; then echo OK; else echo WARN; fi` sin `exit 1` en la rama fallida | Continúa el script | **No** |
+| Ejecutar E2E en segundo plano (`&`) sin `wait` ni comprobar `$?` | Ignora el resultado | **No** |
+| `if npm run test:e2e; then ...; fi` donde el `else` solo imprime | Traga el fallo | **No** |
+| `if ! ( cd src && CI=1 npm run test:e2e ); then echo ERROR; exit 1; fi` | Salida explícita | **Sí** |
+| Subshell `( cd src && CI=1 npm run test:e2e )` como sentencia suelta con `set -e` | El subshell devuelve el exit de Playwright al padre | **Sí** |
+
+> **Corrección anti‑alucinación:** un subshell `( … )` **no** anula el bloqueo por sí solo. Con `set -e`, si `npm run test:e2e` falla dentro del subshell, el exit code del subshell es ≠ 0 y el script padre termina. La fractura aparece cuando el desarrollador **envuelve** el E2E en ramas que no hacen `exit 1`, o cuando usa `|| true`.
+
+### B.3 Implementación de referencia (forjada en el repositorio)
+
+```bash
+if ! (
+  cd "${PROJECT_ROOT}/src"
+  CI=1 npm run test:e2e
+); then
+  echo "[ERROR] Aduana Empírica E2E fallida. Ignición abortada."
+  exit 1
+fi
+```
+
+- `CI=1` alinea el comportamiento con CI (`reuseExistingServer: false`, rebuild del `webServer` en `playwright.config.ts`).
+- El subshell preserva el directorio de trabajo del script (Ansible sigue resolviendo rutas desde la raíz del proyecto).
+- La rama `if ! …; then exit 1` documenta el bloqueo aunque `set -e` ya abortaría en el patrón de subshell suelto.
+
+### B.4 Verificación Kaizen (CA‑5)
+
+1. Forzar un fallo en un spec (`test.fail()` o aserción imposible) → `CI=1 npm run test:e2e` debe devolver exit ≠ 0.
+2. Ejecutar `src/deploy.sh` en ese estado → debe imprimir el error de Aduana Empírica y **no** debe aparecer el log de Ansistrano.
+3. Restaurar el spec → `scripts/audit-anchor.sh` y `deploy.sh` vuelven a verde.
 
 ---
 
@@ -172,6 +217,7 @@ exclude: [...configDefaults.exclude, '**/tests/e2e/playwright/**'],
 | 14 | `@playwright/test` arrastraría binarios a la imagen del Nodo 11 | `output: 'standalone'` + `Dockerfile` runner sin `node_modules` de `deps` ⇒ nunca viajan | §5.1: afirmación confirmada y reforzada |
 | 15 | Poner el E2E en la primera línea de `deploy.sh` | Un fallo de red/SSH se descubriría tras decenas de segundos de build | §5.5: orden Aduana Física → Aduana Empírica → Ignición |
 | 16 | Specs bajo `src/tests/e2e/playwright/` | No existe `src/tests/`; `@playwright/test` se resuelve desde `src/node_modules` | Implementación: `src/playwright-e2e/` + `exclude` en `tsconfig` y `vitest.config` |
+| 17 | El subshell `( cd && npm run test:e2e )` “traga” errores y bypassa Ansible | Con `set -e`, el exit del subshell se propaga; el bypass viene de `\|\| true` o `if` sin `exit 1` | Anexo B + `deploy.sh` con `if ! ( … ); then exit 1; fi` |
 
 ### A.2 Artefactos de código verificados (rutas reales)
 

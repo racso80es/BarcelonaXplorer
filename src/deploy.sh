@@ -87,16 +87,20 @@ if ! grep -q "^TELEGRAM_ENABLED=true" "${ENV_PROD}"; then
 fi
 echo -e "${GREEN}[OK] Variables críticas de producción (.env.production) validadas y listas para sincronización con el Nodo 11.${NC}"
 
-# 5. Aduana Empírica — Playwright E2E (bloquea antes de Ignición si hay regresión de UI)
-echo -e "${YELLOW}>>> Ejecutando puerta empírica E2E (npm run test:e2e)...${NC}"
+# 5. Aduana Empírica — Playwright E2E (bloqueo atómico; ver HU-13 Anexo B)
+# Prohibido: npm run test:e2e || true, ramas if sin exit 1, o desacoplar el exit code del hilo principal.
+echo -e "${YELLOW}>>> Ejecutando puerta empírica E2E (CI=1 npm run test:e2e)...${NC}"
 if [[ ! -d "${PROJECT_ROOT}/src" ]]; then
     echo -e "${RED}[ERROR] No se encuentra el directorio de aplicación en ${PROJECT_ROOT}/src${NC}"
     exit 1
 fi
-(
+if ! (
     cd "${PROJECT_ROOT}/src"
     CI=1 npm run test:e2e
-)
+); then
+    echo -e "${RED}[ERROR] Aduana Empírica E2E fallida. Ignición (ansible-playbook) abortada.${NC}"
+    exit 1
+fi
 echo -e "${GREEN}[OK] Aduana Empírica E2E superada.${NC}"
 
 # 6. Ignición — Ejecución del pipeline Ansistrano
