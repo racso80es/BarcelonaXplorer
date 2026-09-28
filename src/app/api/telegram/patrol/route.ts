@@ -164,15 +164,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           continue;
         }
 
-        const waypoints = itinerary.waypoints;
-        const mappedWaypoints: PatrolWaypointInput[] = waypoints.map((wp) => ({
-          title: wp.title,
-          lat: wp.coordinates?.lat ?? null,
-          lng: wp.coordinates?.lng ?? null,
-          isOutdoor:
-            wp.tacticalMetadata?.environmentalConditions?.rainFriendly === false,
-        }));
-
         // PBI-STEEL-013: sin registro de progreso real, no se asume avance ni fatiga
         const completedWaypoints: PatrolWaypointInput[] = [];
         const nextWaypoint: PatrolWaypointInput | null = null;
