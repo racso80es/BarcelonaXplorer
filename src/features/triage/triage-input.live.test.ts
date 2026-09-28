@@ -10,7 +10,7 @@ import { TelemetryRepositoryPort } from '@/features/telemetry';
 describe('Aduana Universal y Triaje Entrópico Upstream Live E2E (HU-CORE-TRIAGE-002)', () => {
   beforeAll(() => {
     // Carga de variables de entorno reales desde src/.env.local
-    const envPath = path.resolve(__dirname, '../../src/.env.local');
+    const envPath = path.resolve(__dirname, '../../.env.local');
     if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
       process.loadEnvFile(envPath);
     }

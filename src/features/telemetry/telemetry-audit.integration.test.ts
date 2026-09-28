@@ -34,7 +34,7 @@ const hasDatabaseUrl = (): boolean => {
   if (process.env.DATABASE_URL) {
     return true;
   }
-  const envPath = path.resolve(__dirname, '../../src/.env.local');
+  const envPath = path.resolve(__dirname, '../../.env.local');
   if (!fs.existsSync(envPath)) {
     return false;
   }
@@ -51,7 +51,7 @@ describe.skipIf(!hasDatabaseUrl())(
   beforeAll(async () => {
     // Cargar DATABASE_URL desde .env.local si no está en process.env
     if (!process.env.DATABASE_URL) {
-      const envPath = path.resolve(__dirname, '../../src/.env.local');
+      const envPath = path.resolve(__dirname, '../../.env.local');
       if (fs.existsSync(envPath)) {
         const envContent = fs.readFileSync(envPath, 'utf8');
         const match = envContent.match(/DATABASE_URL="?([^"\n]+)"?/);
@@ -243,7 +243,7 @@ describe.skipIf(!hasDatabaseUrl())(
   });
 
   it('5. Auditoría de Frontera Edge: middleware.ts libre de Prisma y de módulos C++', () => {
-    const middlewarePath = path.resolve(__dirname, '../../src/middleware.ts');
+    const middlewarePath = path.resolve(__dirname, '../../middleware.ts');
     const middlewareCode = fs.readFileSync(middlewarePath, 'utf8');
 
     // Comprobación de que no importa Prisma

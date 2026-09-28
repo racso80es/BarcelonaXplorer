@@ -6,10 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "cd .. && eslint --config ./src/eslint.config.mjs --max-warnings 0 src tests",
+    "lint": "cd .. && eslint --config ./src/eslint.config.mjs --max-warnings 0 src",
     "test": "vitest run",
-    "test:live": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run ../tests/e2e",
-    "test:integration": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run ../tests/integration",
+    "test:live": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run ./features/ai-engine/jev-tests/jev-ai.live.test.ts ./features/triage/triage-input.live.test.ts",
+    "test:integration": "node --env-file=.env.local ./node_modules/vitest/vitest.mjs run ./features/telemetry/telemetry-audit.integration.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

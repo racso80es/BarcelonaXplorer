@@ -48,7 +48,7 @@ echo "════════════════════════�
 
 cd "${REPO_ROOT}/src"
 
-echo "1/6 Linter AST (eslint, --max-warnings 0, src + tests/)..."
+echo "1/5 Linter AST (eslint, --max-warnings 0, src/)..."
 if npm run lint; then
   echo "✅ Linter: 0 problemas y 0 avisos."
 else
@@ -56,27 +56,19 @@ else
   exit 1
 fi
 
-echo "2/6 Compilador TypeScript aplicación (tsc --noEmit)..."
+echo "2/5 Compilador TypeScript aplicación (tsc --noEmit)..."
 npx tsc --noEmit
 echo "✅ Compilador aplicación: 0 errores."
 
-echo "3/6 Compilador TypeScript Playwright (tsconfig.playwright-e2e.json)..."
+echo "3/5 Compilador TypeScript Playwright (tsconfig.playwright-e2e.json)..."
 npx tsc --noEmit -p tsconfig.playwright-e2e.json
 echo "✅ Compilador Playwright E2E: 0 errores."
 
-echo "4/6 Compilador TypeScript árbol tests/ (tests/tsconfig.json)..."
-TESTS_NODE_MODULES="${REPO_ROOT}/tests/node_modules"
-if [ ! -e "${TESTS_NODE_MODULES}" ]; then
-  ln -sf ../src/node_modules "${TESTS_NODE_MODULES}"
-fi
-npx tsc --noEmit -p ../tests/tsconfig.json
-echo "✅ Compilador tests/: 0 errores."
-
-echo "5/6 Suite de Pruebas (vitest run)..."
+echo "4/5 Suite de Pruebas (vitest run)..."
 npm test
 echo "✅ Suite de Pruebas: 100% verde."
 
-echo "6/6 Blindaje empírico E2E (playwright test)..."
+echo "5/5 Blindaje empírico E2E (playwright test)..."
 CI=1 npm run test:e2e
 echo "✅ Playwright E2E: 100% verde."
 

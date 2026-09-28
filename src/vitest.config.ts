@@ -6,16 +6,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['../tests/**/*.test.{ts,tsx}', './**/*.test.{ts,tsx}'],
+    include: ['./**/*.test.{ts,tsx}'],
     setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
     exclude: [
       ...configDefaults.exclude,
-      '../tests/node_modules/**',
       '**/playwright-e2e/**',
-      // E2E en vivo (JEV/Groq): fuera del cuádruple oráculo; usar npm run test:live
-      '../tests/e2e/**/*.e2e.test.ts',
-      // Integración MySQL: requiere DATABASE_URL; usar npm run test:integration
-      '../tests/integration/**',
+      '**/*.live.test.ts',
+      '**/*.integration.test.ts',
     ],
   },
   resolve: {

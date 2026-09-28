@@ -154,7 +154,7 @@ describe('Admin Security Middleware (middleware.ts)', () => {
 
   describe('Cifrado en Tránsito (Blindaje en Producción)', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'production';
+      vi.stubEnv('NODE_ENV', 'production');
     });
 
     it('debe forzar redirección 308 a HTTPS en producción si la petición llega por HTTP sin credenciales', async () => {
@@ -246,7 +246,6 @@ describe('Admin Security Middleware (middleware.ts)', () => {
     });
 
     it('debe despachar telemetría de alerta (403) ante transmisión insegura en producción', async () => {
-      process.env.NODE_ENV = 'production';
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
         Promise.resolve(new Response(JSON.stringify({ status: 'accepted' }), { status: 202 }))
       );

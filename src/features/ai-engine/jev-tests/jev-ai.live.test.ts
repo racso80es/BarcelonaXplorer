@@ -18,7 +18,7 @@ describe('Jev AI Upstream Live E2E (HU-INFRA-JEV-001)', () => {
   beforeAll(() => {
     // Asegurar carga de .env.local en el entorno de prueba
     if (!process.env.JEV_API_KEY) {
-      const envPath = path.resolve(__dirname, '../../src/.env.local');
+      const envPath = path.resolve(__dirname, '../../../.env.local');
       if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
         process.loadEnvFile(envPath);
       }
