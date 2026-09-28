@@ -62,14 +62,7 @@ if (( REMOTE_DISK_FREE_PCT < 10 )); then
 fi
 echo -e "${GREEN}[OK] Espacio en disco validado en el nodo destino: ${REMOTE_DISK_FREE_PCT}% disponible (${REMOTE_DISK_USE_PCT}% usado).${NC}"
 
-# 4. Verificación de compilación previa de TypeScript
-echo -e "${YELLOW}>>> Ejecutando comprobación de tipos estáticos (noEmit)...${NC}"
-if [[ -d "${PROJECT_ROOT}/src" ]]; then
-    (cd "${PROJECT_ROOT}/src" && npx tsc --noEmit)
-    echo -e "${GREEN}[OK] Compilación TypeScript validada sin errores.${NC}"
-fi
-
-# 5. Verificación de persistencia de credenciales de seguridad en .env.production
+# 4. Verificación de persistencia de credenciales de seguridad en .env.production (Aduana Física)
 echo -e "${YELLOW}>>> Verificando configuración perimetral en .env.production...${NC}"
 ENV_PROD="${PROJECT_ROOT}/src/.env.production"
 if [[ ! -f "${ENV_PROD}" ]]; then
@@ -94,7 +87,19 @@ if ! grep -q "^TELEGRAM_ENABLED=true" "${ENV_PROD}"; then
 fi
 echo -e "${GREEN}[OK] Variables críticas de producción (.env.production) validadas y listas para sincronización con el Nodo 11.${NC}"
 
-# 6. Ejecución del pipeline Ansistrano
+# 5. Aduana Empírica — Playwright E2E (bloquea antes de Ignición si hay regresión de UI)
+echo -e "${YELLOW}>>> Ejecutando puerta empírica E2E (npm run test:e2e)...${NC}"
+if [[ ! -d "${PROJECT_ROOT}/src" ]]; then
+    echo -e "${RED}[ERROR] No se encuentra el directorio de aplicación en ${PROJECT_ROOT}/src${NC}"
+    exit 1
+fi
+(
+    cd "${PROJECT_ROOT}/src"
+    CI=1 npm run test:e2e
+)
+echo -e "${GREEN}[OK] Aduana Empírica E2E superada.${NC}"
+
+# 6. Ignición — Ejecución del pipeline Ansistrano
 echo -e "${YELLOW}>>> Disparando Ansistrano hacia el Nodo 11...${NC}"
 export ANSIBLE_CONFIG="${ANSIBLE_CONFIG:-${ANSIBLE_DIR}/ansible.cfg}"
 ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@"

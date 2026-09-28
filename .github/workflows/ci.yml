@@ -4,7 +4,7 @@
 # Marco Constitucional: Protocolo de Acero — Grado S+
 # Axiomas Vinculados:
 #   - Axioma III: Diseño Declarativo sobre Lógica Imperativa
-#   - Axioma IV: El Peaje del Oráculo (Santa Trinidad 100% Verde)
+#   - Axioma IV: El Peaje del Oráculo (Cuádruple Oráculo 100% Verde)
 # ═══════════════════════════════════════════════════════════════
 
 name: CI Aduana de Fricción
@@ -25,9 +25,9 @@ concurrency:
 
 jobs:
   oracle-gate:
-    name: Santa Trinidad de Oráculos
+    name: Cuádruple Oráculo de Certificación
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout del Repositorio (Historial Completo para Tags)
@@ -49,6 +49,10 @@ jobs:
       - name: Generar Esquemas y Tipos de Prisma
         working-directory: src
         run: npx prisma generate
+
+      - name: Instalar Chromium para Playwright (PBI-QA-E2E-005)
+        working-directory: src
+        run: npx playwright install --with-deps chromium
 
       - name: Ejecutar Protocolo de Auditoría y Anclaje Documental
         run: |

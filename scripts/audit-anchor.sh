@@ -43,26 +43,30 @@ echo ""
 
 # 3. Consulta al Peaje del Oráculo (Axioma IV)
 echo "═══════════════════════════════════════════════════════════════════"
-echo "⚖️  Consultando la Santa Trinidad de Oráculos..."
+echo "⚖️  Consultando el Cuádruple Oráculo (Fail-Fast por coste termodinámico)..."
 echo "═══════════════════════════════════════════════════════════════════"
 
 cd "${REPO_ROOT}/src"
 
-echo "1/3 Compilador TypeScript (tsc --noEmit)..."
-npx tsc --noEmit
-echo "✅ Compilador: 0 errores."
-
-echo "2/3 Suite de Pruebas (vitest run)..."
-npm test
-echo "✅ Suite de Pruebas: 100% verde."
-
-echo "3/3 Linter AST (eslint)..."
+echo "1/4 Linter AST (eslint)..."
 if npm run lint; then
   echo "✅ Linter: 0 problemas."
 else
   echo "❌ Linter: Falló la aduana AST (Revisar log)."
   exit 1
 fi
+
+echo "2/4 Compilador TypeScript (tsc --noEmit)..."
+npx tsc --noEmit
+echo "✅ Compilador: 0 errores."
+
+echo "3/4 Suite de Pruebas (vitest run)..."
+npm test
+echo "✅ Suite de Pruebas: 100% verde."
+
+echo "4/4 Blindaje empírico E2E (playwright test)..."
+CI=1 npm run test:e2e
+echo "✅ Playwright E2E: 100% verde."
 
 echo ""
 echo "🎉 Protocolo de Extracción de Delta completado con éxito."
