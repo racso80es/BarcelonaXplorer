@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Motor E2E — Soberanía de contexto bajo src/ (PBI-QA-E2E-002).
  * webServer: build de producción (no next dev) para fidelidad del Edge Runtime.
+ * El servidor standalone no publica `.next/static` ni `public` por sí solo:
+ * sin esa copia el HTML llega, el cliente no hidrata y el hook E2E no existe.
  */
 export default defineConfig({
   testDir: './playwright-e2e',
@@ -24,7 +26,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'NEXT_PUBLIC_E2E_DISPATCH_HOOK=1 npm run build && PORT=3000 node .next/standalone/server.js',
+      'NEXT_PUBLIC_E2E_DISPATCH_HOOK=1 npm run build && rm -rf .next/standalone/.next/static .next/standalone/public && mkdir -p .next/standalone/.next && cp -a .next/static .next/standalone/.next/static && cp -a public .next/standalone/public && PORT=3000 node .next/standalone/server.js',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,

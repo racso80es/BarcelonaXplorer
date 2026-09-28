@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { OrchestratorBlock } from '@/components/OrchestratorBlock';
 import { TacticalSpark, TacticalSparkProps } from '@/components/TacticalSpark';
 import { TelegramAnchorDrop } from '@/components/tactical/telegram-anchor-drop';
@@ -70,6 +70,7 @@ export default function OrchestratorPage() {
   const [sysLang, setSysLang] = useState<SupportedLanguage>('es');
   const ui = getUiDictionary(sysLang);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const promptFormRef = useRef<HTMLFormElement>(null);
 
   // Ignición Contextual proactiva al montar la página (PBI-TRIAGE-IGN-003)
   useEffect(() => {
@@ -129,26 +130,59 @@ export default function OrchestratorPage() {
     }
   }, [turns]);
 
-  // Manejo del Submit
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLocked) return;
+  const dispatchPromptFromForm = useCallback((form: HTMLFormElement) => {
+    const promptField = form.elements.namedItem('prompt');
+    const formPrompt =
+      promptField instanceof HTMLTextAreaElement
+        ? promptField.value.trim()
+        : '';
+    const resolvedPrompt = formPrompt || inputValue.trim();
+    if (!resolvedPrompt) return;
+
+    if (resolvedPrompt !== inputValue) {
+      setInputValue(resolvedPrompt);
+    }
 
     const newTurnId = `turn-${Date.now()}`;
     const newTurn: Turn = {
       id: newTurnId,
-      userPrompt: inputValue,
+      userPrompt: resolvedPrompt,
       sparks: [],
-      status: 'pending' // Equivalente a Fase 1
+      status: 'pending',
     };
 
-    setTurns(prev => [...prev, newTurn]);
+    setTurns((prev) => [...prev, newTurn]);
     setInputValue('');
+    form.reset();
 
-    // Transición a Asimilación (Fase 2) tras un breve delay
     setTimeout(() => {
-      setTurns(prev => prev.map(t => t.id === newTurnId ? { ...t, status: 'orchestrating' } : t));
+      setTurns((prev) =>
+        prev.map((t) =>
+          t.id === newTurnId ? { ...t, status: 'orchestrating' } : t,
+        ),
+      );
     }, 400);
+  }, [inputValue]);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_E2E_DISPATCH_HOOK !== '1') {
+      return;
+    }
+    const win = window as Window & { __bxDispatchPrompt?: () => void };
+    win.__bxDispatchPrompt = () => {
+      if (promptFormRef.current) {
+        dispatchPromptFromForm(promptFormRef.current);
+      }
+    };
+    return () => {
+      delete win.__bxDispatchPrompt;
+    };
+  }, [dispatchPromptFromForm]);
+
+  // Manejo del Submit
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    dispatchPromptFromForm(e.currentTarget);
   };
 
   // Efecto de Orquestación (Vía Rápida y Lenta)
@@ -387,7 +421,8 @@ export default function OrchestratorPage() {
       isSubscribed = false;
       abortController.abort();
     };
-  }, [currentTurn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- id/status bastan; el objeto aborta el fetch al mutar sparks
+  }, [currentTurn?.id, currentTurn?.status]);
 
   const getIconForType = (type: string) => {
     switch (type) {
@@ -666,24 +701,37 @@ export default function OrchestratorPage() {
             onForceDispatch={thermalState.isThresholdSatisfied ? handleForceDispatch : undefined}
             isDispatching={isStreamingItinerary || isLocked}
           />
-          <form onSubmit={handleSubmit} className="relative flex items-center">
+          <form
+            ref={promptFormRef}
+            onSubmit={handleSubmit}
+            className="relative flex items-center"
+          >
             <textarea
+              name="prompt"
+              data-testid="orchestrator-prompt"
               className="w-full bg-white border border-layout-divider-strong text-content-primary placeholder:text-zinc-400 rounded-lg py-3 pl-4 pr-14 resize-none focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-focus-tactical transition-all shadow-xs disabled:opacity-50 text-sm sm:text-base leading-normal"
               rows={2}
               placeholder={ui.chat.inputPlaceholder}
-              value={inputValue}
+              defaultValue=""
               onChange={(e) => setInputValue(e.target.value)}
               disabled={isLocked}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmit(e);
+                  if (promptFormRef.current) {
+                    dispatchPromptFromForm(promptFormRef.current);
+                  }
                 }
               }}
             />
             <button
-              type="submit"
-              disabled={!inputValue.trim() || isLocked}
+              type="button"
+              disabled={isLocked}
+              onClick={() => {
+                if (promptFormRef.current) {
+                  dispatchPromptFromForm(promptFormRef.current);
+                }
+              }}
               className="absolute right-2.5 sm:right-3 p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               aria-label={ui.chat.sendButton}
             >

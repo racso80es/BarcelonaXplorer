@@ -35,7 +35,7 @@
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
 - [x] **CA-1 (Config del motor):** Existe `src/playwright.config.ts` con `use.baseURL: 'http://localhost:3000'`, `testDir: './playwright-e2e'` y `webServer`:
-  - `command`: `NEXT_PUBLIC_E2E_DISPATCH_HOOK=1 npm run build && PORT=3000 node .next/standalone/server.js`
+  - `command`: build con `NEXT_PUBLIC_E2E_DISPATCH_HOOK=1`, copia de `.next/static` y `public` dentro de `.next/standalone/`, y `PORT=3000 node .next/standalone/server.js`
   - `url: 'http://localhost:3000'`
   - `reuseExistingServer: !process.env.CI`
   - `timeout: 300_000`
@@ -57,6 +57,7 @@
 ## 4. Notas de Forja (Anti‑Alucinación)
 
 - **`next start` no sirve con `output: 'standalone'`.** Next.js 16 emite el aviso y el proceso no arranca. El `webServer` usa `node .next/standalone/server.js` con `PORT=3000`.
+- **El standalone no sirve el cliente solo.** Tras el build hay que copiar `.next/static` a `.next/standalone/.next/static` y `public` a `.next/standalone/public`. Sin esa copia el HTML llega, los chunks responden 404 y React no hidrata.
 - **Los specs no pueden vivir en `/tests` (raíz).** Desde ahí Node no resuelve `@playwright/test`, que está instalado en `src/node_modules`. El `testDir` real es `src/playwright-e2e/`.
 - **`src/tsconfig.json` excluye `playwright-e2e`.** El `include` es `**/*.ts`; sin esa exclusión, `tsc --noEmit` typechequeaba los specs.
 - **`next start` no habilita la 308→HTTPS en localhost.** `isSecureConnection()` retorna `true` para `localhost`/`127.0.0.1` con independencia de `NODE_ENV`.
