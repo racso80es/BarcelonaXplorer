@@ -129,15 +129,28 @@ describe('PrismaTelemetryRepository (Vía del Yunque S+)', () => {
         sessionId: 'sess-123',
         intent: 'dialogue',
         decisionEngine: 'jev-ai',
-        model: 'groq/qwen3.8-27b',
+        model: 'qwen/qwen3.8-27b',
         promptLength: 25,
         durationMs: 45,
         statusCode: 200,
         tokenEstimate: 50,
-        tokensSaved: 850,
+        tokensSaved: 120,
       });
       expect(triageEvent.intent).toBe('dialogue');
-      expect(triageEvent.tokensSaved).toBe(850);
+      expect(triageEvent.tokensSaved).toBe(120);
+
+      const triageWithoutUsage = TriageRoutedEventSchema.parse({
+        eventType: 'TRIAGE_ROUTED',
+        sessionId: 'sess-min',
+        intent: 'dialogue',
+        decisionEngine: 'jev-ai',
+        model: 'qwen/qwen3.8-27b',
+        promptLength: 10,
+        durationMs: 12,
+        statusCode: 200,
+      });
+      expect(triageWithoutUsage.tokenEstimate).toBeUndefined();
+      expect(triageWithoutUsage.tokensSaved).toBeUndefined();
 
       const densityEvent = DensityThresholdCheckEventSchema.parse({
         eventType: 'DENSITY_THRESHOLD_CHECK',
@@ -179,7 +192,7 @@ describe('PrismaTelemetryRepository (Vía del Yunque S+)', () => {
           sessionId: 'sess-abc',
           intent: 'dialogue',
           durationMs: 35,
-          tokensSaved: 850,
+          tokensSaved: 120,
         },
         200,
         35,
@@ -190,7 +203,7 @@ describe('PrismaTelemetryRepository (Vía del Yunque S+)', () => {
       expect(mockPrisma.telemetryLog.create).toHaveBeenCalledTimes(1);
       const callArgs = mockPrisma.telemetryLog.create.mock.calls[0][0];
       expect(callArgs.data.payload.eventType).toBe('TRIAGE_ROUTED');
-      expect(callArgs.data.payload.tokensSaved).toBe(850);
+      expect(callArgs.data.payload.tokensSaved).toBe(120);
     });
   });
 });

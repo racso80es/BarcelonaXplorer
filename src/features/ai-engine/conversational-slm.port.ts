@@ -10,7 +10,17 @@ import type { SupportedLanguage } from '@/features/i18n';
  * 3. Saludos proactivos dinámicos de ignición contextual adaptados al entorno y memoria RAG.
  * 4. Detección de intención lingüística acorralada por whitelist (HU-12 / PBI-003).
  */
+export type EmpatheticDialogueResult = {
+  message: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+};
+
 export interface IConversationalSLMPort {
+  /** Identificador del modelo SLM activo (p. ej. valor de GROQ_FAST_MODEL). */
+  getActiveModelId(): string;
+
   /**
    * Genera un mensaje amable de rebote perimetral (< 200 ms).
    *
@@ -42,7 +52,7 @@ export interface IConversationalSLMPort {
   generateEmpatheticDialogue(
     prompt: string,
     currentContext?: string,
-  ): Promise<string>;
+  ): Promise<EmpatheticDialogueResult>;
 
   /**
    * Genera un saludo dinámico proactivo de máximo dos oraciones adaptado

@@ -102,9 +102,12 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       mockConversationalSlm = {
+        getActiveModelId: vi.fn().mockReturnValue('qwen/qwen3.8-27b'),
         generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
         generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
-        generateEmpatheticDialogue: vi.fn().mockResolvedValue('Barcelona puede agotar; tómate un café.'),
+        generateEmpatheticDialogue: vi.fn().mockResolvedValue({
+          message: 'Barcelona puede agotar; tómate un café.',
+        }),
         generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días! Barcelona amanece en movimiento.'),
         detectLanguageIntent: vi.fn().mockResolvedValue('es'),
       };
@@ -499,9 +502,12 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       mockConversationalSlm = {
+        getActiveModelId: vi.fn().mockReturnValue('qwen/qwen3.8-27b'),
         generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
         generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
-        generateEmpatheticDialogue: vi.fn().mockResolvedValue('Barcelona puede agotar; tómate un café.'),
+        generateEmpatheticDialogue: vi.fn().mockResolvedValue({
+          message: 'Barcelona puede agotar; tómate un café.',
+        }),
         generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días!'),
         detectLanguageIntent: vi.fn().mockResolvedValue('es'),
       };

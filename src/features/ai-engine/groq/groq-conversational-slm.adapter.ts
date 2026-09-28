@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk';
 import { IConversationalSLMPort } from '@/features/ai-engine';
+import type { EmpatheticDialogueResult } from '@/features/ai-engine/conversational-slm.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
 import {
@@ -48,6 +49,10 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
       this.client = client ?? new Groq({ apiKey });
     }
     this.model = process.env.GROQ_FAST_MODEL ?? 'qwen/qwen3.8-27b';
+  }
+
+  getActiveModelId(): string {
+    return this.model;
   }
 
   async generateBounceMessage(
@@ -233,12 +238,12 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
   async generateEmpatheticDialogue(
     prompt: string,
     currentContext?: string,
-  ): Promise<string> {
+  ): Promise<EmpatheticDialogueResult> {
     const fallbackMessage =
       'Te entiendo perfectamente. A veces el mejor plan en Barcelona es simplemente relajarse en una terracita y ver la vida pasar con calma. Avísame cuando te apetezca explorar.';
 
     if (!this.client) {
-      return fallbackMessage;
+      return { message: fallbackMessage };
     }
 
     const startTime = Date.now();
@@ -282,7 +287,13 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
         );
       }
 
-      return finalMessage;
+      const usage = completion.usage;
+      return {
+        message: finalMessage,
+        promptTokens: usage?.prompt_tokens,
+        completionTokens: usage?.completion_tokens,
+        totalTokens: usage?.total_tokens,
+      };
     } catch (err: unknown) {
       const durationMs = Date.now() - startTime;
 
@@ -306,7 +317,7 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
         );
       }
 
-      return fallbackMessage;
+      return { message: fallbackMessage };
     }
   }
 

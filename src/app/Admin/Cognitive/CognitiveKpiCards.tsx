@@ -132,7 +132,7 @@ export async function CognitiveKpiCards({
       {/* Tarjeta 5: Ahorro Cognitivo SLM (PBI-OPS-TELEM-002) */}
       <KpiMetricCard
         title="Ahorro Cognitivo SLM"
-        value={tokensSavedTotal > 0 ? `${tokensSavedTotal} tok` : '92%'}
+        value={tokensSavedTotal > 0 ? `${tokensSavedTotal} tok` : 'Sin datos'}
         description="Tokens amortizados por triaje sin invocar LLM"
         trend="positive"
         trendLabel="Orquestación Híbrida"

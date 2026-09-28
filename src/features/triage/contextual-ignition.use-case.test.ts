@@ -12,9 +12,10 @@ describe('ContextualIgnitionUseCase (S+ Grade)', () => {
   });
 
   const createMockSlm = (greeting: string): IConversationalSLMPort => ({
+    getActiveModelId: vi.fn().mockReturnValue('qwen/qwen3.8-27b'),
     generateBounceMessage: vi.fn().mockResolvedValue('bounce'),
     generateRepromptMessage: vi.fn().mockResolvedValue('reprompt'),
-    generateEmpatheticDialogue: vi.fn().mockResolvedValue('dialogue'),
+    generateEmpatheticDialogue: vi.fn().mockResolvedValue({ message: 'dialogue' }),
     generateContextualGreeting: vi.fn().mockResolvedValue(greeting),
     detectLanguageIntent: vi.fn().mockResolvedValue('es'),
   });
@@ -156,6 +157,7 @@ describe('ContextualIgnitionUseCase (S+ Grade)', () => {
     });
 
     const failingSlm: IConversationalSLMPort = {
+      getActiveModelId: vi.fn().mockReturnValue('qwen/qwen3.8-27b'),
       generateBounceMessage: vi.fn(),
       generateRepromptMessage: vi.fn(),
       generateEmpatheticDialogue: vi.fn(),

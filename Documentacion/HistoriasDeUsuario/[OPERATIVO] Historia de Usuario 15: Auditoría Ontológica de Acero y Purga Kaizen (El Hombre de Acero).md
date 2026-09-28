@@ -184,7 +184,7 @@ Redactados el 2026-09-28 a partir de la tabla "Diferibles" de la sección 9 del 
 | ✅ PBI-STEEL-011 | [Retirada del Circuit Breaker sin proveedor](../PBI/Realizado/PBI%20-%20Retirada%20del%20Circuit%20Breaker%20sin%20Proveedor%20Externo%20%28P2%29.md) | F-10, T-03 | P2 — Realizado |
 | PBI-STEEL-012 | [Streaming reactivo real desde cero](../PBI/Pendiente/PBI%20-%20Streaming%20Reactivo%20Real%20desde%20Cero%20%28P2%29.md) | F-11, ya decidido en el 005 | P2, congelado |
 | ✅ PBI-STEEL-013 | [Desactivación del drop de fatiga sin progreso](../PBI/Realizado/PBI%20-%20Desactivaci%C3%B3n%20del%20Drop%20de%20Fatiga%20sin%20Progreso%20Real%20%28P2%29.md) | F-12 | P2 — Realizado |
-| PBI-STEEL-014 | [Telemetría veraz de modelo y tokens](../PBI/Pendiente/PBI%20-%20Telemetr%C3%ADa%20Veraz%20de%20Modelo%20y%20Tokens%20%28P2%29.md) | F-13 | P2 |
+| ✅ PBI-STEEL-014 | [Telemetría veraz de modelo y tokens](../PBI/Realizado/PBI%20-%20Telemetr%C3%ADa%20Veraz%20de%20Modelo%20y%20Tokens%20%28P2%29.md) | F-13 | P2 — Realizado |
 | PBI-STEEL-015 | [Gobernanza de render del orquestador y del lienzo](../PBI/Pendiente/PBI%20-%20Gobernanza%20de%20Render%20del%20Orquestador%20y%20del%20Lienzo%20%28P2%29.md) | F-14 | P2 |
 | PBI-STEEL-016 | [Ampliación del perímetro de los oráculos](../PBI/Pendiente/PBI%20-%20Ampliaci%C3%B3n%20del%20Per%C3%ADmetro%20de%20los%20Or%C3%A1culos%20%28P2%29.md) | F-16, T-07 | P2 |
 | PBI-STEEL-017 | [Externalización de credenciales y renombrado del contenedor](../PBI/Pendiente/PBI%20-%20Externalizaci%C3%B3n%20de%20Credenciales%20y%20Renombrado%20del%20Contenedor%20Web%20%28P2%29.md) | F-17 | P2 |

@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Telemetría Veraz de Modelo y Tokens
 
 **Identificador:** PBI-STEEL-014
-**Estatus:** Pendiente (Backlog diferido — no se ejecuta antes de cerrar PBI-STEEL-001 a 009)
+**Estatus:** Realizado (2026-09-28)
 **Fecha de Creación:** 2026-09-28
 **Historia de Usuario Relacionada:** [[OPERATIVO] Historia de Usuario 15: Auditoría Ontológica de Acero y Purga Kaizen](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20Historia%20de%20Usuario%2015%3A%20Auditor%C3%ADa%20Ontol%C3%B3gica%20de%20Acero%20y%20Purga%20Kaizen%20%28El%20Hombre%20de%20Acero%29.md)
 **Origen:** [`AUD-OPS-STEEL-001`](../../Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md) · F-13
@@ -34,11 +34,11 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Modelo):** el evento de telemetría del diálogo casual copia `this.model` del adaptador Groq (el valor de `GROQ_FAST_MODEL` o su defecto `qwen/qwen3.8-27b`). Desaparece el literal `groq/qwen3.8-27b`.
-- [ ] **CA-2 (Uso real):** `tokenEstimate` y `tokensSaved` se rellenan solo con números presentes en la respuesta del SDK. El nombre del campo se toma del tipo de esa respuesta en el momento de la forja. Si la respuesta no trae uso, los campos se omiten. Prohibido dejar `45` y `850`.
-- [ ] **CA-3 (Caché):** `lancedb-semantic-cache.adapter.ts` deja de sustituir un `tokensSaved` ausente por `850`. Lo que no se pasó, no se guarda.
-- [ ] **CA-4 (Admin):** `CognitiveKpiCards` muestra un texto de "sin datos" cuando `tokensSavedTotal` es 0. Desaparece el literal `92%`.
-- [ ] **CA-5 (Tests que fijan la mentira):** se actualizan en el mismo cambio las aserciones que esperan `850` o el modelo con prefijo `groq/` como si fueran el contrato: `triage.test.ts`, `semantic-cache.test.ts`, `telemetry.test.ts` y `HybridTelemetryCard.test.tsx`. Un test nuevo cubre "sin uso del SDK → campo ausente" y "suma 0 → sin datos".
+- [x] **CA-1 (Modelo):** el evento de telemetría del diálogo casual copia `this.model` del adaptador Groq (el valor de `GROQ_FAST_MODEL` o su defecto `qwen/qwen3.8-27b`). Desaparece el literal `groq/qwen3.8-27b`.
+- [x] **CA-2 (Uso real):** `tokenEstimate` y `tokensSaved` se rellenan solo con números presentes en la respuesta del SDK. El nombre del campo se toma del tipo de esa respuesta en el momento de la forja. Si la respuesta no trae uso, los campos se omiten. Prohibido dejar `45` y `850`.
+- [x] **CA-3 (Caché):** `lancedb-semantic-cache.adapter.ts` deja de sustituir un `tokensSaved` ausente por `850`. Lo que no se pasó, no se guarda.
+- [x] **CA-4 (Admin):** `CognitiveKpiCards` muestra un texto de "sin datos" cuando `tokensSavedTotal` es 0. Desaparece el literal `92%`.
+- [x] **CA-5 (Tests que fijan la mentira):** se actualizan en el mismo cambio las aserciones que esperan `850` o el modelo con prefijo `groq/` como si fueran el contrato: `triage.test.ts`, `semantic-cache.test.ts`, `telemetry.test.ts` y `HybridTelemetryCard.test.tsx`. Un test nuevo cubre "sin uso del SDK → campo ausente" y "suma 0 → sin datos".
 
 ---
 
@@ -52,4 +52,4 @@
 
 ## 4. Evidencia de Certificación
 
-Pendiente de forja.
+Vitest 477 tests; modelo desde getActiveModelId(); tokens solo con usage SDK.

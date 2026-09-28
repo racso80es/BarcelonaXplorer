@@ -95,7 +95,10 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
           prompt: metadata.prompt ?? top.document.text,
           result: payload.data,
           similarity: top.score,
-          tokensSaved: metadata.tokensSaved ?? 850,
+          tokensSaved:
+            typeof metadata.tokensSaved === 'number'
+              ? metadata.tokensSaved
+              : undefined,
           createdAt,
         };
       }
@@ -127,7 +130,7 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
           prompt: prompt.trim(),
           cachedResultJson: JSON.stringify(payload),
           createdAt: new Date().toISOString(),
-          tokensSaved: tokensSaved ?? 850,
+          ...(tokensSaved !== undefined ? { tokensSaved } : {}),
           cacheMatrixId: matrixId,
           cacheLanguage: language,
         },

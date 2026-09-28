@@ -182,7 +182,9 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
                 eventType: 'TRIAGE_ROUTED',
                 sessionId: input.sessionId,
                 cacheHit: true,
-                tokensSaved: cached.tokensSaved,
+                ...(cached.tokensSaved !== undefined
+                  ? { tokensSaved: cached.tokensSaved }
+                  : {}),
                 similarity: cached.similarity,
                 prompt: trimmedPrompt,
               },
@@ -340,12 +342,30 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     );
 
     if (isCasualDialogue) {
-      const dialogueMessage =
+      const dialogueResult =
         await this.conversationalSlm.generateEmpatheticDialogue(
           trimmedPrompt,
           stateContext,
         );
+      const dialogueMessage = dialogueResult.message;
       const durationMs = Date.now() - startTime;
+
+      const casualTelemetryPayload: Record<string, unknown> = {
+        eventType: 'TRIAGE_ROUTED',
+        tag: 'CASUAL_DIALOGUE',
+        sessionId: input.sessionId,
+        intent: 'dialogue',
+        decisionEngine: 'jev-ai',
+        model: this.conversationalSlm.getActiveModelId(),
+        promptLength: trimmedPrompt.length,
+        durationMs,
+        statusCode: 200,
+        prompt: trimmedPrompt,
+        dialogueMessage,
+      };
+      if (dialogueResult.totalTokens !== undefined) {
+        casualTelemetryPayload.tokenEstimate = dialogueResult.totalTokens;
+      }
 
       this.emitTelemetry({
         level: 'INFO',
@@ -353,21 +373,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         message: `[Aduana] Diálogo casual interceptado con empatía`,
         statusCode: 200,
         durationMs,
-        payload: {
-          eventType: 'TRIAGE_ROUTED',
-          tag: 'CASUAL_DIALOGUE',
-          sessionId: input.sessionId,
-          intent: 'dialogue',
-          decisionEngine: 'jev-ai',
-          model: 'groq/qwen3.8-27b',
-          promptLength: trimmedPrompt.length,
-          durationMs,
-          statusCode: 200,
-          tokenEstimate: 45,
-          tokensSaved: 850,
-          prompt: trimmedPrompt,
-          dialogueMessage,
-        },
+        payload: casualTelemetryPayload,
       });
 
       const casualPayload = { ...priorPayload, language: sovereignLang };
@@ -920,7 +926,6 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         matrixId: ctx.matrixId,
         language: ctx.language,
         payload,
-        tokensSaved: 850,
       })
       .catch(() => {});
   }

@@ -12,7 +12,7 @@ export interface CachedTriageResult {
   prompt: string;
   result: CachedSemanticTriageResult;
   similarity: number;
-  tokensSaved: number;
+  tokensSaved?: number;
   createdAt: Date;
 }
 
