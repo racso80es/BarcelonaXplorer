@@ -34,11 +34,47 @@ services:
       - NODE_OPTIONS=--dns-result-order=ipv4first
       # Persistencia Vectorial LanceDB: URI in-process sobre almacenamiento persistente
       - LANCEDB_URI=${LANCEDB_URI:-/app/vector_storage}
+      # Aduana Universal IA Gateway (HU-16)
+      - IA_GATEWAY_URL=${IA_GATEWAY_URL:-http://ia-gateway:3001}
+      - IA_GATEWAY_SECRET=${IA_GATEWAY_SECRET}
     volumes:
       # Axioma I: Aislamiento IaaC del almacenamiento vectorial LanceDB (Apache Arrow)
       - ${LANCEDB_DATA_PATH:-./data/lancedb}:/app/vector_storage
     depends_on:
       - db
+      - ia-gateway
+
+  # ─────────────────────────────────────────────────────────────
+  # Servicio IA Gateway: Microservicio Aduana Universal Multi-Motor
+  # ─────────────────────────────────────────────────────────────
+  ia-gateway:
+    image: barcelonaxplorer-ia-gateway:${BX_RELEASE_TAG:-local}
+    build:
+      context: ./ia-gateway
+      dockerfile: Dockerfile
+    container_name: barcelonaxplorer_ia_gateway
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - IA_GATEWAY_SECRET=${IA_GATEWAY_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - JEV_API_KEY=${JEV_API_KEY}
+      - JEV_BASE_URL=${JEV_BASE_URL:-https://jev-ai.pro/api}
+      - JEV_MODEL=${JEV_MODEL:-jev-latest}
+      - DEFAULT_FAST_LLM=${DEFAULT_FAST_LLM:-google:gemini-2.5-flash}
+      - DEFAULT_REASONING_LLM=${DEFAULT_REASONING_LLM:-groq:llama-3.3-70b-versatile}
+    # Axioma I: Sin puertos publicados en el host (solo alcanzable por la red interna de docker compose)
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3001/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   # ─────────────────────────────────────────────────────────────
   # Servicio DB: Motor Relacional MySQL 8.0 (Telemetría y Anclajes)

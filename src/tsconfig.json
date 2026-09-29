@@ -43,6 +43,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "playwright-e2e"]
+  "exclude": ["node_modules", "playwright-e2e", "ia-gateway"]
 }
 

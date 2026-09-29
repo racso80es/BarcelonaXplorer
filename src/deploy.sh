@@ -101,6 +101,20 @@ fi
 if ! grep -q "^TELEGRAM_ENABLED=true" "${ENV_PROD}"; then
     echo -e "${YELLOW}[WARN] TELEGRAM_ENABLED no está definido como 'true' en ${ENV_PROD}.${NC}"
 fi
+
+# Validación de Aduana Universal IA Gateway (PBI-GW-008)
+IA_GATEWAY_LINE=$(grep -E '^IA_GATEWAY_SECRET=' "${ENV_PROD}" | tail -n 1 || true)
+if [[ -z "${IA_GATEWAY_LINE}" ]]; then
+    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir IA_GATEWAY_SECRET (mínimo 32 caracteres) para el microservicio IA Gateway.${NC}"
+    exit 1
+fi
+IA_GATEWAY_VAL="${IA_GATEWAY_LINE#IA_GATEWAY_SECRET=}"
+IA_GATEWAY_VAL="${IA_GATEWAY_VAL%\"}"
+IA_GATEWAY_VAL="${IA_GATEWAY_VAL#\"}"
+if (( ${#IA_GATEWAY_VAL} < 32 )); then
+    echo -e "${RED}[ERROR] IA_GATEWAY_SECRET en ${ENV_PROD} debe tener al menos 32 caracteres.${NC}"
+    exit 1
+fi
 echo -e "${GREEN}[OK] Variables críticas de producción (.env.production) validadas y listas para sincronización con el Nodo 11.${NC}"
 
 # 5. Aduana Empírica — Playwright E2E (bloqueo atómico; ver HU-13 Anexo B)

@@ -23,6 +23,9 @@
     # Axioma II: Archivos de configuración y secretos inmutables preservados entre despliegues
     ansistrano_shared_files:
       - .env.production
+    # Axioma I: Rutas compartidas y enlazadas simbólicamente por Ansistrano
+    ansistrano_shared_paths:
+      - ia-gateway
     # Axioma III: Hook declarativo de post-enlace simbólico para ignición de contenedores
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
   pre_tasks:
@@ -85,6 +88,13 @@
         src: "../src/.env.production"
         dest: "{{ ansistrano_deploy_to }}/shared/.env.production"
         mode: '0600'
+
+    # Axioma I: Sincronización del código fuente del microservicio ia-gateway hacia shared
+    - name: Transferir código fuente del microservicio ia-gateway a shared
+      ansible.builtin.copy:
+        src: "../ia-gateway"
+        dest: "{{ ansistrano_deploy_to }}/shared/"
+        mode: '0755'
   roles:
     # Rol Ansistrano: orquestación atómica cero-downtime (setup -> update -> symlink -> cleanup)
     - ansistrano.deploy

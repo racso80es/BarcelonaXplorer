@@ -10,12 +10,12 @@
 
 # Axioma V: Ejecución Encapsulada y Aislamiento de Fallos (Build-Before-Swap)
 # Paso 1: Etiquetar release, compilar imagen inmutable y conservar al menos 2 tags (PBI-STEEL-008)
-- name: Registrar etiqueta de release y compilar imagen web etiquetada (Build-Before-Swap)
+- name: Registrar etiqueta de release y compilar imágenes ia-gateway y web etiquetadas (Build-Before-Swap)
   ansible.builtin.shell: |
     set -euo pipefail
     export BX_RELEASE_TAG="{{ ansistrano_release_path | basename }}"
     echo "$BX_RELEASE_TAG" > .bx_release_tag
-    docker compose --env-file .env.production -p barcelonaxplorer build web
+    docker compose --env-file .env.production -p barcelonaxplorer build ia-gateway web
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
   environment:

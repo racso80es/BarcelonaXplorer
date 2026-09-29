@@ -27,7 +27,9 @@ export interface FallbackConfig {
   defaultReasoningLlm: AnchorDefinition;
 }
 
-export function resolveFallbackConfig(env: NodeJS.ProcessEnv = process.env): FallbackConfig {
+export function resolveFallbackConfig(
+  env: Record<string, string | undefined> = process.env
+): FallbackConfig {
   const fastRaw = env['DEFAULT_FAST_LLM'] ?? 'google:gemini-2.5-flash';
   const reasoningRaw = env['DEFAULT_REASONING_LLM'] ?? 'groq:llama-3.3-70b-versatile';
 
