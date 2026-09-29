@@ -1,9 +1,9 @@
 # [OPERATIVO] Historia de Usuario: Consolidación Kaizen del IA Gateway y Blindaje del Oráculo de Empaquetado (Post-AUD-INFRA-GW-001)
 
 **Identificador:** HU-KAIZEN-003
-**Estatus:** En progreso (1/9 completados, 8/9 pendientes) — PBI-GW-010 completado; PBI-GW-011 a PBI-GW-018 pendientes
+**Estatus:** En progreso (2/9 completados, 7/9 pendientes) — PBI-GW-010 y PBI-GW-012 completados; PBI-GW-011, PBI-GW-013 a PBI-GW-018 pendientes
 **Fecha de Creación:** 2026-09-29
-**Última Actualización:** 2026-09-29 (PBI-GW-010 completado)
+**Última Actualización:** 2026-09-29 (PBI-GW-012 completado)
 **Naturaleza:** Consolidación post‑migración, hardening de seguridad y configuración, ampliación del perímetro de oráculos y gobernanza documental
 **Auditoría Base Vinculada:** [`AUD-INFRA-GW-001`](../Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md)
 **Historia Precedente:** [`HU-16 — Microservicio IA Gateway`](../HistoriasDeUsuario_Historico/Historia%20de%20Usuario%2016%3A%20Microservicio%20IA%20Gateway%20%28Aduana%20Universal%29%20y%20Enrutamiento%20Multi-Modal.md) (Completada)
@@ -85,7 +85,7 @@
 | :---: | :--- | :--- | :--- | :---: |
 | **P1** | `PBI-GW-010` | [Matriz declarativa de modelos por proveedor y degradación intra‑proveedor](../PBI/Realizado/PBI%20-%20Matriz%20Declarativa%20de%20Modelos%20por%20Proveedor%20y%20Degradacion%20Intra-Proveedor%20en%20IA%20Gateway%20%28P1%29.md) | F-08 | 3 |
 | **P1** | `PBI-GW-011` | [Oráculo de empaquetado y del gateway en `audit-anchor.sh` y CI](../PBI/Pendiente/PBI%20-%20Oraculo%20de%20Empaquetado%20y%20del%20IA%20Gateway%20en%20audit-anchor%20y%20CI%20%28P1%29.md) | F-13 | 2 |
-| **P1** | `PBI-GW-012` | [Arranque Fail‑Closed: secreto obligatorio y anclaje verificado](../PBI/Pendiente/PBI%20-%20Arranque%20Fail-Closed%20del%20IA%20Gateway%20Secreto%20Obligatorio%20y%20Anclaje%20Verificado%20%28P1%29.md) | F-10, F-09 | 2 |
+| **P1** | `PBI-GW-012` | [Arranque Fail‑Closed: secreto obligatorio y anclaje verificado](../PBI/Realizado/PBI%20-%20Arranque%20Fail-Closed%20del%20IA%20Gateway%20Secreto%20Obligatorio%20y%20Anclaje%20Verificado%20%28P1%29.md) | F-10, F-09 | 2 |
 | **P2** | `PBI-GW-013` | [Sonda del IA Gateway en el Oráculo de Salud post‑despliegue](../PBI/Pendiente/PBI%20-%20Sonda%20del%20IA%20Gateway%20en%20el%20Oraculo%20de%20Salud%20Post-Despliegue%20%28P2%29.md) | F-12 | 2 |
 | **P2** | `PBI-GW-014` | [Segregación de ficheros de entorno por servicio en Compose](../PBI/Pendiente/PBI%20-%20Segregacion%20de%20Ficheros%20de%20Entorno%20por%20Servicio%20en%20Docker%20Compose%20%28P2%29.md) | F-11 | 2 |
 | **P2** | `PBI-GW-015` | [Lanzador local versionado `scripts/dev-up.sh`](../PBI/Pendiente/PBI%20-%20Lanzador%20Local%20Versionado%20scripts%20dev-up%20%28P2%29.md) | F-17 | 1 |

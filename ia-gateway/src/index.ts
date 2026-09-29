@@ -9,8 +9,18 @@ import { resolveProviderModels } from './endpoints/llm/models.config.js';
 import { createGatewayServer, sendJson } from './server.js';
 import { createSuccessEnvelope } from './shared/envelope.js';
 
-const PORT = parseInt(process.env.PORT ?? '3001', 10);
-const IA_GATEWAY_SECRET = process.env.IA_GATEWAY_SECRET ?? 'development-secret-key-change-in-prod';
+import { assertStartupConfig } from './config/startup.js';
+import type { StartupConfig } from './config/startup.js';
+
+let startupConfig: StartupConfig;
+try {
+  startupConfig = assertStartupConfig(process.env);
+} catch (err) {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+}
+
+const { port: PORT, gatewaySecret: IA_GATEWAY_SECRET } = startupConfig;
 
 const healthSensor = new HealthSensor({
   jevBaseUrl: process.env.JEV_BASE_URL ?? 'https://jev-ai.pro/api',

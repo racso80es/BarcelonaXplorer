@@ -28,22 +28,30 @@ describe('Fallback and Base Anchor Hierarchy (PBI-GW-005)', () => {
       expect(() => parseAnchorString('openai:gpt-4')).toThrow(); // Solo google o groq
     });
 
-    it('debe emitir advertencia si el anclaje comparte proveedor con el principal', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    it('debe lanzar error Fail-Closed si el anclaje comparte proveedor con el principal (PBI-GW-012 CA-3)', () => {
+      expect(() =>
+        resolveFallbackConfig({
+          DEFAULT_FAST_LLM: 'groq:llama-3.3-70b-versatile', // Comparte con GROQ (principal de FAST_LLM)
+          DEFAULT_REASONING_LLM: 'groq:llama-3.3-70b-versatile',
+        })
+      ).toThrowError(/DEFAULT_FAST_LLM comparte proveedor \(GROQ\)/);
 
-      resolveFallbackConfig({
-        DEFAULT_FAST_LLM: 'groq:llama-3.3-70b-versatile', // Comparte con GROQ (principal de FAST_LLM)
-        DEFAULT_REASONING_LLM: 'google:gemini-2.5-flash', // Comparte con GOOGLE (principal de REASONING)
+      expect(() =>
+        resolveFallbackConfig({
+          DEFAULT_FAST_LLM: 'google:gemini-2.5-flash',
+          DEFAULT_REASONING_LLM: 'google:gemini-2.5-flash', // Comparte con GOOGLE (principal de REASONING)
+        })
+      ).toThrowError(/DEFAULT_REASONING_LLM comparte proveedor \(GOOGLE\)/);
+    });
+
+    it('debe resolver configuración correctamente con anclajes válidos', () => {
+      const config = resolveFallbackConfig({
+        DEFAULT_FAST_LLM: 'google:gemini-2.5-flash',
+        DEFAULT_REASONING_LLM: 'groq:llama-3.3-70b-versatile',
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('DEFAULT_FAST_LLM comparte proveedor')
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('DEFAULT_REASONING_LLM comparte proveedor')
-      );
-
-      consoleSpy.mockRestore();
+      expect(config.defaultFastLlm).toEqual({ provider: 'GOOGLE', modelId: 'gemini-2.5-flash' });
+      expect(config.defaultReasoningLlm).toEqual({ provider: 'GROQ', modelId: 'llama-3.3-70b-versatile' });
     });
   });
 

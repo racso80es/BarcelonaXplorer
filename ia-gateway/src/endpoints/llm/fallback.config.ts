@@ -36,18 +36,18 @@ export function resolveFallbackConfig(
   const defaultFastLlm = parseAnchorString(fastRaw);
   const defaultReasoningLlm = parseAnchorString(reasoningRaw);
 
-  // CA-2: Restricción de proveedor distinto al principal de la matriz
+  // CA-3: Restricción estricta de proveedor distinto al principal de la matriz (D-1: Fail-fast)
   // Matriz FAST_LLM principal es GROQ -> Anclaje debe ser GOOGLE
   if (defaultFastLlm.provider === 'GROQ') {
-    console.warn(
-      '[IA Gateway Config WARNING] DEFAULT_FAST_LLM comparte proveedor (GROQ) con el principal de su matriz. Se recomienda usar GOOGLE como anclaje.'
+    throw new Error(
+      '[IA Gateway Config Error] DEFAULT_FAST_LLM comparte proveedor (GROQ) con el principal de su matriz FAST_LLM. Se exige un proveedor distinto como anclaje base (ej: GOOGLE).'
     );
   }
 
   // Matriz REASONING_LLM principal es GOOGLE -> Anclaje debe ser GROQ
   if (defaultReasoningLlm.provider === 'GOOGLE') {
-    console.warn(
-      '[IA Gateway Config WARNING] DEFAULT_REASONING_LLM comparte proveedor (GOOGLE) con el principal de su matriz. Se recomienda usar GROQ como anclaje.'
+    throw new Error(
+      '[IA Gateway Config Error] DEFAULT_REASONING_LLM comparte proveedor (GOOGLE) con el principal de su matriz REASONING_LLM. Se exige un proveedor distinto como anclaje base (ej: GROQ).'
     );
   }
 
