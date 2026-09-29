@@ -184,10 +184,10 @@ describe('POST /v1/llm/generate (PBI-GW-003)', () => {
       }),
     });
 
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(503);
     const body = (await res.json()) as OperationEnvelope<never>;
     expect(body.success).toBe(false);
-    expect(body.exitCode).toBe(502);
+    expect(body.exitCode).toBe(503);
     expect(body.errors?.some((e) => e.includes('Groq upstream error'))).toBe(true);
   });
 });
