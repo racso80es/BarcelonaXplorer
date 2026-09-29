@@ -161,6 +161,15 @@
 # Axioma IV: El Peaje del Oráculo — Sonda sintética post-despliegue con reversión automática
 - name: Oráculo de Salud Sintético y Mitigación Automática Post-Despliegue
   block:
+    # CA-1 (PBI-GW-013): Verificar que el contenedor barcelonaxplorer_ia_gateway alcance estado healthy
+    - name: Verificar salud del contenedor IA Gateway vía Docker Healthcheck
+      ansible.builtin.command: docker inspect --format '{{.State.Health.Status}}' barcelonaxplorer_ia_gateway
+      register: ia_gateway_container_health
+      until: ia_gateway_container_health.stdout == 'healthy'
+      retries: 20
+      delay: 2
+      changed_when: false
+
     - name: Sondear salud de la aplicación Next.js vía endpoint de telemetría sintética
       ansible.builtin.uri:
         url: "http://127.0.0.1:8080/api/telemetry/log"
@@ -183,11 +192,25 @@
       retries: 10
       delay: 3
 
+    # CA-3 (PBI-GW-013): Sonda HTTP end-to-end a través del monolito al IA Gateway
+    - name: Sondear salud end-to-end del IA Gateway vía endpoint /api/ai/health
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8080/api/ai/health"
+        method: GET
+        status_code: 200
+        return_content: true
+      register: ia_gateway_probe
+      until: ia_gateway_probe.status == 200 and ia_gateway_probe.json.success == true
+      retries: 10
+      delay: 3
+
     - name: Confirmar éxito del Oráculo de Salud Sintético
       ansible.builtin.debug:
         msg: >
-          Oráculo de salud superado exitosamente. Estado HTTP: {{ healthcheck_probe.status }}.
-          Stack Next.js + MySQL 100% operativo en release activa.
+          Oráculo de salud superado exitosamente.
+          Telemetría Next.js: {{ healthcheck_probe.status }}.
+          IA Gateway contenedor: {{ ia_gateway_container_health.stdout }} | Sonda HTTP: {{ ia_gateway_probe.status }}.
+          Stack Next.js + IA Gateway + MySQL 100% operativo en release activa.
 
   rescue:
     - name: Alerta crítica — El Oráculo de Salud detectó fallo persistente post-despliegue
