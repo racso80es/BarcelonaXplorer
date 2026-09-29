@@ -1,6 +1,22 @@
-@import "tailwindcss";
+/*
+ * Axioma III (Diseño Declarativo): fuentes de clases Tailwind declaradas
+ * explícitamente en lugar de la autodetección.
+ * Motivo: `./ia-gateway` es un enlace simbólico a `../ia-gateway` (paridad con el
+ * layout Ansistrano de producción, PBI-GW-008). La autodetección de Tailwind 4
+ * sigue symlinks y registra su ruta real como dependencia; Turbopack rechaza rutas
+ * que salen de la raíz del proyecto ("leaves the filesystem root") y rompe todo el
+ * CSS de la aplicación. El microservicio no contiene UI: no debe escanearse.
+ */
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+
+/* Rutas relativas a esta hoja (src/app/globals.css); nunca fuera de src/ */
+@source "../app";
+@source "../components";
+@source "../features";
+@source "../lib";
+@source "../shared";
 
 @custom-variant dark (&:is(.dark *));
 

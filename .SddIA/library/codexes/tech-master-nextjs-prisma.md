@@ -127,6 +127,13 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 - **Cumplimiento:** revisión
 - **Anclaje:** `src/components.json`
 
+### TC-UI-002 — Declaración explícita de fuentes Tailwind
+
+- **Sentencia:** Las fuentes de Tailwind se declaran de forma explícita (`@import "tailwindcss" source(none)` más directivas `@source` relativas a la hoja de estilos); se prohíbe la autodetección de fuentes mientras exista bajo `src/` cualquier ruta que salga del proyecto.
+- **Excepción:** Ninguna.
+- **Cumplimiento:** `npx next build` (oráculo de empaquetado)
+- **Anclaje:** `src/app/globals.css`, originado por [`AUD-INFRA-GW-001`](../../Documentacion/Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md) (F-01)
+
 ### TC-AI-001 — SDKs de inferencia
 
 - **Sentencia:** SDK de Google: `@google/genai`. Prohibido `@google/generative-ai`. Groq: `groq-sdk`.
@@ -137,9 +144,16 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 ### TC-TEST-001 — Vitest colocalizado y Playwright
 
 - **Sentencia:** Tests de unidad colocalizados (`*.test.ts`) y ejecutados con Vitest. Prohibido Jest y un árbol espejo nuevo en `tests/`. Specs de navegador en `src/playwright-e2e/` con Playwright.
-- **Excepción:** Los árboles `tests/e2e` y `tests/integration` ya existentes, excluidos del oráculo por `src/vitest.config.ts`.
+- **Excepción:** Los árboles `tests/e2e` y `tests/integration` ya existentes, excluidos del oráculo por `src/vitest.config.mts`.
 - **Cumplimiento:** revisión
-- **Anclaje:** `src/vitest.config.ts`
+- **Anclaje:** `src/vitest.config.mts`
+
+### TC-INFRA-001 — Gobernanza de enlaces simbólicos bajo `src/`
+
+- **Sentencia:** Un enlace simbólico bajo `src/` solo se admite si declara su exclusión en los cuatro lectores — `tsconfig.json` (`exclude`), `vitest.config.mts` (`exclude`), las fuentes Tailwind (no aparece en ningún `@source`) y `src/.dockerignore` — y el PBI que lo introduce incluye la salida de `npx next build` entre sus evidencias.
+- **Excepción:** Ninguna.
+- **Cumplimiento:** `npx next build` + revisión
+- **Anclaje:** `src/ia-gateway`, `src/.dockerignore`, `src/tsconfig.json`, `src/vitest.config.mts`, originado por [`AUD-INFRA-GW-001`](../../Documentacion/Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md)
 
 ---
 

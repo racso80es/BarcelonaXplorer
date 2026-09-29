@@ -6,3 +6,5 @@ README.md
 .next
 .git
 .env*
+# Symlink al microservicio (PBI-GW-008): se compila en su propia imagen, no en web
+ia-gateway

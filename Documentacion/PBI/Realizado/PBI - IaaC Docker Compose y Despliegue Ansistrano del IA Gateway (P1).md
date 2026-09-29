@@ -54,3 +54,7 @@
    - 8 archivos de test (34 tests pasando al 100%).
 4. **Verificación de Tipos (`tsc --noEmit`):**
    - 0 errores en `src/` e `ia-gateway/`.
+
+> [!NOTE]
+> **Anotación Post-Auditoría (AUD-INFRA-GW-001, 2026-09-29):**  
+> La certificación de oráculos de este PBI constató `docker compose config`, `eslint`, `vitest` y `tsc --noEmit` en verde. Sin embargo, ninguno de estos oráculos validó el empaquetado del monolito Next.js (`npx next build`). La introducción del enlace simbólico `src/ia-gateway -> ../ia-gateway` provocó un fallo en tiempo de ejecución local con Turbopack y Tailwind 4 al salir de la raíz del proyecto (`leaves the filesystem root`). Véase la auditoría completa en [`AUD-INFRA-GW-001`](../../Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md) y la resolución estructural en HU-KAIZEN-003. El estatus se mantiene como **Completado**, registrando el alcance de su verificación original.

@@ -28,8 +28,10 @@ const REQUIRED_TC_IDS = [
   'TC-TS-001',
   'TC-ZOD-001',
   'TC-UI-001',
+  'TC-UI-002',
   'TC-AI-001',
   'TC-TEST-001',
+  'TC-INFRA-001',
 ] as const;
 
 function majorOf(version: string): number {

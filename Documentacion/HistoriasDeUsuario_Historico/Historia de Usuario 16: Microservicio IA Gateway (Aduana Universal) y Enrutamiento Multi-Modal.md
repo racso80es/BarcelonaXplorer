@@ -137,6 +137,10 @@
 - [x] Telemetría registrada bajo `LLM_ENGINE` con el payload de la sección 3.
 - [x] Oráculos en verde: `npx tsc --noEmit`, `npx eslint` y `vitest run`.
 
+> [!NOTE]
+> **Anotación Post-Auditoría (AUD-INFRA-GW-001, 2026-09-29):**  
+> La suite de tres oráculos en verde (`tsc`, `eslint`, `vitest run`) no cubría el empaquetado de producción de Next.js (`next build`), dejando un punto ciego que permitió la regresión en Turbopack causada por el escaneo de Tailwind 4 sobre el symlink `src/ia-gateway`. El blindaje del oráculo de empaquetado, la consolidación del gateway y las lecciones aprendidas se ejecutan en [HU-KAIZEN-003 — Consolidación Kaizen del IA Gateway y Blindaje del Oráculo de Empaquetado](../HistoriasDeUsuario/16%20-%5BOPERATIVO%5D%20HU%3A%20Consolidaci%C3%B3n%20Kaizen%20del%20IA%20Gateway%20y%20Blindaje%20del%20Or%C3%A1culo%20de%20Empaquetado%20%28Post-AUD-INFRA-GW-001%29.md).
+
 ---
 
 ## 5.1. Trazabilidad de PBIs de Implementación
