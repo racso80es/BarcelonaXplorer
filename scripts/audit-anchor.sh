@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # BarcelonaXplorer — Protocolo de Auditoría y Anclaje Documental Evolutivo
-# PBI: PBI-OPS-DOC-ANCHOR-001 (S+ Grade)
+# PBIs: PBI-OPS-DOC-ANCHOR-001, PBI-GW-011 (S+ Grade)
 # Axioma II: Tolerancia Cero a la Inferencia
 # Axioma IV: El Peaje del Oráculo
 # ==============================================================================
@@ -41,14 +41,16 @@ echo "════════════════════════�
 git diff --stat "${LAST_TAG}..HEAD" || echo "Sin diferencias físicas."
 echo ""
 
-# 3. Consulta al Peaje del Oráculo (Axioma IV)
+# 3. Consulta al Peaje del Oráculo (Axioma IV, PBI-GW-011)
 echo "═══════════════════════════════════════════════════════════════════"
-echo "⚖️  Consultando el Cuádruple Oráculo (Fail-Fast por coste termodinámico)..."
+echo "⚖️  Consultando los Oráculos de Certificación (Fail-Fast por coste termodinámico)..."
 echo "═══════════════════════════════════════════════════════════════════"
+
+export BX_AUDIT=1
 
 cd "${REPO_ROOT}/src"
 
-echo "1/5 Linter AST (eslint, --max-warnings 0, src/)..."
+echo "1/8 Linter AST (eslint, --max-warnings 0, src/)..."
 if npm run lint; then
   echo "✅ Linter: 0 problemas y 0 avisos."
 else
@@ -56,21 +58,39 @@ else
   exit 1
 fi
 
-echo "2/5 Compilador TypeScript aplicación (tsc --noEmit)..."
+echo "2/8 Compilador TypeScript monolito (tsc --noEmit)..."
 npx tsc --noEmit
-echo "✅ Compilador aplicación: 0 errores."
+echo "✅ Compilador monolito: 0 errores."
 
-echo "3/5 Compilador TypeScript Playwright (tsconfig.playwright-e2e.json)..."
+echo "3/8 Compilador TypeScript Playwright (tsconfig.playwright-e2e.json)..."
 npx tsc --noEmit -p tsconfig.playwright-e2e.json
 echo "✅ Compilador Playwright E2E: 0 errores."
 
-echo "4/5 Suite de Pruebas (vitest run)..."
-npm test
-echo "✅ Suite de Pruebas: 100% verde."
+echo "4/8 Compilador TypeScript IA Gateway (ia-gateway/)..."
+cd "${REPO_ROOT}/ia-gateway"
+npx tsc --noEmit
+echo "✅ Compilador IA Gateway: 0 errores."
 
-echo "5/5 Blindaje empírico E2E (playwright test)..."
+echo "5/8 Suite de Pruebas IA Gateway (ia-gateway/ vitest run)..."
+npx vitest run
+echo "✅ Suite IA Gateway: 100% verde."
+
+echo "6/8 Suite de Pruebas Monolito (src/ vitest run)..."
+cd "${REPO_ROOT}/src"
+npm test
+echo "✅ Suite Monolito: 100% verde."
+
+echo "7/8 Oráculo de Empaquetado de Producción (src/ npx next build)..."
+# CA-1: Verificación de bundling real: detecta fallos de symlinks (AUD-INFRA-GW-001) y CSS de Tailwind
+npx next build
+echo "✅ Empaquetador de Producción: 0 errores, rutas generadas correctamente."
+
+echo "8/8 Blindaje empírico E2E (playwright test con BX_AUDIT=1)..."
+# CA-2 y CA-5: BX_AUDIT=1 fuerza reuseExistingServer: false en playwright.config.ts.
+# Playwright reconstruye con NEXT_PUBLIC_E2E_DISPATCH_HOOK=1 en webServer
+# para garantizar aislamiento de entorno y frescura de artefactos del bundle standalone.
 CI=1 npm run test:e2e
 echo "✅ Playwright E2E: 100% verde."
 
 echo ""
-echo "🎉 Protocolo de Extracción de Delta completado con éxito."
+echo "🎉 Protocolo de Auditoría y Anclaje completado con éxito con todos los oráculos en VERDE."
