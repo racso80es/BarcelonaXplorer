@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
-import { GeminiClient } from '@/features/ai-engine/server';
+import { IaGatewayClient } from '@/features/ai-engine/server';
 
 /**
  * Extrae un mensaje de error legible para humanos, sin exponer
@@ -35,10 +35,10 @@ function sanitizeErrorMessage(error: unknown): string {
 
 async function checkAiStatus() {
   const startTime = Date.now();
-  const primaryModel = (process.env.GEMINI_MODELS || 'gemini-1.5-flash').split(',')[0].trim();
+  const primaryModel = process.env.DEFAULT_REASONING_LLM || 'IA Gateway (Multi-Motor)';
   
   try {
-    const aiClient = new GeminiClient();
+    const aiClient = new IaGatewayClient();
     await aiClient.generateText('ping');
     const latency = Date.now() - startTime;
     return {

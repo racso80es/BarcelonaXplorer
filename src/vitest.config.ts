@@ -13,6 +13,7 @@ export default defineConfig({
       '**/playwright-e2e/**',
       '**/*.live.test.ts',
       '**/*.integration.test.ts',
+      'ia-gateway/**',
     ],
   },
   resolve: {

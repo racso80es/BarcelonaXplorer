@@ -23,9 +23,6 @@ vi.mock('@/features/triage/server', async (importOriginal) => {
   };
 });
 
-vi.mock('@/features/ai-engine/jev/jevClient', () => ({
-  JevClient: class {},
-}));
 vi.mock('@/features/ai-engine/groq/groq-conversational-slm.adapter', () => ({
   GroqConversationalSlmAdapter: class {},
 }));
@@ -38,6 +35,7 @@ vi.mock('@/features/planner/server', () => ({
 vi.mock('@/features/ai-engine/server', () => ({
   GeminiClient: class {},
   GeminiEmbeddingAdapter: class {},
+  IaGatewayClient: class {},
 }));
 vi.mock('@/features/cognitive-memory/server', () => ({
   LanceDbCognitiveMemoryAdapter: class {},

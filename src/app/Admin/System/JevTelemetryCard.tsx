@@ -4,7 +4,7 @@ import type {
   AuditJevHealthUseCasePort,
   AuditJevHealthResult,
 } from '@/features/ai-engine';
-import { AuditJevHealthUseCase, JevClient } from '@/features/ai-engine/server';
+import { AuditJevHealthUseCase, IaGatewayClient } from '@/features/ai-engine/server';
 import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 
 export interface JevTelemetryCardProps {
@@ -14,7 +14,7 @@ export interface JevTelemetryCardProps {
 function createDefaultUseCase(): AuditJevHealthUseCasePort {
   const telemetryRepo = new PrismaTelemetryRepository();
   return new AuditJevHealthUseCase(
-    new JevClient(undefined, telemetryRepo),
+    new IaGatewayClient(undefined, telemetryRepo),
     telemetryRepo,
   );
 }

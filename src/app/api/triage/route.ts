@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TriageInputUseCase } from '@/features/triage/server';
-import { JevClient } from '@/features/ai-engine/jev/jevClient';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import {
   InMemoryDensityMatrixRepository,
@@ -8,7 +7,10 @@ import {
   PrismaItineraryRepository,
   AffiliateEnricherService,
 } from '@/features/planner/server';
-import { GeminiClient, GeminiEmbeddingAdapter } from '@/features/ai-engine/server';
+import {
+  IaGatewayClient,
+  GeminiEmbeddingAdapter,
+} from '@/features/ai-engine/server';
 import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import {
   LanceDbCognitiveMemoryAdapter,
@@ -107,15 +109,15 @@ export async function POST(req: NextRequest) {
       undefined;
 
     const telemetryRepo = new PrismaTelemetryRepository();
-    const decisionEngine = new JevClient(undefined, telemetryRepo);
+    const iaGatewayClient = new IaGatewayClient(undefined, telemetryRepo);
+    const decisionEngine = iaGatewayClient;
     const conversationalSlm = new GroqConversationalSlmAdapter(
       undefined,
       telemetryRepo,
     );
-    const geminiClient = new GeminiClient(telemetryRepo);
     const embeddingPort = new GeminiEmbeddingAdapter(undefined, telemetryRepo);
     const routeUseCase = new GenerateTacticalRouteUseCase(
-      geminiClient,
+      iaGatewayClient,
       telemetryRepo,
     );
     const itineraryRepo = new PrismaItineraryRepository();

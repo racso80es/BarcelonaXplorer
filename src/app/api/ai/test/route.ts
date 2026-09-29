@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GeminiClient } from '@/features/ai-engine/server';
+import { IaGatewayClient } from '@/features/ai-engine/server';
 import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 
 export const dynamic = 'force-dynamic';
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const telemetryRepo = new PrismaTelemetryRepository();
-    const aiClient = new GeminiClient(telemetryRepo);
+    const aiClient = new IaGatewayClient(undefined, telemetryRepo);
     const text = await aiClient.generateText('Responde con una frase corta sobre Barcelona.');
     return NextResponse.json({ ok: true, text });
   } catch (error: unknown) {

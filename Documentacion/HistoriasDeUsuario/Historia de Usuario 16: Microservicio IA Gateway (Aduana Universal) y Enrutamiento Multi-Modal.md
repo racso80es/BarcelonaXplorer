@@ -1,6 +1,6 @@
 # Historia de Usuario 16: Microservicio IA Gateway (Aduana Universal) y Enrutamiento Multi-Motor
 
-- **Estatus:** En Curso (Decisiones D-1 a D-4 resueltas; implementación secuencial de PBIs en progreso).
+- **Estatus:** Completada (Todos los PBIs PBI-GW-001 al PBI-GW-009 implementados, verificados con oráculos y desplegables).
 - **Fecha de Revisión:** 2026-09-29
 - **Autor:** Operador Técnico / Arquitectura BarcelonaXplorer
 - **Módulo:** Infraestructura y Órganos Sensoriales / Motores Cognitivos
@@ -130,12 +130,12 @@
 
 ## 5. Definición de Hecho (DoD)
 
-- [ ] Servicio `ia-gateway` declarado en `src/docker-compose.yml`, sin puertos publicados en el host y con autenticación interna por secreto compartido.
-- [ ] Ambos endpoints responden con `OperationEnvelope<T>` y validan su entrada con Zod.
-- [ ] Cliente en `src/features/ai-engine/ia-gateway/` que implementa `ITypedDecisionEngine` y `AiGeneratorPort`, con test colocalizado.
-- [ ] Variables `DEFAULT_FAST_LLM`, `DEFAULT_REASONING_LLM` e `IA_GATEWAY_SECRET` documentadas en `src/.env.example`.
-- [ ] Telemetría registrada bajo `LLM_ENGINE` con el payload de la sección 3.
-- [ ] Oráculos en verde: `npx tsc --noEmit`, `npx eslint` y `vitest run`.
+- [x] Servicio `ia-gateway` declarado en `src/docker-compose.yml`, sin puertos publicados en el host y con autenticación interna por secreto compartido.
+- [x] Ambos endpoints responden con `OperationEnvelope<T>` y validan su entrada con Zod.
+- [x] Cliente en `src/features/ai-engine/ia-gateway/` que implementa `ITypedDecisionEngine` y `AiGeneratorPort`, con test colocalizado.
+- [x] Variables `DEFAULT_FAST_LLM`, `DEFAULT_REASONING_LLM` e `IA_GATEWAY_SECRET` documentadas en `src/.env.example`.
+- [x] Telemetría registrada bajo `LLM_ENGINE` con el payload de la sección 3.
+- [x] Oráculos en verde: `npx tsc --noEmit`, `npx eslint` y `vitest run`.
 
 ---
 
@@ -151,7 +151,7 @@
 | PBI-GW-006 | Cliente IA Gateway en Next.js Vertical Slice | P1 | **Completado** | [`Realizado/PBI - Cliente del IA Gateway en Next.js Vertical Slice (P1).md`](../PBI/Realizado/PBI%20-%20Cliente%20del%20IA%20Gateway%20en%20Next.js%20Vertical%20Slice%20(P1).md) |
 | PBI-GW-007 | Telemetría Unificada bajo LLM_ENGINE | P2 | **Completado** | [`Realizado/PBI - Telemetría Unificada bajo LLM_ENGINE para IA Gateway (P2).md`](../PBI/Realizado/PBI%20-%20Telemetr%C3%ADa%20Unificada%20bajo%20LLM_ENGINE%20para%20IA%20Gateway%20(P2).md) |
 | PBI-GW-008 | IaaC Docker Compose y Ansistrano | P1 | **Completado** | [`Realizado/PBI - IaaC Docker Compose y Despliegue Ansistrano del IA Gateway (P1).md`](../PBI/Realizado/PBI%20-%20IaaC%20Docker%20Compose%20y%20Despliegue%20Ansistrano%20del%20IA%20Gateway%20(P1).md) |
-| PBI-GW-009 | Migración Big-Bang de Adaptadores | P2 | Pendiente | [`Pendiente/PBI - Migración de Adaptadores Directos al IA Gateway (P2).md`](../PBI/Pendiente/PBI%20-%20Migraci%C3%B3n%20de%20Adaptadores%20Directos%20al%20IA%20Gateway%20(P2).md) |
+| PBI-GW-009 | Migración Big-Bang de Adaptadores | P2 | **Completado** | [`Realizado/PBI - Migración de Adaptadores Directos al IA Gateway (P2).md`](../PBI/Realizado/PBI%20-%20Migraci%C3%B3n%20de%20Adaptadores%20Directos%20al%20IA%20Gateway%20(P2).md) |
 
 ---
 
