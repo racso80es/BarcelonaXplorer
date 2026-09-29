@@ -200,4 +200,227 @@ describe('IaGatewayClient (PBI-GW-006)', () => {
     const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
     await expect(client.evaluateNoul('s', 'i')).rejects.toThrow('ECONNREFUSED');
   });
+
+  // ─────────────────────────────────────────────────────────────
+  // PBI-GW-007: Telemetría Unificada bajo LLM_ENGINE
+  // ─────────────────────────────────────────────────────────────
+
+  it('PBI-GW-007 CA-1/CA-2/CA-3: debe emitir telemetría bajo contexto LLM_ENGINE con métricas completas', async () => {
+    const previousEnv = process.env.TELEMETRY_LLM_ENABLED;
+    delete process.env.TELEMETRY_LLM_ENABLED;
+
+    const mockTelemetryRepo = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+    };
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          primitive: 'noul',
+          probability: 0.9,
+          isAffirmative: true,
+          metrics: {
+            engineType: 'TYPED_DECISION',
+            provider: 'JEV',
+            modelId: 'jev-decision-v1',
+            promptTokens: 80,
+            completionTokens: 2,
+            totalTokens: 82,
+            fallbackTriggered: false,
+            attemptedProviders: ['JEV'],
+            durationMs: 95,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    await client.evaluateNoul('Estado', 'Instrucción');
+
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0]?.[0];
+    expect(loggedEntry).toBeDefined();
+    expect(loggedEntry.context).toBe('LLM_ENGINE');
+    expect(loggedEntry.level).toBe('INFO');
+    expect(loggedEntry.statusCode).toBe(200);
+    expect(loggedEntry.durationMs).toBe(95);
+    expect(loggedEntry.message).toContain('[IA Gateway TYPED_DECISION]');
+    expect(loggedEntry.payload).toEqual({
+      engineType: 'TYPED_DECISION',
+      provider: 'JEV',
+      modelId: 'jev-decision-v1',
+      promptTokens: 80,
+      completionTokens: 2,
+      totalTokens: 82,
+      fallbackTriggered: false,
+      attemptedProviders: ['JEV'],
+    });
+
+    if (previousEnv !== undefined) {
+      process.env.TELEMETRY_LLM_ENABLED = previousEnv;
+    }
+  });
+
+  it('PBI-GW-007 CA-2: debe registrar WARN si se activó fallbackTriggered', async () => {
+    const previousEnv = process.env.TELEMETRY_LLM_ENABLED;
+    delete process.env.TELEMETRY_LLM_ENABLED;
+
+    const mockTelemetryRepo = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+    };
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          text: 'Respuesta generada vía Gemini tras fallback',
+          metrics: {
+            engineType: 'FAST_LLM',
+            provider: 'GOOGLE',
+            modelId: 'gemini-2.5-flash',
+            promptTokens: 50,
+            completionTokens: 20,
+            totalTokens: 70,
+            fallbackTriggered: true,
+            attemptedProviders: ['GROQ', 'GOOGLE'],
+            durationMs: 380,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    await client.generateText('Consulta');
+
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0]?.[0];
+    expect(loggedEntry.level).toBe('WARN');
+    expect(loggedEntry.message).toContain('anclaje base');
+    expect(loggedEntry.payload).toMatchObject({
+      fallbackTriggered: true,
+      attemptedProviders: ['GROQ', 'GOOGLE'],
+    });
+
+    if (previousEnv !== undefined) {
+      process.env.TELEMETRY_LLM_ENABLED = previousEnv;
+    }
+  });
+
+  it('PBI-GW-007 CA-4: debe omitir el registro cuando TELEMETRY_LLM_ENABLED es false', async () => {
+    const previousEnv = process.env.TELEMETRY_LLM_ENABLED;
+    process.env.TELEMETRY_LLM_ENABLED = 'false';
+
+    const mockTelemetryRepo = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+    };
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          text: 'Sin telemetría',
+          metrics: {
+            engineType: 'FAST_LLM',
+            provider: 'GROQ',
+            modelId: 'llama-3.3-70b-versatile',
+            promptTokens: 10,
+            completionTokens: 5,
+            totalTokens: 15,
+            fallbackTriggered: false,
+            attemptedProviders: ['GROQ'],
+            durationMs: 80,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    await client.generateText('Prueba');
+
+    expect(mockTelemetryRepo.log).not.toHaveBeenCalled();
+
+    if (previousEnv !== undefined) {
+      process.env.TELEMETRY_LLM_ENABLED = previousEnv;
+    } else {
+      delete process.env.TELEMETRY_LLM_ENABLED;
+    }
+  });
+
+  it('PBI-GW-007 CA-1: fallo en telemetría fire-and-forget no interrumpe la respuesta al cliente', async () => {
+    const previousEnv = process.env.TELEMETRY_LLM_ENABLED;
+    delete process.env.TELEMETRY_LLM_ENABLED;
+
+    const mockTelemetryRepo = {
+      log: vi.fn().mockRejectedValue(new Error('Fallo de escritura en DB')),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+    };
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          text: 'Texto válido',
+          metrics: {
+            engineType: 'FAST_LLM',
+            provider: 'GROQ',
+            modelId: 'llama-3.3-70b-versatile',
+            promptTokens: 10,
+            completionTokens: 5,
+            totalTokens: 15,
+            fallbackTriggered: false,
+            attemptedProviders: ['GROQ'],
+            durationMs: 80,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    const result = await client.generateText('Prueba');
+    expect(result).toBe('Texto válido');
+
+    if (previousEnv !== undefined) {
+      process.env.TELEMETRY_LLM_ENABLED = previousEnv;
+    }
+  });
 });

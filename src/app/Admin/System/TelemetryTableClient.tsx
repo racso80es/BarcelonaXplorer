@@ -285,6 +285,36 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
     if (payloadData.latencyMs !== undefined) {
       items.push({ label: 'Latencia de Sonda', value: `${payloadData.latencyMs}ms` });
     }
+    if (payloadData.engineType) {
+      items.push({ label: 'Tipo de Motor IA', value: String(payloadData.engineType) });
+    }
+    if (payloadData.provider) {
+      items.push({ label: 'Proveedor IA', value: String(payloadData.provider) });
+    }
+    if (payloadData.modelId) {
+      items.push({ label: 'Modelo', value: String(payloadData.modelId) });
+    }
+    if (payloadData.totalTokens !== undefined && payloadData.totalTokens !== null) {
+      items.push({ label: 'Total Tokens', value: String(payloadData.totalTokens) });
+    }
+    if (payloadData.promptTokens !== undefined && payloadData.promptTokens !== null) {
+      items.push({ label: 'Prompt Tokens', value: String(payloadData.promptTokens) });
+    }
+    if (payloadData.completionTokens !== undefined && payloadData.completionTokens !== null) {
+      items.push({ label: 'Completion Tokens', value: String(payloadData.completionTokens) });
+    }
+    if (payloadData.fallbackTriggered !== undefined) {
+      items.push({
+        label: 'Fallback Disparado',
+        value: payloadData.fallbackTriggered ? 'Sí (Anclaje Base)' : 'No',
+      });
+    }
+    if (Array.isArray(payloadData.attemptedProviders) && payloadData.attemptedProviders.length > 0) {
+      items.push({
+        label: 'Proveedores Intentados',
+        value: (payloadData.attemptedProviders as string[]).join(' ➔ '),
+      });
+    }
 
     return items.length > 0 ? items : null;
   }, [payloadData]);

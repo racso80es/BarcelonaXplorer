@@ -12,7 +12,9 @@ import {
   TacticalWaypoint,
   TimeSpan,
 } from '@/features/planner';
+import { TelemetryEntry } from '@/features/telemetry';
 import type { TelemetryRepositoryPort } from '@/features/telemetry';
+import type { IaGatewayMetrics } from './ia-gateway-common.schema';
 import {
   IaGatewayChoiceEnvelopeSchema,
   IaGatewayHealthEnvelopeSchema,
@@ -50,6 +52,53 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
       Accept: 'application/json',
       'x-ia-gateway-secret': this.gatewaySecret,
     };
+  }
+
+  private recordTelemetry(
+    metrics: IaGatewayMetrics,
+    statusCode = 200,
+    errorMessage?: string
+  ): void {
+    if (process.env.TELEMETRY_LLM_ENABLED === 'false' || !this.telemetryRepo) {
+      return;
+    }
+
+    const level: 'INFO' | 'WARN' | 'ERROR' = errorMessage
+      ? 'ERROR'
+      : metrics.fallbackTriggered
+        ? 'WARN'
+        : 'INFO';
+
+    const message = errorMessage
+      ? `[IA Gateway ${metrics.engineType}] Fallo: ${errorMessage}`
+      : metrics.fallbackTriggered
+        ? `[IA Gateway ${metrics.engineType}] Inferencia servida mediante anclaje base | Modelo: ${metrics.modelId}`
+        : `[IA Gateway ${metrics.engineType}] Inferencia completada con éxito | Modelo: ${metrics.modelId}`;
+
+    const payload = {
+      engineType: metrics.engineType,
+      provider: metrics.provider,
+      modelId: metrics.modelId,
+      promptTokens: metrics.promptTokens,
+      completionTokens: metrics.completionTokens,
+      totalTokens: metrics.totalTokens,
+      fallbackTriggered: metrics.fallbackTriggered,
+      attemptedProviders: metrics.attemptedProviders,
+      ...(errorMessage ? { error: errorMessage } : {}),
+    };
+
+    void this.telemetryRepo
+      .log(
+        new TelemetryEntry(
+          level,
+          'LLM_ENGINE',
+          message,
+          payload,
+          statusCode,
+          metrics.durationMs
+        )
+      )
+      .catch((err) => console.warn('[IA Gateway Telemetry Fire-and-Forget Error]', err));
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -137,6 +186,8 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
         throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
       }
 
+      this.recordTelemetry(envelope.result.metrics, response.status);
+
       return {
         probability: envelope.result.probability,
         isAffirmative: envelope.result.probability >= threshold,
@@ -177,6 +228,8 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
         const errorMsg = envelope.errors?.join('; ') || envelope.feedback || 'Fallo en evaluación choice';
         throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
       }
+
+      this.recordTelemetry(envelope.result.metrics, response.status);
 
       return {
         selectedChoice: envelope.result.selectedChoice as T,
@@ -225,6 +278,8 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
         throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
       }
 
+      this.recordTelemetry(envelope.result.metrics, response.status);
+
       // Validación del Escudo Zod sobre el JSON retornado
       const parsed = TacticalRouteZodSchema.parse(envelope.result.json);
 
@@ -272,6 +327,8 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
         const errorMsg = envelope.errors?.join('; ') || envelope.feedback || 'Fallo en generateText';
         throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
       }
+
+      this.recordTelemetry(envelope.result.metrics, response.status);
 
       return envelope.result.text;
     } catch (err: unknown) {
