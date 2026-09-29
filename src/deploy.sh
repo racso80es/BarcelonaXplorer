@@ -62,60 +62,89 @@ if (( REMOTE_DISK_FREE_PCT < 10 )); then
 fi
 echo -e "${GREEN}[OK] Espacio en disco validado en el nodo destino: ${REMOTE_DISK_FREE_PCT}% disponible (${REMOTE_DISK_USE_PCT}% usado).${NC}"
 
-# 4. Verificación de persistencia de credenciales de seguridad en .env.production (Aduana Física)
-echo -e "${YELLOW}>>> Verificando configuración perimetral en .env.production...${NC}"
-ENV_PROD="${PROJECT_ROOT}/src/.env.production"
-if [[ ! -f "${ENV_PROD}" ]]; then
-    echo -e "${RED}[ERROR] No se encuentra el archivo de configuración de producción en ${ENV_PROD}.${NC}"
-    echo -e "${YELLOW}[TIP] Puedes generarlo copiando src/.env.example a src/.env.production y configurando los secretos reales.${NC}"
+# 4. Verificación de persistencia de credenciales en ficheros segregados (PBI-GW-014)
+echo -e "${YELLOW}>>> Verificando configuración perimetral segregada (.env.web y .env.ia-gateway)...${NC}"
+ENV_WEB="${PROJECT_ROOT}/src/.env.web"
+ENV_GW="${PROJECT_ROOT}/src/.env.ia-gateway"
+
+if [[ ! -f "${ENV_WEB}" ]]; then
+    echo -e "${RED}[ERROR] No se encuentra el archivo de entorno del monolito en ${ENV_WEB}.${NC}"
     exit 1
 fi
-if ! grep -q "^ADMIN_USER=" "${ENV_PROD}" || ! grep -q "^ADMIN_PASSWORD_HASH=" "${ENV_PROD}"; then
-    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir ADMIN_USER y ADMIN_PASSWORD_HASH antes del despliegue al Nodo 11.${NC}"
+if [[ ! -f "${ENV_GW}" ]]; then
+    echo -e "${RED}[ERROR] No se encuentra el archivo de entorno del gateway en ${ENV_GW}.${NC}"
     exit 1
 fi
-if ! grep -q "^TELEMETRY_LLM_ENABLED=" "${ENV_PROD}" || ! grep -q "^CRON_SECRET=" "${ENV_PROD}"; then
-    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir TELEMETRY_LLM_ENABLED y CRON_SECRET antes del despliegue al Nodo 11.${NC}"
+
+# Validaciones de servicio Web
+if ! grep -q "^ADMIN_USER=" "${ENV_WEB}" || ! grep -q "^ADMIN_PASSWORD_HASH=" "${ENV_WEB}"; then
+    echo -e "${RED}[ERROR] ${ENV_WEB} debe definir ADMIN_USER y ADMIN_PASSWORD_HASH antes del despliegue al Nodo 11.${NC}"
     exit 1
 fi
-if ! grep -q "^TELEGRAM_BOT_TOKEN=" "${ENV_PROD}"; then
-    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir TELEGRAM_BOT_TOKEN para la activación del canal Telegram.${NC}"
+if ! grep -q "^TELEMETRY_LLM_ENABLED=" "${ENV_WEB}" || ! grep -q "^CRON_SECRET=" "${ENV_WEB}"; then
+    echo -e "${RED}[ERROR] ${ENV_WEB} debe definir TELEMETRY_LLM_ENABLED y CRON_SECRET antes del despliegue al Nodo 11.${NC}"
     exit 1
 fi
-PATROL_LINE=$(grep -E '^PATROL_SECRET_TOKEN=' "${ENV_PROD}" | tail -n 1 || true)
+if ! grep -q "^TELEGRAM_BOT_TOKEN=" "${ENV_WEB}"; then
+    echo -e "${RED}[ERROR] ${ENV_WEB} debe definir TELEGRAM_BOT_TOKEN para la activación del canal Telegram.${NC}"
+    exit 1
+fi
+if ! grep -q "^GEMINI_API_KEY=" "${ENV_WEB}"; then
+    echo -e "${RED}[ERROR] ${ENV_WEB} debe definir GEMINI_API_KEY para embeddings de LanceDB en el monolito.${NC}"
+    exit 1
+fi
+
+PATROL_LINE=$(grep -E '^PATROL_SECRET_TOKEN=' "${ENV_WEB}" | tail -n 1 || true)
 if [[ -z "${PATROL_LINE}" ]]; then
-    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir PATROL_SECRET_TOKEN (mínimo 32 caracteres) para la patrulla Telegram.${NC}"
+    echo -e "${RED}[ERROR] ${ENV_WEB} debe definir PATROL_SECRET_TOKEN (mínimo 32 caracteres) para la patrulla Telegram.${NC}"
     exit 1
 fi
 PATROL_VAL="${PATROL_LINE#PATROL_SECRET_TOKEN=}"
 PATROL_VAL="${PATROL_VAL%\"}"
 PATROL_VAL="${PATROL_VAL#\"}"
 if (( ${#PATROL_VAL} < 32 )); then
-    echo -e "${RED}[ERROR] PATROL_SECRET_TOKEN en ${ENV_PROD} debe tener al menos 32 caracteres.${NC}"
+    echo -e "${RED}[ERROR] PATROL_SECRET_TOKEN en ${ENV_WEB} debe tener al menos 32 caracteres.${NC}"
     exit 1
 fi
 if [[ "${PATROL_VAL}" == "bcn_patrol_secret_default" ]]; then
     echo -e "${RED}[ERROR] PATROL_SECRET_TOKEN no puede ser el literal histórico comprometido (bcn_patrol_secret_default).${NC}"
     exit 1
 fi
-if ! grep -q "^TELEGRAM_ENABLED=true" "${ENV_PROD}"; then
-    echo -e "${YELLOW}[WARN] TELEGRAM_ENABLED no está definido como 'true' en ${ENV_PROD}.${NC}"
+
+# Validaciones de servicio IA Gateway
+if ! grep -q "^GEMINI_API_KEY=" "${ENV_GW}" || ! grep -q "^GROQ_API_KEY=" "${ENV_GW}" || ! grep -q "^JEV_API_KEY=" "${ENV_GW}"; then
+    echo -e "${RED}[ERROR] ${ENV_GW} debe definir las claves de proveedor (GEMINI_API_KEY, GROQ_API_KEY, JEV_API_KEY).${NC}"
+    exit 1
 fi
 
-# Validación de Aduana Universal IA Gateway (PBI-GW-008)
-IA_GATEWAY_LINE=$(grep -E '^IA_GATEWAY_SECRET=' "${ENV_PROD}" | tail -n 1 || true)
-if [[ -z "${IA_GATEWAY_LINE}" ]]; then
-    echo -e "${RED}[ERROR] ${ENV_PROD} debe definir IA_GATEWAY_SECRET (mínimo 32 caracteres) para el microservicio IA Gateway.${NC}"
+# Aduana de igualdad de IA_GATEWAY_SECRET (CA-2)
+GW_SEC_WEB_LINE=$(grep -E '^IA_GATEWAY_SECRET=' "${ENV_WEB}" | tail -n 1 || true)
+GW_SEC_GW_LINE=$(grep -E '^IA_GATEWAY_SECRET=' "${ENV_GW}" | tail -n 1 || true)
+
+if [[ -z "${GW_SEC_WEB_LINE}" ]] || [[ -z "${GW_SEC_GW_LINE}" ]]; then
+    echo -e "${RED}[ERROR] IA_GATEWAY_SECRET debe estar definido en ambos ficheros (.env.web y .env.ia-gateway).${NC}"
     exit 1
 fi
-IA_GATEWAY_VAL="${IA_GATEWAY_LINE#IA_GATEWAY_SECRET=}"
-IA_GATEWAY_VAL="${IA_GATEWAY_VAL%\"}"
-IA_GATEWAY_VAL="${IA_GATEWAY_VAL#\"}"
-if (( ${#IA_GATEWAY_VAL} < 32 )); then
-    echo -e "${RED}[ERROR] IA_GATEWAY_SECRET en ${ENV_PROD} debe tener al menos 32 caracteres.${NC}"
+
+GW_SEC_WEB="${GW_SEC_WEB_LINE#IA_GATEWAY_SECRET=}"
+GW_SEC_WEB="${GW_SEC_WEB%\"}"
+GW_SEC_WEB="${GW_SEC_WEB#\"}"
+
+GW_SEC_GW="${GW_SEC_GW_LINE#IA_GATEWAY_SECRET=}"
+GW_SEC_GW="${GW_SEC_GW%\"}"
+GW_SEC_GW="${GW_SEC_GW#\"}"
+
+if (( ${#GW_SEC_WEB} < 32 )) || (( ${#GW_SEC_GW} < 32 )); then
+    echo -e "${RED}[ERROR] IA_GATEWAY_SECRET debe tener al menos 32 caracteres en ambos ficheros.${NC}"
     exit 1
 fi
-echo -e "${GREEN}[OK] Variables críticas de producción (.env.production) validadas y listas para sincronización con el Nodo 11.${NC}"
+
+if [[ "${GW_SEC_WEB}" != "${GW_SEC_GW}" ]]; then
+    echo -e "${RED}[ERROR] Discrepancia crítica: IA_GATEWAY_SECRET difiere entre .env.web y .env.ia-gateway. Deben ser estrictamente idénticos para permitir comunicación autorizada.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}[OK] Ficheros segregados (.env.web y .env.ia-gateway) validados con IA_GATEWAY_SECRET idéntico y seguro.${NC}"
 
 # 5. Aduana Empírica — Playwright E2E (bloqueo atómico; ver HU-13 Anexo B)
 # Prohibido: npm run test:e2e || true, ramas if sin exit 1, o desacoplar el exit code del hilo principal.

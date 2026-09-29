@@ -15,7 +15,8 @@
     set -euo pipefail
     export BX_RELEASE_TAG="{{ ansistrano_release_path | basename }}"
     echo "$BX_RELEASE_TAG" > .bx_release_tag
-    docker compose --env-file .env.production -p barcelonaxplorer build ia-gateway web
+    ENV_FILE="$([ -f .env.web ] && echo '.env.web' || echo '.env.production')"
+    docker compose --env-file "$ENV_FILE" -p barcelonaxplorer build ia-gateway web
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
   environment:
@@ -27,7 +28,8 @@
   ansible.builtin.shell: |
     set -euo pipefail
     export BX_RELEASE_TAG="$(cat .bx_release_tag)"
-    docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
+    ENV_FILE="$([ -f .env.web ] && echo '.env.web' || echo '.env.production')"
+    docker compose --env-file "$ENV_FILE" -p barcelonaxplorer up -d --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
 
@@ -43,7 +45,7 @@
     set -euo pipefail
     set -a
     # shellcheck disable=SC1091
-    source .env.production
+    source "$([ -f .env.web ] && echo '.env.web' || echo '.env.production')"
     set +a
     docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" --silent
   args:
@@ -205,11 +207,12 @@
             exit 1
           fi
           export BX_RELEASE_TAG="$(cat .bx_release_tag)"
+          ENV_FILE="$([ -f .env.web ] && echo '.env.web' || echo '.env.production')"
           if ! docker image inspect "barcelonaxplorer-web:${BX_RELEASE_TAG}" >/dev/null 2>&1; then
             echo "Imagen ${BX_RELEASE_TAG} ausente; reconstruyendo desde release previa..."
-            docker compose --env-file .env.production -p barcelonaxplorer build web
+            docker compose --env-file "$ENV_FILE" -p barcelonaxplorer build web
           fi
-          docker compose --env-file .env.production -p barcelonaxplorer up -d --remove-orphans
+          docker compose --env-file "$ENV_FILE" -p barcelonaxplorer up -d --remove-orphans
         else
           echo "ADVERTENCIA: No se localizó release previa para restaurar."
         fi

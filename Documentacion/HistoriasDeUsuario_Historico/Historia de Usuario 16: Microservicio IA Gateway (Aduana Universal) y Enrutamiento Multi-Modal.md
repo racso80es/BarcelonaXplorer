@@ -32,7 +32,7 @@
 
 - **Despliegue:** Nuevo servicio `ia-gateway` declarado en [`src/docker-compose.yml`](../../src/docker-compose.yml) junto a `web` y `db`. Sin publicación de puertos en el host: solo es alcanzable desde `web` por la red interna de Compose (p. ej. `http://ia-gateway:<puerto>`).
 - **Autenticación interna:** Toda petición de `web` al gateway lleva una cabecera con secreto compartido (p. ej. `IA_GATEWAY_SECRET`). El gateway rechaza con `401` cualquier petición sin ella.
-- **Custodia de secretos:** `GEMINI_API_KEY`, `GROQ_API_KEY` y `JEV_API_KEY` pasan a ser variables del servicio `ia-gateway`. Al cerrar la migración, `web` deja de necesitarlas.
+- **Custodia de secretos:** `GEMINI_API_KEY`, `GROQ_API_KEY` y `JEV_API_KEY` pasan a ser variables del servicio `ia-gateway`. *Anotación (PBI-GW-014):* El servicio `web` deja de necesitar `GROQ_API_KEY` y `JEV_API_KEY`, pero **retiene** `GEMINI_API_KEY` debido a que el motor de embeddings de LanceDB (`gemini-embedding.adapter.ts`) permanece en el monolito según §2.5. La segregación se materializa con ficheros de entorno independientes (`src/.env.web` y `src/.env.ia-gateway`) enlazados por Ansistrano.
 - **Sobre de respuesta:** Ambos endpoints responden con `OperationEnvelope<T>` (Axioma V), con la misma forma que [`src/shared/operation-envelope.ts`](../../src/shared/operation-envelope.ts): `success`, `exitCode`, `result`, `feedback`, `errors`.
 - **Sensor de salud de proveedores:** El gateway mantiene el estado de salud de cada proveedor con dos fuentes:
   - **Pasiva (principal):** latencia y códigos de error de las peticiones reales, en ventana deslizante, con cortocircuito (*circuit breaker*) al superar un umbral de fallos o de latencia.

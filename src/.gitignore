@@ -39,6 +39,8 @@ yarn-error.log*
 .env*.local
 .env.production
 .env*.production
+.env.web
+.env.ia-gateway
 
 # vercel
 .vercel

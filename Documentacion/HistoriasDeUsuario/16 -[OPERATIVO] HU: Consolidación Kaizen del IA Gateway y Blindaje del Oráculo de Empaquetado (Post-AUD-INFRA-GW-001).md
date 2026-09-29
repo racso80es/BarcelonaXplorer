@@ -1,9 +1,9 @@
 # [OPERATIVO] Historia de Usuario: Consolidación Kaizen del IA Gateway y Blindaje del Oráculo de Empaquetado (Post-AUD-INFRA-GW-001)
 
 **Identificador:** HU-KAIZEN-003
-**Estatus:** En progreso (3/9 completados, 6/9 pendientes) — PBI-GW-010, PBI-GW-011 y PBI-GW-012 completados; PBI-GW-013 a PBI-GW-018 pendientes
+**Estatus:** En progreso (4/9 completados, 5/9 pendientes) — PBI-GW-010, PBI-GW-011, PBI-GW-012 y PBI-GW-014 completados; PBI-GW-013, PBI-GW-015 a PBI-GW-018 pendientes
 **Fecha de Creación:** 2026-09-29
-**Última Actualización:** 2026-09-29 (PBI-GW-011 completado)
+**Última Actualización:** 2026-09-29 (PBI-GW-014 completado)
 **Naturaleza:** Consolidación post‑migración, hardening de seguridad y configuración, ampliación del perímetro de oráculos y gobernanza documental
 **Auditoría Base Vinculada:** [`AUD-INFRA-GW-001`](../Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md)
 **Historia Precedente:** [`HU-16 — Microservicio IA Gateway`](../HistoriasDeUsuario_Historico/Historia%20de%20Usuario%2016%3A%20Microservicio%20IA%20Gateway%20%28Aduana%20Universal%29%20y%20Enrutamiento%20Multi-Modal.md) (Completada)
@@ -87,7 +87,7 @@
 | **P1** | `PBI-GW-011` | [Oráculo de empaquetado y del gateway en `audit-anchor.sh` y CI](../PBI/Realizado/PBI%20-%20Oraculo%20de%20Empaquetado%20y%20del%20IA%20Gateway%20en%20audit-anchor%20y%20CI%20%28P1%29.md) | F-13 | 2 |
 | **P1** | `PBI-GW-012` | [Arranque Fail‑Closed: secreto obligatorio y anclaje verificado](../PBI/Realizado/PBI%20-%20Arranque%20Fail-Closed%20del%20IA%20Gateway%20Secreto%20Obligatorio%20y%20Anclaje%20Verificado%20%28P1%29.md) | F-10, F-09 | 2 |
 | **P2** | `PBI-GW-013` | [Sonda del IA Gateway en el Oráculo de Salud post‑despliegue](../PBI/Pendiente/PBI%20-%20Sonda%20del%20IA%20Gateway%20en%20el%20Oraculo%20de%20Salud%20Post-Despliegue%20%28P2%29.md) | F-12 | 2 |
-| **P2** | `PBI-GW-014` | [Segregación de ficheros de entorno por servicio en Compose](../PBI/Pendiente/PBI%20-%20Segregacion%20de%20Ficheros%20de%20Entorno%20por%20Servicio%20en%20Docker%20Compose%20%28P2%29.md) | F-11 | 2 |
+| **P2** | `PBI-GW-014` | [Segregación de ficheros de entorno por servicio en Compose](../PBI/Realizado/PBI%20-%20Segregacion%20de%20Ficheros%20de%20Entorno%20por%20Servicio%20en%20Docker%20Compose%20%28P2%29.md) | F-11 | 2 |
 | **P2** | `PBI-GW-015` | [Lanzador local versionado `scripts/dev-up.sh`](../PBI/Pendiente/PBI%20-%20Lanzador%20Local%20Versionado%20scripts%20dev-up%20%28P2%29.md) | F-17 | 1 |
 | **P3** | `PBI-GW-016` | [Imagen del gateway sin tests y `dev` con recarga real](../PBI/Pendiente/PBI%20-%20Imagen%20del%20IA%20Gateway%20sin%20Tests%20y%20Recarga%20Real%20en%20Desarrollo%20%28P3%29.md) | F-14, F-04 | 1 |
 | **P3** | `PBI-GW-017` | [Validación runtime de `evaluateChoice` y limpieza de avisos de tooling](../PBI/Pendiente/PBI%20-%20Validacion%20Runtime%20de%20evaluateChoice%20y%20Limpieza%20de%20Avisos%20de%20Tooling%20%28P3%29.md) | F-18, F-15, F-19 | 1 |

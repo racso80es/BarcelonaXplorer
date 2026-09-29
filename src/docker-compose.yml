@@ -21,8 +21,8 @@ services:
     ports:
       - "8080:3000"
     restart: unless-stopped
-    # Inyección de secretos e identidad operativa desde shared
-    env_file: .env.production
+    # Inyección de secretos segregados por servicio desde shared (PBI-GW-014)
+    env_file: .env.web
     environment:
       - NODE_ENV=production
       - TELEGRAM_ENABLED=true
@@ -54,18 +54,9 @@ services:
       dockerfile: Dockerfile
     container_name: barcelonaxplorer_ia_gateway
     restart: unless-stopped
-    env_file: .env.production
+    env_file: .env.ia-gateway
     environment:
       - NODE_ENV=production
-      - PORT=3001
-      - IA_GATEWAY_SECRET=${IA_GATEWAY_SECRET}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - JEV_API_KEY=${JEV_API_KEY}
-      - JEV_BASE_URL=${JEV_BASE_URL:-https://jev-ai.pro/api}
-      - JEV_MODEL=${JEV_MODEL:-jev-latest}
-      - DEFAULT_FAST_LLM=${DEFAULT_FAST_LLM:-google:gemini-2.5-flash}
-      - DEFAULT_REASONING_LLM=${DEFAULT_REASONING_LLM:-groq:llama-3.3-70b-versatile}
     # Axioma I: Sin puertos publicados en el host (solo alcanzable por la red interna de docker compose)
     expose:
       - "3001"

@@ -20,9 +20,10 @@
     ansistrano_keep_releases: 3
     # Axioma II: Umbral mínimo de seguridad en disco raíz (en Megabytes: 3072 MB = 3 GB)
     min_root_disk_free_mb: 3072
-    # Axioma II: Archivos de configuración y secretos inmutables preservados entre despliegues
+    # Axioma II: Archivos de configuración y secretos inmutables preservados entre despliegues (PBI-GW-014)
     ansistrano_shared_files:
-      - .env.production
+      - .env.web
+      - .env.ia-gateway
     # Axioma I: Rutas compartidas y enlazadas simbólicamente por Ansistrano
     ansistrano_shared_paths:
       - ia-gateway
@@ -82,11 +83,17 @@
         state: directory
         mode: '0777'
 
-    # Axioma II: Blindaje de secretos en producción con permisos de lectura exclusivos (0600)
-    - name: Transferir automáticamente .env.production a shared
+    # Axioma II: Blindaje de secretos en producción con permisos de lectura exclusivos (0600, PBI-GW-014)
+    - name: Transferir automáticamente .env.web a shared
       ansible.builtin.copy:
-        src: "../src/.env.production"
-        dest: "{{ ansistrano_deploy_to }}/shared/.env.production"
+        src: "../src/.env.web"
+        dest: "{{ ansistrano_deploy_to }}/shared/.env.web"
+        mode: '0600'
+
+    - name: Transferir automáticamente .env.ia-gateway a shared
+      ansible.builtin.copy:
+        src: "../src/.env.ia-gateway"
+        dest: "{{ ansistrano_deploy_to }}/shared/.env.ia-gateway"
         mode: '0600'
 
     # Axioma I: Sincronización del código fuente del microservicio ia-gateway hacia shared
