@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --loader ts-node/esm src/index.ts",
-    "build": "tsc",
+    "dev": "tsc -p tsconfig.build.json && (trap 'kill 0' INT TERM EXIT; tsc -p tsconfig.build.json --watch --preserveWatchOutput & node --watch dist/index.js)",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
