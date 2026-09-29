@@ -8,3 +8,5 @@ export { GroqFastAiAdapter } from './groq/groq-fast-ai.adapter';
 export { GroqConversationalSlmAdapter } from './groq/groq-conversational-slm.adapter';
 export { GroqGeographicBounceGenerator } from './groq/groq-geographic-bounce-generator';
 export { GenerateFastRadarUseCase } from './generate-fast-radar.use-case';
+export { IaGatewayClient } from './ia-gateway/ia-gateway.client';
+

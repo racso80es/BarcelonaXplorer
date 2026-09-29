@@ -1,0 +1,203 @@
+import { describe, expect, it, vi } from 'vitest';
+import { IaGatewayClient } from './ia-gateway.client';
+
+describe('IaGatewayClient (PBI-GW-006)', () => {
+  const secret = 'test-secret-gateway-123';
+  const baseUrl = 'http://ia-gateway:3001';
+
+  it('CA-1: debe ejecutar evaluateNoul enviando cabecera y parseando con Zod', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          primitive: 'noul',
+          probability: 0.85,
+          isAffirmative: true,
+          metrics: {
+            engineType: 'TYPED_DECISION',
+            provider: 'JEV',
+            modelId: 'jev-latest',
+            promptTokens: 100,
+            completionTokens: 5,
+            totalTokens: 105,
+            fallbackTriggered: false,
+            attemptedProviders: ['JEV'],
+            durationMs: 150,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    const result = await client.evaluateNoul('Contexto', '¿Es afirmativo?');
+
+    expect(result.probability).toBe(0.85);
+    expect(result.isAffirmative).toBe(true);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://ia-gateway:3001/v1/decision/evaluate',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'x-ia-gateway-secret': secret,
+        }),
+      })
+    );
+  });
+
+  it('CA-1: debe ejecutar evaluateChoice correctamente', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          primitive: 'choice',
+          selectedChoice: 'gothic',
+          confidence: 0.95,
+          probabilities: { gothic: 0.95, modern: 0.05 },
+          metrics: {
+            engineType: 'TYPED_DECISION',
+            provider: 'JEV',
+            modelId: 'jev-latest',
+            promptTokens: 120,
+            completionTokens: 10,
+            totalTokens: 130,
+            fallbackTriggered: false,
+            attemptedProviders: ['JEV'],
+            durationMs: 160,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    const result = await client.evaluateChoice('Barri Gòtic', 'Identifica el barrio', ['gothic', 'modern']);
+
+    expect(result.selectedChoice).toBe('gothic');
+    expect(result.confidence).toBe(0.95);
+    expect(result.probabilities['gothic']).toBe(0.95);
+  });
+
+  it('CA-1: debe reportar evaluateHealth correctamente', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          status: 'healthy',
+          timestamp: '2026-09-29T12:00:00.000Z',
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    const health = await client.evaluateHealth();
+
+    expect(health.isHealthy).toBe(true);
+    expect(health.statusCode).toBe(200);
+  });
+
+  it('CA-2: debe generar ruta táctica (JSON) y devolver entidades puras de dominio', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          text: '{}',
+          json: {
+            id: 'route-bcn-1',
+            summary: 'Ruta Táctica Modernista en Eixample',
+            waypoints: [
+              {
+                id: 'wp-1',
+                title: 'Casa Batlló',
+                description: 'Obra de Antoni Gaudí',
+                coordinates: { lat: 41.3916, lng: 2.1648 },
+                timeSpan: { start: '10:00', end: '11:30' },
+                recommendations: ['Reserva con antelación'],
+              },
+            ],
+          },
+          metrics: {
+            engineType: 'REASONING_LLM',
+            provider: 'GOOGLE',
+            modelId: 'gemini-2.5-flash',
+            promptTokens: 150,
+            completionTokens: 80,
+            totalTokens: 230,
+            fallbackTriggered: false,
+            attemptedProviders: ['GOOGLE'],
+            durationMs: 450,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    const route = await client.generateTacticalRoute('Ruta modernista en Barcelona');
+
+    expect(route.id).toBe('route-bcn-1');
+    expect(route.summary).toBe('Ruta Táctica Modernista en Eixample');
+    expect(route.waypoints.length).toBe(1);
+    expect(route.waypoints[0]?.coordinates?.lat).toBe(41.3916);
+  });
+
+  it('CA-2: debe generar texto libre mediante generateText', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          text: 'Consejo rápido de tránsito en Barcelona.',
+          metrics: {
+            engineType: 'FAST_LLM',
+            provider: 'GROQ',
+            modelId: 'llama-3.3-70b-versatile',
+            promptTokens: 40,
+            completionTokens: 10,
+            totalTokens: 50,
+            fallbackTriggered: false,
+            attemptedProviders: ['GROQ'],
+            durationMs: 120,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    const text = await client.generateText('Dame un consejo');
+
+    expect(text).toBe('Consejo rápido de tránsito en Barcelona.');
+  });
+
+  it('CA-5: debe propagar error determinista si el sobre devuelve success: false', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        success: false,
+        exitCode: 503,
+        errors: ['Agotamiento total de proveedores LLM'],
+        feedback: 'Servicio no disponible',
+      }),
+    });
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    await expect(client.generateText('Pregunta')).rejects.toThrow(
+      'IA Gateway error (503): Agotamiento total de proveedores LLM'
+    );
+  });
+
+  it('CA-5: debe manejar gateway inalcanzable por fallo de red', async () => {
+    const mockFetch = vi.fn().mockRejectedValueOnce(new Error('fetch failed: ECONNREFUSED'));
+
+    const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+    await expect(client.evaluateNoul('s', 'i')).rejects.toThrow('ECONNREFUSED');
+  });
+});
