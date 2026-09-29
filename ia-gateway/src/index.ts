@@ -1,5 +1,8 @@
 import { createDecisionHandler } from './endpoints/decision/decision.handler.js';
 import { JevAdapter } from './endpoints/decision/jev.adapter.js';
+import { GeminiAdapter } from './endpoints/llm/gemini.adapter.js';
+import { GroqAdapter } from './endpoints/llm/groq.adapter.js';
+import { createLlmHandler } from './endpoints/llm/llm.handler.js';
 import { HealthSensor } from './health/health-sensor.js';
 import { createGatewayServer, sendJson } from './server.js';
 import { createSuccessEnvelope } from './shared/envelope.js';
@@ -22,10 +25,21 @@ const jevAdapter = new JevAdapter({
   timeoutMs: parseInt(process.env.JEV_TIMEOUT_MS ?? '10000', 10),
 });
 
+const geminiAdapter = new GeminiAdapter({
+  apiKey: process.env.GEMINI_API_KEY,
+  defaultModel: process.env.GEMINI_REASONING_MODEL ?? 'gemini-2.5-flash',
+});
+
+const groqAdapter = new GroqAdapter({
+  apiKey: process.env.GROQ_API_KEY,
+  defaultModel: process.env.GROQ_FAST_MODEL ?? 'llama-3.3-70b-versatile',
+});
+
 const server = createGatewayServer({
   port: PORT,
   gatewaySecret: IA_GATEWAY_SECRET,
   decisionHandler: createDecisionHandler(jevAdapter),
+  llmHandler: createLlmHandler(geminiAdapter, groqAdapter, healthSensor),
   healthHandler: async (_req, res) => {
     sendJson(
       res,
