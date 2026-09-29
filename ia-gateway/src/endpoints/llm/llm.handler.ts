@@ -9,13 +9,16 @@ import { resolveFallbackConfig } from './fallback.config.js';
 import type { FallbackConfig } from './fallback.config.js';
 import type { GeminiAdapter } from './gemini.adapter.js';
 import type { GroqAdapter } from './groq.adapter.js';
+import { getModelsForProvider, resolveProviderModels } from './models.config.js';
+import type { ProviderModelsConfig } from './models.config.js';
 import { getZodSchemaById } from './schemas-registry.js';
 
 export function createLlmHandler(
   geminiAdapter: GeminiAdapter,
   groqAdapter: GroqAdapter,
   healthSensor: HealthSensor,
-  fallbackConfig: FallbackConfig = resolveFallbackConfig()
+  fallbackConfig: FallbackConfig = resolveFallbackConfig(),
+  providerModels: ProviderModelsConfig = resolveProviderModels()
 ) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     let rawBody: unknown;
@@ -64,78 +67,92 @@ export function createLlmHandler(
     );
 
     const attemptedProviders: string[] = [];
+    const attemptedModels: string[] = [];
     const collectedErrors: string[] = [];
 
-    // 1. Intentar candidatos sanos de la matriz
+    // 1. Intentar candidatos sanos de la matriz con degradación intra-proveedor (CA-2)
     for (const provider of healthyCandidates) {
       attemptedProviders.push(provider);
-      const t0 = performance.now();
+      const configuredModels = getModelsForProvider(provider, providerModels);
+      const modelsToTry = configuredModels.length > 0 ? configuredModels : ['default'];
+      let providerSucceeded = false;
+      let lastFailureDurationMs = 0;
 
-      try {
-        const adapter = provider === 'GOOGLE' ? geminiAdapter : groqAdapter;
-        const result = await adapter.generate({
-          prompt,
-          systemInstruction,
-          responseFormat,
-          temperature,
-        });
+      for (const modelId of modelsToTry) {
+        const modelTag = `${provider}:${modelId}`;
+        attemptedModels.push(modelTag);
+        const t0 = performance.now();
 
-        let parsedJsonRecord: Record<string, unknown> | undefined = undefined;
+        try {
+          const adapter = provider === 'GOOGLE' ? geminiAdapter : groqAdapter;
+          const result = await adapter.generate({
+            prompt,
+            systemInstruction,
+            responseFormat,
+            temperature,
+            modelId,
+          });
 
-        // CA-4: Conformidad estructural Zod si responseFormat es 'json'
-        if (responseFormat === 'json') {
-          let parsedUnknown: unknown;
-          try {
-            parsedUnknown = JSON.parse(result.text);
-          } catch {
-            const durationMs = Math.round(performance.now() - t0);
-            healthSensor.recordFailure(provider, durationMs, 422);
-            collectedErrors.push(`${provider}: La respuesta generada no es un JSON válido`);
-            continue;
+          let parsedJsonRecord: Record<string, unknown> | undefined = undefined;
+
+          // Conformidad estructural Zod si responseFormat es 'json'
+          if (responseFormat === 'json') {
+            let parsedUnknown: unknown;
+            try {
+              parsedUnknown = JSON.parse(result.text);
+            } catch {
+              lastFailureDurationMs = Math.round(performance.now() - t0);
+              collectedErrors.push(`${modelTag}: La respuesta generada no es un JSON válido`);
+              continue;
+            }
+
+            const schema = getZodSchemaById(schemaId);
+            const schemaValidation = schema.safeParse(parsedUnknown);
+
+            if (!schemaValidation.success) {
+              lastFailureDurationMs = Math.round(performance.now() - t0);
+              collectedErrors.push(
+                `${modelTag}: El JSON generado no cumple el esquema ${schemaId}`
+              );
+              continue;
+            }
+
+            parsedJsonRecord = schemaValidation.data as Record<string, unknown>;
           }
 
-          const schema = getZodSchemaById(schemaId);
-          const schemaValidation = schema.safeParse(parsedUnknown);
+          healthSensor.recordSuccess(provider, result.durationMs, 200);
+          providerSucceeded = true;
 
-          if (!schemaValidation.success) {
-            const durationMs = Math.round(performance.now() - t0);
-            healthSensor.recordFailure(provider, durationMs, 422);
-            collectedErrors.push(
-              `${provider}: El JSON generado no cumple el esquema ${schemaId}`
-            );
-            continue;
-          }
+          const metrics: GatewayMetrics = {
+            engineType,
+            provider,
+            modelId: result.modelId,
+            promptTokens: result.promptTokens,
+            completionTokens: result.completionTokens,
+            totalTokens: result.totalTokens,
+            fallbackTriggered: false,
+            attemptedProviders,
+            attemptedModels,
+            durationMs: result.durationMs,
+          };
 
-          parsedJsonRecord = schemaValidation.data as Record<string, unknown>;
+          const output: LlmGenerateOutput = {
+            text: result.text,
+            json: parsedJsonRecord,
+            metrics,
+          };
+
+          sendJson(res, 200, createSuccessEnvelope(output));
+          return;
+        } catch (err) {
+          lastFailureDurationMs = Math.round(performance.now() - t0);
+          const errMsg = err instanceof Error ? err.message : String(err);
+          collectedErrors.push(`${modelTag}: ${errMsg}`);
         }
+      }
 
-        healthSensor.recordSuccess(provider, result.durationMs, 200);
-
-        const metrics: GatewayMetrics = {
-          engineType,
-          provider,
-          modelId: result.modelId,
-          promptTokens: result.promptTokens,
-          completionTokens: result.completionTokens,
-          totalTokens: result.totalTokens,
-          fallbackTriggered: false,
-          attemptedProviders,
-          durationMs: result.durationMs,
-        };
-
-        const output: LlmGenerateOutput = {
-          text: result.text,
-          json: parsedJsonRecord,
-          metrics,
-        };
-
-        sendJson(res, 200, createSuccessEnvelope(output));
-        return;
-      } catch (err) {
-        const durationMs = Math.round(performance.now() - t0);
-        healthSensor.recordFailure(provider, durationMs, 502);
-        const errMsg = err instanceof Error ? err.message : String(err);
-        collectedErrors.push(`${provider}: ${errMsg}`);
+      if (!providerSucceeded) {
+        healthSensor.recordFailure(provider, lastFailureDurationMs, 502);
       }
     }
 
@@ -147,6 +164,7 @@ export function createLlmHandler(
 
     const anchorTag = `${anchor.provider}:${anchor.modelId} (anchor)`;
     attemptedProviders.push(anchorTag);
+    attemptedModels.push(anchorTag);
     const t0Anchor = performance.now();
 
     try {
@@ -194,6 +212,7 @@ export function createLlmHandler(
         totalTokens: result.totalTokens,
         fallbackTriggered: true, // CA-4: Anclaje base activado
         attemptedProviders,
+        attemptedModels,
         durationMs: result.durationMs,
       };
 

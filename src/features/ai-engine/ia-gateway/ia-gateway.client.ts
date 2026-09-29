@@ -84,6 +84,7 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
       totalTokens: metrics.totalTokens,
       fallbackTriggered: metrics.fallbackTriggered,
       attemptedProviders: metrics.attemptedProviders,
+      attemptedModels: metrics.attemptedModels,
       ...(errorMessage ? { error: errorMessage } : {}),
     };
 

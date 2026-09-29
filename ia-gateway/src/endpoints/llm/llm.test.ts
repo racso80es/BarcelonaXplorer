@@ -190,4 +190,161 @@ describe('POST /v1/llm/generate (PBI-GW-003)', () => {
     expect(body.exitCode).toBe(503);
     expect(body.errors?.some((e) => e.includes('Groq upstream error'))).toBe(true);
   });
+
+  it('PBI-GW-010 CA-2, CA-4: el primer modelo de Gemini responde 503 y el segundo responde 200 sin llegar a Groq', async () => {
+    const localGeminiAdapter = new GeminiAdapter({ apiKey: 'fake-gemini-key' });
+    const localGeminiMock = vi.fn();
+    localGeminiAdapter.generate = localGeminiMock;
+
+    const localGroqAdapter = new GroqAdapter({ apiKey: 'fake-groq-key' });
+    const localGroqMock = vi.fn();
+    localGroqAdapter.generate = localGroqMock;
+
+    const healthSensor = new HealthSensor();
+    const providerModels = {
+      geminiModels: ['gemini-primary-fail', 'gemini-secondary-success'],
+      groqModels: ['llama-3.3-70b-versatile'],
+    };
+
+    const handler = createLlmHandler(
+      localGeminiAdapter,
+      localGroqAdapter,
+      healthSensor,
+      undefined,
+      providerModels
+    );
+
+    const srv = createGatewayServer({
+      port: 0,
+      gatewaySecret: testSecret,
+      llmHandler: handler,
+    });
+
+    let srvUrl = '';
+    await new Promise<void>((resolve) => {
+      srv.listen(0, '127.0.0.1', () => {
+        const addr = srv.address() as AddressInfo;
+        srvUrl = `http://127.0.0.1:${addr.port}`;
+        resolve();
+      });
+    });
+
+    try {
+      localGeminiMock.mockRejectedValueOnce(new Error('503 Service Unavailable'));
+      localGeminiMock.mockResolvedValueOnce({
+        text: 'Respuesta recuperada por segundo modelo de Gemini',
+        modelId: 'gemini-secondary-success',
+        promptTokens: 45,
+        completionTokens: 15,
+        totalTokens: 60,
+        durationMs: 160,
+      });
+
+      const res = await fetch(`${srvUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Consulta de prueba intra-proveedor',
+          engineType: 'REASONING_LLM',
+          responseFormat: 'text',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as OperationEnvelope<LlmGenerateOutput>;
+      expect(body.success).toBe(true);
+      expect(body.result?.metrics.provider).toBe('GOOGLE');
+      expect(body.result?.metrics.modelId).toBe('gemini-secondary-success');
+      expect(body.result?.metrics.attemptedProviders).toEqual(['GOOGLE']);
+      expect(body.result?.metrics.attemptedModels).toEqual([
+        'GOOGLE:gemini-primary-fail',
+        'GOOGLE:gemini-secondary-success',
+      ]);
+      expect(localGroqMock).not.toHaveBeenCalled();
+    } finally {
+      await new Promise<void>((resolve) => srv.close(() => resolve()));
+    }
+  });
+
+  it('PBI-GW-010 CA-2, CA-4: todos los modelos de un proveedor fallan y se conmuta al siguiente proveedor', async () => {
+    const localGeminiAdapter = new GeminiAdapter({ apiKey: 'fake-gemini-key' });
+    const localGeminiMock = vi.fn();
+    localGeminiAdapter.generate = localGeminiMock;
+
+    const localGroqAdapter = new GroqAdapter({ apiKey: 'fake-groq-key' });
+    const localGroqMock = vi.fn();
+    localGroqAdapter.generate = localGroqMock;
+
+    const healthSensor = new HealthSensor();
+    const providerModels = {
+      geminiModels: ['gemini-fail-1', 'gemini-fail-2'],
+      groqModels: ['groq-success'],
+    };
+
+    const handler = createLlmHandler(
+      localGeminiAdapter,
+      localGroqAdapter,
+      healthSensor,
+      undefined,
+      providerModels
+    );
+
+    const srv = createGatewayServer({
+      port: 0,
+      gatewaySecret: testSecret,
+      llmHandler: handler,
+    });
+
+    let srvUrl = '';
+    await new Promise<void>((resolve) => {
+      srv.listen(0, '127.0.0.1', () => {
+        const addr = srv.address() as AddressInfo;
+        srvUrl = `http://127.0.0.1:${addr.port}`;
+        resolve();
+      });
+    });
+
+    try {
+      localGeminiMock.mockRejectedValueOnce(new Error('Gemini fail 1'));
+      localGeminiMock.mockRejectedValueOnce(new Error('Gemini fail 2'));
+      localGroqMock.mockResolvedValueOnce({
+        text: 'Respuesta recuperada por Groq tras agotar modelos Gemini',
+        modelId: 'groq-success',
+        promptTokens: 30,
+        completionTokens: 10,
+        totalTokens: 40,
+        durationMs: 80,
+      });
+
+      const res = await fetch(`${srvUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Consulta fallback multi-proveedor',
+          engineType: 'REASONING_LLM',
+          responseFormat: 'text',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as OperationEnvelope<LlmGenerateOutput>;
+      expect(body.success).toBe(true);
+      expect(body.result?.metrics.provider).toBe('GROQ');
+      expect(body.result?.metrics.modelId).toBe('groq-success');
+      expect(body.result?.metrics.attemptedProviders).toEqual(['GOOGLE', 'GROQ']);
+      expect(body.result?.metrics.attemptedModels).toEqual([
+        'GOOGLE:gemini-fail-1',
+        'GOOGLE:gemini-fail-2',
+        'GROQ:groq-success',
+      ]);
+    } finally {
+      await new Promise<void>((resolve) => srv.close(() => resolve()));
+    }
+  });
 });

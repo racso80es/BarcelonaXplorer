@@ -151,6 +151,7 @@ export class JevAdapter {
         totalTokens,
         fallbackTriggered: false,
         attemptedProviders: ['JEV'],
+        attemptedModels: [`JEV:${parsed.data.model || this.config.model}`],
         durationMs,
       };
 

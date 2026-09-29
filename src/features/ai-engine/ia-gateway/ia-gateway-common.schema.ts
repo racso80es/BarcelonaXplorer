@@ -9,6 +9,7 @@ export const IaGatewayMetricsSchema = z.object({
   totalTokens: z.number().int().nonnegative().nullable(),
   fallbackTriggered: z.boolean(),
   attemptedProviders: z.array(z.string()),
+  attemptedModels: z.array(z.string()).default([]),
   durationMs: z.number().nonnegative(),
 });
 

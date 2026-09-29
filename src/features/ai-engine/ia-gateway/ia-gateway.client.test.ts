@@ -265,6 +265,7 @@ describe('IaGatewayClient (PBI-GW-006)', () => {
       totalTokens: 82,
       fallbackTriggered: false,
       attemptedProviders: ['JEV'],
+      attemptedModels: [],
     });
 
     if (previousEnv !== undefined) {
@@ -418,6 +419,62 @@ describe('IaGatewayClient (PBI-GW-006)', () => {
 
     const result = await client.generateText('Prueba');
     expect(result).toBe('Texto válido');
+
+    if (previousEnv !== undefined) {
+      process.env.TELEMETRY_LLM_ENABLED = previousEnv;
+    }
+  });
+
+  it('PBI-GW-010 CA-3: debe incluir attemptedModels en el payload de telemetría', async () => {
+    const previousEnv = process.env.TELEMETRY_LLM_ENABLED;
+    process.env.TELEMETRY_LLM_ENABLED = 'true';
+
+    const mockTelemetryRepo = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+    };
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          text: 'Respuesta recuperada tras degradación intra-proveedor',
+          metrics: {
+            engineType: 'REASONING_LLM',
+            provider: 'GOOGLE',
+            modelId: 'gemini-3-flash-preview',
+            promptTokens: 120,
+            completionTokens: 30,
+            totalTokens: 150,
+            fallbackTriggered: false,
+            attemptedProviders: ['GOOGLE'],
+            attemptedModels: ['GOOGLE:gemini-3.5-flash', 'GOOGLE:gemini-3-flash-preview'],
+            durationMs: 250,
+          },
+        },
+      }),
+    });
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    await client.generateText('Consulta con degradación de modelos');
+
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0]?.[0];
+    expect(loggedEntry.payload).toMatchObject({
+      engineType: 'REASONING_LLM',
+      provider: 'GOOGLE',
+      modelId: 'gemini-3-flash-preview',
+      attemptedProviders: ['GOOGLE'],
+      attemptedModels: ['GOOGLE:gemini-3.5-flash', 'GOOGLE:gemini-3-flash-preview'],
+    });
 
     if (previousEnv !== undefined) {
       process.env.TELEMETRY_LLM_ENABLED = previousEnv;

@@ -5,6 +5,7 @@ import { GroqAdapter } from './endpoints/llm/groq.adapter.js';
 import { createLlmHandler } from './endpoints/llm/llm.handler.js';
 import { HealthSensor } from './health/health-sensor.js';
 import { resolveFallbackConfig } from './endpoints/llm/fallback.config.js';
+import { resolveProviderModels } from './endpoints/llm/models.config.js';
 import { createGatewayServer, sendJson } from './server.js';
 import { createSuccessEnvelope } from './shared/envelope.js';
 
@@ -37,12 +38,13 @@ const groqAdapter = new GroqAdapter({
 });
 
 const fallbackConfig = resolveFallbackConfig();
+const providerModels = resolveProviderModels();
 
 const server = createGatewayServer({
   port: PORT,
   gatewaySecret: IA_GATEWAY_SECRET,
   decisionHandler: createDecisionHandler(jevAdapter),
-  llmHandler: createLlmHandler(geminiAdapter, groqAdapter, healthSensor, fallbackConfig),
+  llmHandler: createLlmHandler(geminiAdapter, groqAdapter, healthSensor, fallbackConfig, providerModels),
   healthHandler: async (_req, res) => {
     sendJson(
       res,
