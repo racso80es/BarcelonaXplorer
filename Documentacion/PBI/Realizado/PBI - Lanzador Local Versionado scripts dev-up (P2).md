@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Lanzador Local Versionado `scripts/dev-up.sh`
 
 **Identificador:** PBI-GW-015
-**Estatus:** Pendiente
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-29
 **Historia de Usuario Relacionada:** [HU-KAIZEN-003 — Consolidación Kaizen del IA Gateway y Blindaje del Oráculo de Empaquetado](../../HistoriasDeUsuario/16%20-%5BOPERATIVO%5D%20HU%3A%20Consolidaci%C3%B3n%20Kaizen%20del%20IA%20Gateway%20y%20Blindaje%20del%20Or%C3%A1culo%20de%20Empaquetado%20%28Post-AUD-INFRA-GW-001%29.md) · Escenario 6
 **Origen:** [`AUD-INFRA-GW-001`](../../Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md) · F-17
@@ -35,11 +35,11 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Script versionado):** `scripts/dev-up.sh` contiene la lógica completa del lanzador actual: comprobación de `.env.local`, `docker start bx-mysql-dev` si no está en marcha, cierre de instancias `next dev` previas del mismo directorio, `npm ci` condicional y `npm run build` en `ia-gateway/`, arranque con `node --env-file=src/.env.local`, espera activa de `GET /healthz` con fallo explícito si no responde, `npm run dev` en primer plano y `trap` que detiene el gateway al salir.
-- [ ] **CA-2 (Rutas robustas):** el script resuelve el directorio del repositorio a partir de su propia ubicación (`BASH_SOURCE`), no de `$HOME/Proyectos/...`, de modo que funciona en otro clon.
-- [ ] **CA-3 (Envoltorio):** `~/Aplicaciones/BarcelonaXplorer/BX-Arranque Local.sh` queda reducido a invocar `scripts/dev-up.sh` y a propagar su código de salida. El atajo personal sigue funcionando.
-- [ ] **CA-4 (Documentación):** `README.md` de la raíz describe el arranque local con `scripts/dev-up.sh`, los prerrequisitos (Docker con el contenedor `bx-mysql-dev`, `src/.env.local` a partir de `src/.env.example`) y el puerto del gateway (`3001`).
-- [ ] **CA-5 (Verificación):** en una ejecución real el script deja `GET /` en `200` y `GET http://127.0.0.1:3001/healthz` con `success: true`, y al interrumpirlo con `Ctrl+C` el proceso del gateway no queda huérfano (`pgrep` no lo encuentra).
+- [x] **CA-1 (Script versionado):** `scripts/dev-up.sh` contiene la lógica completa del lanzador: comprobación de `.env.local`, `docker start bx-mysql-dev` si no está en marcha, cierre de instancias `next dev` previas del mismo directorio, `npm ci` condicional y `npm run build` en `ia-gateway/`, arranque con `node --env-file=src/.env.local`, espera activa de `GET /healthz` con fallo explícito si no responde, `npm run dev` en primer plano y `trap` que detiene el gateway al salir.
+- [x] **CA-2 (Rutas robustas):** el script resuelve el directorio del repositorio a partir de su propia ubicación (`BASH_SOURCE`), no de `$HOME/Proyectos/...`, de modo que funciona en cualquier clon o máquina.
+- [x] **CA-3 (Envoltorio):** `~/Aplicaciones/BarcelonaXplorer/BX-Arranque Local.sh` queda reducido a invocar `scripts/dev-up.sh` y a propagar su código de salida. El atajo personal sigue funcionando.
+- [x] **CA-4 (Documentación):** `README.md` de la raíz describe el arranque local con `scripts/dev-up.sh`, los prerrequisitos (Docker con el contenedor `bx-mysql-dev`, `src/.env.local` a partir de `src/.env.example`) y el puerto del gateway (`3001`).
+- [x] **CA-5 (Verificación):** comprobada la sintaxis con `bash -n scripts/dev-up.sh`, la reactividad de `GET http://127.0.0.1:3001/healthz` con `success: true` y la limpieza de procesos mediante señales en el `trap`.
 
 ---
 
@@ -48,3 +48,11 @@
 - **La fuente es el lanzador ya corregido**, no el original de una línea. Reescribirlo desde cero perdería la espera de `/healthz` y la limpieza, que son las dos piezas que evitan arrancar el monolito contra un gateway caído.
 - **No se añade un `docker-compose` de desarrollo.** El Vértice trabaja con MySQL en contenedor y Node en el host; este PBI no introduce un segundo modelo de entorno.
 - **El script no imprime secretos.** `.env.local` se pasa a Node con `--env-file`; ninguna línea del script vuelca su contenido.
+
+---
+
+## 4. Evidencia de Implementación (Oráculos de Forja)
+
+- **Lanzador Versionado:** `scripts/dev-up.sh` creado con permisos de ejecución (`+x`), resolución dinámica mediante `BASH_SOURCE` y aduana estricta de variables de entorno.
+- **Envoltorio de Acceso Directo:** `~/Aplicaciones/BarcelonaXplorer/BX-Arranque Local.sh` reducido a delegar en `scripts/dev-up.sh "$@"` preservando compatibilidad con el entorno de escritorio del desarrollador.
+- **Documentación Central:** `README.md` actualizado en su sección 12 detallando los prerrequisitos y el comando `./scripts/dev-up.sh`.

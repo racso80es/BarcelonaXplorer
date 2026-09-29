@@ -343,28 +343,36 @@ git clone https://github.com/racso80es/BarcelonaXplorer.git
 cd BarcelonaXplorer
 ```
 
-### 2. Instalar dependencias
+### 2. Configurar entorno y secretos locales
+Copia la plantilla de variables de entorno y ajusta las credenciales locales:
 ```bash
-cd src
-npm install
+cp src/.env.example src/.env.local
 ```
+> **Nota de Aduana (HU-16):** `src/.env.local` debe incluir obligatoriamente `IA_GATEWAY_URL=http://localhost:3001` y un secreto criptográfico `IA_GATEWAY_SECRET` (mínimo 32 caracteres hexadecimales).
 
-### 3. Configurar entorno y base de datos
-Asegúrate de tener una instancia local de MySQL en ejecución o levántala con Docker Compose:
-```bash
-# Desde el directorio src/
-docker compose up -d db
-npx prisma generate
-npx prisma db push
-```
+### 3. Prerrequisitos de Infraestructura Local
+- **Motor Docker:** Debe disponerse de un contenedor MySQL de desarrollo denominado `bx-mysql-dev`. Si no está iniciado, el lanzador lo activará automáticamente.
+- **Node.js:** Versión >= 20.
 
-### 4. Iniciar el servidor de desarrollo
+### 4. Arranque Unificado con `scripts/dev-up.sh` (Recomendado)
+BarcelonaXplorer desacopla el monolito web del microservicio IA Gateway. El script versionado [`scripts/dev-up.sh`](file:///home/racso/Proyectos/BarcelonaXplorer/scripts/dev-up.sh) orquesta el ciclo de vida completo en el host:
 ```bash
-npm run dev
+./scripts/dev-up.sh
 ```
+El lanzador ejecuta de forma determinista:
+1. Comprobación y aduana de variables requeridas en `src/.env.local`.
+2. Aseguramiento del contenedor `bx-mysql-dev`.
+3. Cierre limpio de procesos zombi de `next dev` en el mismo proyecto.
+4. Compilación del microservicio `ia-gateway/` y arranque en segundo plano en el puerto `3001` (`http://127.0.0.1:3001`).
+5. Espera activa del endpoint de salud `GET http://127.0.0.1:3001/healthz`.
+6. Arranque del monolito Next.js (`npm run dev`) en primer plano en `http://localhost:3000`.
+7. Captura de señales (`trap EXIT INT TERM`) para detener el microservicio al interrumpir la sesión (`Ctrl+C`).
+
 La aplicación estará accesible en:
 - **Página Principal / Landing:** [http://localhost:3000](http://localhost:3000)
 - **Orquestador Táctico:** [http://localhost:3000/orchestrator](http://localhost:3000/orchestrator)
+- **Salud IA Gateway (End-to-End):** [http://localhost:3000/api/ai/health](http://localhost:3000/api/ai/health)
+- **Salud IA Gateway (Microservicio):** [http://localhost:3001/healthz](http://localhost:3001/healthz)
 - **Panel Administrativo:** [http://localhost:3000/Admin](http://localhost:3000/Admin) *(solicitará credenciales HTTP Basic Auth)*
 - **Telemetría del Sistema:** [http://localhost:3000/Admin/System](http://localhost:3000/Admin/System)
 - **Observabilidad Cognitiva (LanceDB):** [http://localhost:3000/Admin/Cognitive](http://localhost:3000/Admin/Cognitive)
@@ -372,13 +380,15 @@ La aplicación estará accesible en:
 
 ### 5. Verificación de Tipado y Pruebas
 ```bash
-# Comprobación de tipos estática
-npx tsc --noEmit
+# Verificación estática con TypeScript
+cd src && npx tsc --noEmit
+cd ../ia-gateway && npx tsc --noEmit
 
-# Ejecución de la suite completa de tests Vitest
-npm test
+# Ejecución de suites completas con Vitest
+cd ../src && npm test
+cd ../ia-gateway && npm test
 ```
-*Vitest ejecutará los **323 tests** unitarios y de integración a lo largo de **65 suites** con cobertura en todas las verticales (`triage`, `telemetry`, `auth`, `cognitive-memory`, `ai-engine`, `planner`, `telegram`), middleware perimetral y componentes UI.*
+*Vitest ejecutará los tests unitarios y de integración (monolito `src/` y microservicio `ia-gateway/`) con cobertura total en todas las verticales, oráculos de empaquetado y adaptadores.*
 
 ---
 
