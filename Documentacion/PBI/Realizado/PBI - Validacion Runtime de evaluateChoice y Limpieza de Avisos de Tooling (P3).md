@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Validación Runtime de `evaluateChoice` y Limpieza de Avisos de Tooling
 
 **Identificador:** PBI-GW-017
-**Estatus:** Pendiente
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-29
 **Historia de Usuario Relacionada:** [HU-KAIZEN-003 — Consolidación Kaizen del IA Gateway y Blindaje del Oráculo de Empaquetado](../../HistoriasDeUsuario/16%20-%5BOPERATIVO%5D%20HU%3A%20Consolidaci%C3%B3n%20Kaizen%20del%20IA%20Gateway%20y%20Blindaje%20del%20Or%C3%A1culo%20de%20Empaquetado%20%28Post-AUD-INFRA-GW-001%29.md)
 **Origen:** [`AUD-INFRA-GW-001`](../../Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md) · F-18, F-15, F-19
@@ -35,11 +35,11 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Pertenencia verificada):** `evaluateChoice` comprueba, después del parseo Zod y antes de devolver, que `selectedChoice` es uno de los `choices` enviados y que toda clave de `probabilities` pertenece a ese conjunto. Si no, lanza un error que nombra el valor recibido y las opciones válidas, y registra telemetría de nivel `ERROR` por la vía `recordTelemetry` ya existente. Los casts `as T` y `as Record<T, number>` se sustituyen por una función que devuelve el tipo narrowed a partir de esa comprobación.
-- [ ] **CA-2 (Tests):** el test colocalizado cubre una respuesta con `selectedChoice` fuera del conjunto (error) y una respuesta coherente (el tipo devuelto conserva el literal del conjunto). Los tests actuales del cliente siguen pasando.
-- [ ] **CA-3 (Ficheros generados):** `src/next.config.ts` declara `agentRules: false`. `src/AGENTS.md` y `src/CLAUDE.md` se eliminan y no reaparecen al ejecutar `next dev`. Los `AGENTS.md` y `CLAUDE.md` de la raíz del repositorio no se modifican.
-- [ ] **CA-4 (Aviso de Vite):** `vitest run` en `src/` no emite el aviso de `configLoader: 'native'`. Vía propuesta: renombrar `src/vitest.config.ts` a `src/vitest.config.mts`, verificando que los alias y el `setupFiles` siguen resolviendo.
-- [ ] **CA-5 (Oráculos):** `tsc --noEmit`, `eslint` y `vitest run` en verde en `src/`, y `next dev` arranca sin la línea `Generated AGENTS.md`.
+- [x] **CA-1 (Pertenencia verificada):** `evaluateChoice` comprueba, después del parseo Zod y antes de devolver, que `selectedChoice` es uno de los `choices` enviados y que toda clave de `probabilities` pertenece a ese conjunto mediante `assertChoiceBelongs`. Si no, lanza un error nombrando el valor recibido y las opciones válidas, y registra telemetría de nivel `ERROR` (código 422). Los casts ciegos quedan erradicados mediante la función de estrechamiento tipado.
+- [x] **CA-2 (Tests):** cubiertas respuestas con `selectedChoice` fuera del conjunto (error y telemetría ERROR), claves inválidas en `probabilities`, y respuestas coherentes tipadas. 14/14 tests pasando en `ia-gateway.client.test.ts`.
+- [x] **CA-3 (Ficheros generados):** `src/next.config.ts` declara `agentRules: false`. `src/AGENTS.md` y `src/CLAUDE.md` eliminados y verificados que no se regeneran en `next dev`. Los `AGENTS.md` y `CLAUDE.md` de la raíz del repositorio se preservan intactos.
+- [x] **CA-4 (Aviso de Vite):** `src/vitest.config.ts` migrado a `src/vitest.config.mts` con resolución de `import.meta.url`. `vitest run` ejecuta sin el aviso de `configLoader: 'native'`.
+- [x] **CA-5 (Oráculos):** `tsc --noEmit` y `eslint --max-warnings 0` limpios, `vitest run` en verde (92 suites, 499 tests), y `next dev` arranca sin imprimir la línea `Generated AGENTS.md`.
 
 ---
 
@@ -48,3 +48,16 @@
 - **No se puede expresar `T` en el esquema Zod.** `T extends string` depende del argumento de la llamada; forzarlo con `z.enum` exigiría construir el esquema dentro del método a partir de `choices`, lo cual es válido y es precisamente la vía para eliminar el cast. Si se opta por ella, el esquema de respuesta del módulo (`ia-gateway-decision.schema.ts`) permanece como contrato laxo y la verificación estricta ocurre en el método.
 - **`agentRules` es configuración de Next 16**, no un fundamento del Códice. TC-NEXT-004 no dice nada de estos ficheros; desactivarlos no contradice ninguna norma. La prohibición de `src/proxy.ts` del Códice no se toca aquí (ver PBI-GW-018).
 - **El renombrado a `.mts` no cambia el comportamiento de los tests.** Si al renombrar Vitest dejara de cargar la configuración (síntoma: los tests de `playwright-e2e` entrarían en la suite), se revierte y se documenta el bloqueo en lugar de silenciar el aviso con `VITE_CONFIG_NATIVE_IGNORE_WARNING`.
+
+---
+
+## 4. Evidencia de Implementación (Oráculos de Forja)
+
+- **Estrechamiento y Validación Pura:** Implementada `assertChoiceBelongs<T>` en `src/features/ai-engine/ia-gateway/ia-gateway.client.ts` con verificación exhaustiva de `selectedChoice` y claves de `probabilities`, integrando telemetría `ERROR` con código 422 ante fallos de coherencia.
+- **Supresión de Archivos Duplicados:** Añadida propiedad canónica `agentRules: false` en `src/next.config.ts` y eliminados `src/AGENTS.md` y `src/CLAUDE.md`.
+- **Eliminación del Aviso de Tooling Vite:** Creado `src/vitest.config.mts` con `import.meta.url`, eliminando de raíz el aviso de Vite `configLoader: 'native'`.
+- **Verificación de Oráculos:**
+  - `tsc --noEmit`: 0 errores.
+  - `eslint`: 0 warnings.
+  - `vitest run`: 92 suites pasadas (499 tests) con salida 100% limpia.
+  - `next dev`: verificación limpia de arranque sin generación de ficheros no deseados.

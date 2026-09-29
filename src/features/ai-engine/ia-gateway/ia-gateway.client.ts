@@ -22,6 +22,38 @@ import {
 } from './ia-gateway-decision.schema';
 import { IaGatewayLlmEnvelopeSchema } from './ia-gateway-llm.schema';
 
+/**
+ * Validador puro de runtime y estrechamiento de tipos (Narrowing) para opciones de elección.
+ * Axioma II (Fronteras Deterministas): Erradica aserciones ciegas (as T) verificando
+ * que el valor devuelto y las claves de probabilidad pertenezcan al conjunto esperado.
+ */
+function assertChoiceBelongs<T extends string>(
+  selectedChoice: string,
+  probabilities: Record<string, number>,
+  validChoices: readonly T[]
+): { selectedChoice: T; probabilities: Record<T, number> } {
+  const choiceSet = new Set<string>(validChoices);
+
+  if (!choiceSet.has(selectedChoice)) {
+    throw new Error(
+      `IA Gateway retornó selectedChoice '${selectedChoice}' fuera de las opciones válidas [${validChoices.join(', ')}]`
+    );
+  }
+
+  for (const key of Object.keys(probabilities)) {
+    if (!choiceSet.has(key)) {
+      throw new Error(
+        `IA Gateway retornó probabilities con clave inválida '${key}' fuera de las opciones válidas [${validChoices.join(', ')}]`
+      );
+    }
+  }
+
+  return {
+    selectedChoice: selectedChoice as T,
+    probabilities: probabilities as Record<T, number>,
+  };
+}
+
 export interface IaGatewayClientConfig {
   baseUrl?: string;
   gatewaySecret?: string;
@@ -230,12 +262,25 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
         throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
       }
 
+      let narrowed: { selectedChoice: T; probabilities: Record<T, number> };
+      try {
+        narrowed = assertChoiceBelongs(
+          envelope.result.selectedChoice,
+          envelope.result.probabilities,
+          choices
+        );
+      } catch (validationErr: unknown) {
+        const errMsg = validationErr instanceof Error ? validationErr.message : String(validationErr);
+        this.recordTelemetry(envelope.result.metrics, 422, errMsg);
+        throw validationErr;
+      }
+
       this.recordTelemetry(envelope.result.metrics, response.status);
 
       return {
-        selectedChoice: envelope.result.selectedChoice as T,
+        selectedChoice: narrowed.selectedChoice,
         confidence: envelope.result.confidence,
-        probabilities: envelope.result.probabilities as Record<T, number>,
+        probabilities: narrowed.probabilities,
       };
     } catch (err: unknown) {
       clearTimeout(timeoutId);

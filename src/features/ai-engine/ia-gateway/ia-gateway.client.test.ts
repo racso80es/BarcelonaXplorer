@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { IaGatewayClient } from './ia-gateway.client';
+import type { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('IaGatewayClient (PBI-GW-006)', () => {
   const secret = 'test-secret-gateway-123';
@@ -79,6 +80,109 @@ describe('IaGatewayClient (PBI-GW-006)', () => {
     expect(result.selectedChoice).toBe('gothic');
     expect(result.confidence).toBe(0.95);
     expect(result.probabilities['gothic']).toBe(0.95);
+  });
+
+  it('CA-1 (PBI-GW-017): lanza error y registra telemetría ERROR si selectedChoice está fuera de las opciones válidas', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          primitive: 'choice',
+          selectedChoice: 'alien_neighborhood',
+          confidence: 0.99,
+          probabilities: { alien_neighborhood: 0.99 },
+          metrics: {
+            engineType: 'TYPED_DECISION',
+            provider: 'JEV',
+            modelId: 'jev-latest',
+            promptTokens: 100,
+            completionTokens: 10,
+            totalTokens: 110,
+            fallbackTriggered: false,
+            attemptedProviders: ['JEV'],
+            durationMs: 120,
+          },
+        },
+      }),
+    });
+
+    const mockTelemetryRepo: TelemetryRepositoryPort = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue(0),
+    };
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    await expect(
+      client.evaluateChoice('Barri Gòtic', 'Identifica el barrio', ['gothic', 'modern'] as const)
+    ).rejects.toThrow(/fuera de las opciones válidas/);
+
+    expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'ERROR',
+        statusCode: 422,
+        message: expect.stringContaining('alien_neighborhood'),
+      })
+    );
+  });
+
+  it('CA-1 (PBI-GW-017): lanza error y registra telemetría ERROR si una clave de probabilities es inválida', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        exitCode: 0,
+        result: {
+          primitive: 'choice',
+          selectedChoice: 'gothic',
+          confidence: 0.9,
+          probabilities: { gothic: 0.9, invalid_key: 0.1 },
+          metrics: {
+            engineType: 'TYPED_DECISION',
+            provider: 'JEV',
+            modelId: 'jev-latest',
+            promptTokens: 100,
+            completionTokens: 10,
+            totalTokens: 110,
+            fallbackTriggered: false,
+            attemptedProviders: ['JEV'],
+            durationMs: 120,
+          },
+        },
+      }),
+    });
+
+    const mockTelemetryRepo: TelemetryRepositoryPort = {
+      log: vi.fn().mockResolvedValue(undefined),
+      getRecentLogs: vi.fn().mockResolvedValue([]),
+      prune: vi.fn().mockResolvedValue(0),
+    };
+
+    const client = new IaGatewayClient(
+      { baseUrl, gatewaySecret: secret },
+      mockTelemetryRepo,
+      mockFetch as unknown as typeof fetch
+    );
+
+    await expect(
+      client.evaluateChoice('Barri Gòtic', 'Identifica el barrio', ['gothic', 'modern'] as const)
+    ).rejects.toThrow(/clave inválida 'invalid_key'/);
+
+    expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        level: 'ERROR',
+        statusCode: 422,
+      })
+    );
   });
 
   it('CA-1: debe reportar evaluateHealth correctamente', async () => {
