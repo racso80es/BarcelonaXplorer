@@ -82,3 +82,20 @@ Referencias de feuentes de datos:
 Api BArcelona
 https://opendata-ajuntament.barcelona.cat/es/desenvolupadors#Introducci%C3%B3
 Extraer La información posible. Tener en cuenta el límite de peticiones por minuto.
+
+1. APIs Gubernamentales e Institucionales (Gratuitas)
+Además del Ayuntamiento, otras administraciones publican datos abiertos sobre Barcelona con APIs potentes:
+
+Dades Obertes de la Generalitat de Catalunya (API Socrata / SODA):
+
+Utilizan la tecnología Socrata, que expone una API REST nativa mucho más flexible que CKAN.
+
+Agenda Cultural de Catalunya: Contiene todos los eventos culturales, conciertos y exposiciones. Puedes filtrar los resultados directamente en la llamada añadiendo ?municipi=Barcelona.
+
+Directorio de Equipamientos: Para extraer museos, bibliotecas, teatros y centros cívicos.
+
+Formato: JSON, CSV. No requiere token para consultas básicas.
+
+Diputación de Barcelona (API Diba):
+
+Ofrece servicios web para extraer la agenda de actividades de la red de Bibliotecas, los parques naturales (como Collserola) y eventos municipales en el área metropolitana.
