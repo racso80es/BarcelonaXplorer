@@ -34,6 +34,7 @@ Este proceso ejecuta la recolección táctica de las fuentes en estado `ACTIVE`.
     *   Si la extracción falla (cambio de DOM, error HTTP 500), se incrementa `failed_attempts` en MySQL.
     *   Si `failed_attempts >= 3`, el sistema cambia automáticamente el estado de la fuente a `DEGRADED`. Se desactiva el consumo para proteger la economía termodinámica[cite: 26].
 3.  **Vectorización:** La entropía validada se vectoriza a través de Gemini Embedding API y se persiste como JSON desnormalizado en la tabla `context_memory` de LanceDB[cite: 1, 2].
+Observaciones racso : AÑADIR COMO PUNTO ANTERIOR A ESTE ANALISI DE FUENTES: Punto de máximo valor y complejidad. Se han idnicado una serie de fuentes en la HU, pero será necesario una buena validación de proceder para extraer datos. Además, realizar estudio para valorar el añadir más fuentes viables.
 
 ---
 
@@ -99,3 +100,30 @@ Formato: JSON, CSV. No requiere token para consultas básicas.
 Diputación de Barcelona (API Diba):
 
 Ofrece servicios web para extraer la agenda de actividades de la red de Bibliotecas, los parques naturales (como Collserola) y eventos municipales en el área metropolitana.
+2. APIs de Agregadores y Plataformas (Freemium)
+Estas plataformas comerciales permiten explotar sus datos de forma gratuita bajo ciertos límites (Rate Limits) mediante el registro de una aplicación:
+
+Ticketmaster Discovery API: Excelente para eventos masivos en Barcelona (conciertos en el Palau Sant Jordi, Estadi Olímpic, festivales, deportes). Permite buscar por ciudad, recinto y fechas.
+
+Eventbrite API: Muy útil para eventos locales, talleres, networking, cursos y actividades de nicho (yoga, emprendimiento, tecnología) organizados en Barcelona.
+
+Meetup GraphQL API: Centraliza la información de grupos locales y sus eventos (tech, senderismo, intercambio de idiomas). Su API permite extraer próximos eventos basados en coordenadas y radio de búsqueda.
+
+3. Alternativas de Extracción (Sin API tradicional)
+Si un portal no ofrece una API REST pública, puedes extraer la información de forma estructurada sin necesidad de parsear código HTML caótico:
+
+Extracción de Metadatos JSON-LD (Schema.org):
+
+Las principales webs de ocio (como Time Out Barcelona, Teatre Barcelona o Barcelona Turisme) utilizan marcado semántico para el SEO.
+
+En lugar de hacer web scraping del texto visual, puedes descargar el HTML y extraer directamente el bloque <script type="application/ld+json">. Allí encontrarás objetos limpios de tipo Event o LocalBusiness con título, fechas, precio, ubicación y descripción estructurados en formato JSON.
+
+Archivos iCal (.ics) y Feeds RSS:
+
+Muchos Centros Cívicos de Barcelona y la red de Bibliotecas exponen sus calendarios de actividades en formato estándar .ics (iCalendar) para que los usuarios se suscriban. Estos archivos son texto plano fácil de procesar programáticamente.
+
+Medios locales como Betevé o revistas de barrio ofrecen feeds RSS de sus secciones de "Agenda" o "Cultura".
+
+Wikidata (SPARQL Endpoint):
+
+A través de query.wikidata.org puedes lanzar consultas SPARQL para extraer un directorio masivo y geolocalizado de puntos de interés de Barcelona (monumentos, esculturas públicas, edificios históricos, museos) con coordenadas exactas, enlaces a imágenes de Wikimedia y descripciones, sin depender de los catálogos del Ayuntamiento.
