@@ -76,3 +76,9 @@ El panel se divide en dos vistas tabulares aplicando la topología estricta de `
     *   **Dado** el panel `/Admin/Context` en la pestaña de Gobernanza de Fuentes.
     *   **Cuando** el Vértice Biológico inspecciona una fuente `PENDING_APPROVAL` descubierta por la Sonda Argos y ejecuta la acción "Aprobar".
     *   **Entonces** el estado muta a `ACTIVE` y la siguiente ejecución del Cron de Ingesta comenzará a asimilar su entropía.
+
+
+Referencias de feuentes de datos:
+Api BArcelona
+https://opendata-ajuntament.barcelona.cat/es/desenvolupadors#Introducci%C3%B3
+Extraer La información posible. Tener en cuenta el límite de peticiones por minuto.
