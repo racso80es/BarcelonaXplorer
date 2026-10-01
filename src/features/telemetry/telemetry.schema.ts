@@ -85,10 +85,38 @@ export const ProviderAffiliateFetchEventSchema = z.object({
 
 export type ProviderAffiliateFetchEvent = z.infer<typeof ProviderAffiliateFetchEventSchema>;
 
+export const CognitiveMemoryIndexingOutcomeSchema = z.enum([
+  'INDEXED',
+  'DISCARDED_FALLBACK',
+  'SKIPPED_UNCHANGED',
+  'SKIPPED_POLICY',
+  'SKIPPED_EMPTY',
+  'FAILED',
+]);
+
+export type CognitiveMemoryIndexingOutcome = z.infer<
+  typeof CognitiveMemoryIndexingOutcomeSchema
+>;
+
+export const CognitiveMemoryIndexingEventSchema = z.object({
+  eventType: z.literal('COGNITIVE_MEMORY_INDEXING'),
+  sessionId: z.string(),
+  matrixId: z.string(),
+  outcome: CognitiveMemoryIndexingOutcomeSchema,
+  error: z.string().optional(),
+  durationMs: z.number().int().nonnegative().optional(),
+  statusCode: z.number().int().optional(),
+});
+
+export type CognitiveMemoryIndexingEvent = z.infer<
+  typeof CognitiveMemoryIndexingEventSchema
+>;
+
 export const HybridOrchestrationEventSchema = z.discriminatedUnion('eventType', [
   TriageRoutedEventSchema,
   DensityThresholdCheckEventSchema,
   ProviderAffiliateFetchEventSchema,
+  CognitiveMemoryIndexingEventSchema,
 ]);
 
 export type HybridOrchestrationEvent = z.infer<typeof HybridOrchestrationEventSchema>;

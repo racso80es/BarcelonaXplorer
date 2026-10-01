@@ -30,9 +30,10 @@ import {
   ISemanticCachePort,
   CachedSemanticTriageResult,
   TRIAGE_SEMANTIC_CACHE_POLICY,
+  DenseSemanticMatrix,
+  IndexSessionMemoryService,
 } from '@/features/cognitive-memory';
 import { IEmbeddingPort } from '@/features/ai-engine';
-import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 import { SupportedLanguage, SupportedLanguageVo } from '@/features/i18n';
 import {
   buildRouteLanguageDirective,
@@ -60,6 +61,8 @@ import {
  *   para resolver consultas recurrentes en <50ms con 0 coste de tokens.
  */
 export class TriageInputUseCase implements ITriageInputUseCasePort {
+  private readonly sessionMemoryIndexer: IndexSessionMemoryService;
+
   constructor(
     private readonly decisionEngine: ITypedDecisionEngine,
     private readonly conversationalSlm: IConversationalSLMPort,
@@ -72,7 +75,13 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     private readonly affiliateEnricher: IAffiliateEnricherService = new AffiliateEnricherService(),
     private readonly itineraryRepo?: ItineraryPersistencePort,
     private readonly semanticCache?: ISemanticCachePort,
-  ) {}
+  ) {
+    this.sessionMemoryIndexer = new IndexSessionMemoryService(
+      this.cognitiveMemory,
+      this.embeddingPort,
+      this.telemetryRepo,
+    );
+  }
 
   async execute(rawInput: TriageInputDto): Promise<TriageOutcome> {
     const startTime = Date.now();
@@ -443,6 +452,19 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         mergedPayload,
       );
 
+      const partialMatrix = DenseSemanticMatrix.create({
+        sessionId: input.sessionId,
+        matrixId,
+        payload: mergedPayload,
+        score: density.score,
+        survivalThreshold: density.survivalThreshold,
+      });
+      await this.sessionMemoryIndexer.index(
+        partialMatrix,
+        'INCOMPLETE_REPROMPT',
+        priorPayload,
+      );
+
       const missingVar = density.highestMissingVariable ?? 'time_window';
       const repromptMessage =
         await this.conversationalSlm.generateRepromptMessage(
@@ -477,27 +499,6 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       survivalThreshold: density.survivalThreshold,
     });
 
-    if (this.cognitiveMemory && this.embeddingPort) {
-      try {
-        const memoryEmbedding = await this.embeddingPort.generateEmbedding(
-          denseMatrix.toDensePromptString(),
-        );
-        if (memoryEmbedding.source !== 'fallback') {
-          await this.cognitiveMemory.persistMemory(denseMatrix, memoryEmbedding.vector);
-        }
-      } catch (err) {
-        // Fail-soft: la falla de persistencia vectorial no debe abortar la generación del itinerario
-        this.emitTelemetry({
-          level: 'WARN',
-          context: 'SECURITY_PERIMETER',
-          message: `[Triage Fail-Soft] No se pudo persistir memoria cognitiva en LanceDB: ${err instanceof Error ? err.message : String(err)}`,
-          statusCode: 500,
-          durationMs: Date.now() - startTime,
-          payload: { sessionId: input.sessionId, matrixId },
-        });
-      }
-    }
-
     // Laudo 1: Despacho interno unificado hacia el orquestador pesado (Gemini) con inyección densa RAG
     let forgedRoute: TacticalRoute | string | undefined = undefined;
     if (this.routeUseCase) {
@@ -516,6 +517,12 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     }
 
     if (typeof forgedRoute === 'string') {
+      await this.sessionMemoryIndexer.index(
+        denseMatrix,
+        'DISPATCH_CLAUDICATION',
+        priorPayload,
+      );
+
       const providerCodeMatch = forgedRoute.match(/\b(503|429)\b/);
       const providerStatusCode = providerCodeMatch
         ? Number.parseInt(providerCodeMatch[1], 10)
@@ -616,6 +623,13 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         });
       }
     }
+
+    // Persistencia explícita de la memoria consolidada en LanceDB antes de limpiar el borrador
+    await this.sessionMemoryIndexer.index(
+      denseMatrix,
+      'DISPATCH_READY',
+      priorPayload,
+    );
 
     // Laudo 2: Limpieza del borrador efímero en la sesión (la memoria consolidada permanece en LanceDB)
     await this.matrixRepo.clearMatrixPayload(input.sessionId, matrixId);

@@ -271,6 +271,46 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(mockRouteUseCase.execute).toHaveBeenCalled();
     });
 
+    it('PBI-MEM-001: debe persistir memoria cognitiva en un turno parcial (INCOMPLETE_REPROMPT) con variables duraderas', async () => {
+      const persistMemory = vi.fn().mockResolvedValue(undefined);
+      const mockCognitiveMemory = {
+        persistMemory,
+        getLatestSessionMemory: vi.fn().mockResolvedValue(null),
+        searchSimilarMemories: vi.fn().mockResolvedValue([]),
+        getRecentMemories: vi.fn().mockResolvedValue([]),
+        clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.01),
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const memoryUseCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        undefined,
+        undefined,
+        mockCognitiveMemory,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+      );
+
+      const result = await memoryUseCase.execute({
+        sessionId: 'sess-partial-memory',
+        prompt: 'Quiero comer tapas con 2 amigos',
+      });
+
+      expect(result.status).toBe('INCOMPLETE_REPROMPT');
+      expect(persistMemory).toHaveBeenCalledTimes(1);
+    });
+
     it('HU-10: debe propagar thermalState "saturated" al enriquecedor y persistir en MySQL al saturar al 100%', async () => {
       const result = await useCase.execute({
         sessionId: 'sess-logistics-saturated',

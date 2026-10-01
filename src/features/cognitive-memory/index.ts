@@ -45,3 +45,10 @@ export {
   CachedSemanticTriageResultSchema,
   TRIAGE_SEMANTIC_CACHE_POLICY,
 } from './cached-triage.schema';
+
+export {
+  IndexSessionMemoryService,
+  COGNITIVE_MEMORY_INDEXING_POLICY,
+  type MemoryIndexingOutcome,
+  type MemoryIndexingResult,
+} from './index-session-memory.service';
