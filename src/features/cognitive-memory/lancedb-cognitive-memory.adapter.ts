@@ -88,18 +88,26 @@ export class LanceDbCognitiveMemoryAdapter implements ICognitiveMemoryPort {
 
   async searchSimilarMemories(
     queryVector: number[],
-    options?: { sessionId?: string; limit?: number },
+    options: { sessionId: string; limit?: number; minSimilarity?: number },
   ): Promise<Array<{ matrix: DenseSemanticMatrix; score: number }>> {
-    const limit = Math.min(Math.max(1, options?.limit ?? 5), 20);
+    const limit = Math.min(Math.max(1, options.limit ?? 5), 20);
+    const minSimilarity = options.minSimilarity ?? 0.75;
+    const escapedSessionId = options.sessionId.trim().replace(/'/g, "''");
+    const where = `id LIKE '${escapedSessionId}:%'`;
+
     const searchResults = await this.vectorStore.search(
       LanceDbCognitiveMemoryAdapter.TABLE_NAME,
       queryVector,
-      limit,
+      { limit, where },
     );
 
     const matches: Array<{ matrix: DenseSemanticMatrix; score: number }> = [];
 
     for (const res of searchResults) {
+      if (res.score < minSimilarity) {
+        continue;
+      }
+
       const parsed = CognitiveMemoryMetadataSchema.safeParse(res.document.metadata);
       if (!parsed.success) {
         console.warn(
@@ -109,7 +117,7 @@ export class LanceDbCognitiveMemoryAdapter implements ICognitiveMemoryPort {
         continue;
       }
 
-      if (options?.sessionId && parsed.data.sessionId !== options.sessionId) {
+      if (parsed.data.sessionId !== options.sessionId) {
         continue;
       }
 

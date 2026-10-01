@@ -5,6 +5,7 @@ import type {
   VectorSearchResult,
   VectorStorePingResult,
   VectorDeleteFilter,
+  VectorSearchOptions,
 } from './vector-store.port';
 import { getLanceDbConnection, resolveLanceDbUri } from './lancedb-client';
 import * as lancedb from '@lancedb/lancedb';
@@ -63,21 +64,35 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
   async search(
     tableName: string,
     queryVector: number[],
-    limit: number = 5
+    limitOrOptions: number | VectorSearchOptions = 5,
   ): Promise<VectorSearchResult[]> {
     const exists = await this.tableExists(tableName);
     if (!exists) {
       return [];
     }
 
+    const limit =
+      typeof limitOrOptions === 'number'
+        ? limitOrOptions
+        : (limitOrOptions.limit ?? 5);
+
+    const whereClause =
+      typeof limitOrOptions === 'object' && limitOrOptions !== null
+        ? limitOrOptions.where
+        : undefined;
+
     const db = await this.getDb();
     const table = await db.openTable(tableName);
 
-    const rows = await table
+    let query = table
       .vectorSearch(queryVector)
-      .distanceType('cosine')
-      .limit(limit)
-      .toArray();
+      .distanceType('cosine');
+
+    if (whereClause && whereClause.trim().length > 0) {
+      query = query.where(whereClause);
+    }
+
+    const rows = await query.limit(limit).toArray();
 
     return rows.map((row) => {
       let parsedMetadata: Record<string, unknown> = {};

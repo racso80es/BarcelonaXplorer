@@ -9,9 +9,11 @@ export {
   type DenseSemanticMatrixProps,
 } from './dense-semantic-matrix.vo';
 
-export type {
-  ICognitiveMemoryPort,
-  CognitiveMemoryItem,
+export {
+  COGNITIVE_MEMORY_KNN_MIN_SIMILARITY,
+  type ICognitiveMemoryPort,
+  type CognitiveMemoryItem,
+  type SearchSimilarMemoriesOptions,
 } from './cognitive-memory.port';
 
 export type {
@@ -25,6 +27,7 @@ export type {
   VectorSearchResult,
   VectorStorePingResult,
   VectorDeleteFilter,
+  VectorSearchOptions,
 } from './vector-store.port';
 
 export type {

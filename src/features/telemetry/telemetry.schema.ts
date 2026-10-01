@@ -112,11 +112,27 @@ export type CognitiveMemoryIndexingEvent = z.infer<
   typeof CognitiveMemoryIndexingEventSchema
 >;
 
+export const CognitiveMemoryRecallEventSchema = z.object({
+  eventType: z.literal('COGNITIVE_MEMORY_RECALL'),
+  sessionId: z.string(),
+  matrixId: z.string(),
+  memoryHit: z.boolean(),
+  strategy: z.enum(['exact', 'knn', 'none']),
+  similarity: z.number().optional(),
+  durationMs: z.number().int().nonnegative().optional(),
+  statusCode: z.number().int().optional(),
+});
+
+export type CognitiveMemoryRecallEvent = z.infer<
+  typeof CognitiveMemoryRecallEventSchema
+>;
+
 export const HybridOrchestrationEventSchema = z.discriminatedUnion('eventType', [
   TriageRoutedEventSchema,
   DensityThresholdCheckEventSchema,
   ProviderAffiliateFetchEventSchema,
   CognitiveMemoryIndexingEventSchema,
+  CognitiveMemoryRecallEventSchema,
 ]);
 
 export type HybridOrchestrationEvent = z.infer<typeof HybridOrchestrationEventSchema>;

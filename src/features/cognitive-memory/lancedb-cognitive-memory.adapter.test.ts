@@ -79,11 +79,47 @@ describe('LanceDbCognitiveMemoryAdapter (LanceDB RAG S+ Grade)', () => {
     await adapter.persistMemory(matrix2, vector2);
 
     const queryVector = Array.from({ length: 768 }, (_, i) => (i === 1 ? 1 : 0));
-    const matches = await adapter.searchSimilarMemories(queryVector, { limit: 2 });
+    const matches = await adapter.searchSimilarMemories(queryVector, { sessionId: 'sess-user-2', limit: 2 });
     expect(matches.length).toBeGreaterThanOrEqual(1);
     expect(matches[0].matrix.propsSnapshot.sessionId).toBe('sess-user-2');
     expect(matches[0].score).toBeGreaterThan(0.5);
   });
+
+  it('CA-2: debe aislar estrictamente las memorias por sessionId sin fuga cross-sesión', async () => {
+    const matrixA = DenseSemanticMatrix.create({
+      sessionId: 'sess-alpha',
+      matrixId: 'gastronomy',
+      payload: { vibe: 'tapas', group_size: 2 },
+      score: 80,
+    });
+    const matrixB = DenseSemanticMatrix.create({
+      sessionId: 'sess-beta',
+      matrixId: 'nightlife',
+      payload: { vibe: 'cocktails', group_size: 2 },
+      score: 80,
+    });
+    const vector = Array.from({ length: 768 }, () => 0.05);
+
+    await adapter.persistMemory(matrixA, vector);
+    await adapter.persistMemory(matrixB, vector);
+
+    const resultsA = await adapter.searchSimilarMemories(vector, {
+      sessionId: 'sess-alpha',
+      limit: 10,
+    });
+    expect(resultsA.length).toBe(1);
+    expect(resultsA[0].matrix.propsSnapshot.sessionId).toBe('sess-alpha');
+    expect(resultsA[0].matrix.propsSnapshot.matrixId).toBe('gastronomy');
+
+    const resultsB = await adapter.searchSimilarMemories(vector, {
+      sessionId: 'sess-beta',
+      limit: 10,
+    });
+    expect(resultsB.length).toBe(1);
+    expect(resultsB[0].matrix.propsSnapshot.sessionId).toBe('sess-beta');
+    expect(resultsB[0].matrix.propsSnapshot.matrixId).toBe('nightlife');
+  });
+
 
   it('debe respetar el límite defensivo acotado (limit: 100) en getRecentMemories', async () => {
     const recent = await adapter.getRecentMemories({ limit: 50 });

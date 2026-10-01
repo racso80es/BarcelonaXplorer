@@ -23,7 +23,8 @@ import {
 } from '@/features/planner';
 import { TriageOutcome } from './triage-outcome.vo';
 import { GeographicScope } from '@/features/planner';
-import { TelemetryEntry } from '@/features/telemetry';
+import { TelemetryEntry, TelemetryContext } from '@/features/telemetry';
+
 
 import {
   ICognitiveMemoryPort,
@@ -33,6 +34,7 @@ import {
   DenseSemanticMatrix,
   IndexSessionMemoryService,
   MEMORY_VARIABLE_DURABILITY,
+  COGNITIVE_MEMORY_KNN_MIN_SIMILARITY,
 } from '@/features/cognitive-memory';
 import { IEmbeddingPort } from '@/features/ai-engine';
 import { SupportedLanguage, SupportedLanguageVo } from '@/features/i18n';
@@ -94,14 +96,68 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     let priorPayload =
       (await this.matrixRepo.getMatrixPayload(input.sessionId, matrixId)) ?? {};
 
-    // 1.1 Si el borrador de sesión está vacío, rescatar la memoria cognitiva consolidada desde LanceDB (RAG)
-    // PBI-MEM-002 CA-2: Rehidratar exclusivamente variables duraderas (descartando time_window efímera)
-    if (Object.keys(priorPayload).length === 0 && this.cognitiveMemory) {
+    // Pre-cálculo único de embedding del prompt por turno (PBI-MEM-003 CA-4)
+    let promptVector: number[] | undefined;
+    if (this.embeddingPort) {
       try {
-        const historical = await this.cognitiveMemory.getLatestSessionMemory(
+        const embeddingResult = await this.embeddingPort.generateEmbedding(trimmedPrompt);
+        if (embeddingResult.source !== 'fallback') {
+          promptVector = embeddingResult.vector;
+        }
+      } catch {
+        promptVector = undefined;
+      }
+    }
+
+    // 1.1 Si el borrador de sesión está vacío, rescatar la memoria cognitiva consolidada desde LanceDB (RAG)
+    // PBI-MEM-003: Cadena declarativa exact -> knn acotada a la sesión y telemetría COGNITIVE_MEMORY_RECALL
+    if (Object.keys(priorPayload).length === 0 && this.cognitiveMemory) {
+      let historical: DenseSemanticMatrix | null = null;
+      let strategyUsed: 'exact' | 'knn' | 'none' = 'none';
+      let recallSimilarity: number | undefined;
+
+      try {
+        // Estrategia 1: Búsqueda exacta por id (sessionId:matrixId)
+        historical = await this.cognitiveMemory.getLatestSessionMemory(
           input.sessionId,
           matrixId,
         );
+        if (historical) {
+          strategyUsed = 'exact';
+        } else if (promptVector) {
+          // Estrategia 2: Búsqueda semántica K-NN acotada a la sesión (PBI-MEM-003 CA-2 y CA-3)
+          const knnMatches = await this.cognitiveMemory.searchSimilarMemories(
+            promptVector,
+            {
+              sessionId: input.sessionId,
+              limit: 1,
+              minSimilarity: COGNITIVE_MEMORY_KNN_MIN_SIMILARITY,
+            },
+          );
+          if (knnMatches.length > 0) {
+            historical = knnMatches[0].matrix;
+            strategyUsed = 'knn';
+            recallSimilarity = knnMatches[0].score;
+          }
+        }
+
+        const memoryHit = historical !== null;
+        this.emitTelemetry({
+          level: 'INFO',
+          context: 'LLM_ENGINE',
+          message: `[Cognitive Memory] Recuperación de memoria: ${memoryHit ? `HIT (${strategyUsed})` : 'MISS'}`,
+          statusCode: 200,
+          durationMs: Date.now() - startTime,
+          payload: {
+            eventType: 'COGNITIVE_MEMORY_RECALL',
+            sessionId: input.sessionId,
+            matrixId,
+            memoryHit,
+            strategy: strategyUsed,
+            ...(recallSimilarity !== undefined ? { similarity: recallSimilarity } : {}),
+          },
+        });
+
         if (historical) {
           const fullPayload = historical.toPayload();
           const durablePayload: Partial<DefaultDensityPayload> = {};
@@ -119,8 +175,22 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
           });
           priorPayload = durablePayload;
         }
-      } catch {
-        // Fail-soft en lectura de memoria histórica LanceDB
+      } catch (err) {
+        // Fail-soft en lectura de memoria histórica LanceDB (CA-6)
+        this.emitTelemetry({
+          level: 'WARN',
+          context: 'LLM_ENGINE',
+          message: `[Cognitive Memory] Fallo al recuperar memoria de sesión: ${err instanceof Error ? err.message : String(err)}`,
+          statusCode: 500,
+          durationMs: Date.now() - startTime,
+          payload: {
+            eventType: 'COGNITIVE_MEMORY_RECALL',
+            sessionId: input.sessionId,
+            matrixId,
+            memoryHit: false,
+            strategy: 'none',
+          },
+        });
       }
     }
 
@@ -172,62 +242,55 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     });
 
     // 2.1 Interceptación por Caché Semántica Vectorial (PBI-COGN-CACHE-001)
-    let promptVector: number[] | undefined;
-    if (this.semanticCache && this.embeddingPort) {
+    if (this.semanticCache && promptVector) {
       try {
-        const embeddingResult = await this.embeddingPort.generateEmbedding(trimmedPrompt);
-        if (embeddingResult.source === 'fallback') {
-          promptVector = undefined;
-        } else {
-          promptVector = embeddingResult.vector;
-          const cached = await this.semanticCache.get({
-            vector: promptVector,
-            matrixId,
+        const cached = await this.semanticCache.get({
+          vector: promptVector,
+          matrixId,
+          language: sovereignLang,
+        });
+        const cachedOutcome = this.buildOutcomeFromSemanticCache(cached?.result, {
+          sessionId: input.sessionId,
+          matrixId,
+          sovereignLang,
+          startTime,
+        });
+
+        if (cached && cachedOutcome) {
+          await this.matrixRepo.saveMatrixPayload(input.sessionId, matrixId, {
             language: sovereignLang,
           });
-          const cachedOutcome = this.buildOutcomeFromSemanticCache(cached?.result, {
-            sessionId: input.sessionId,
-            matrixId,
-            sovereignLang,
-            startTime,
+
+          this.emitTelemetry({
+            level: 'INFO',
+            context: 'SECURITY_PERIMETER',
+            message: '[Aduana] Consulta interceptada por Caché Semántica Vectorial',
+            statusCode: 200,
+            durationMs: Date.now() - startTime,
+            payload: {
+              eventType: 'TRIAGE_ROUTED',
+              sessionId: input.sessionId,
+              cacheHit: true,
+              ...(cached.tokensSaved !== undefined
+                ? { tokensSaved: cached.tokensSaved }
+                : {}),
+              similarity: cached.similarity,
+              prompt: trimmedPrompt,
+            },
           });
 
-          if (cached && cachedOutcome) {
-            await this.matrixRepo.saveMatrixPayload(input.sessionId, matrixId, {
-              language: sovereignLang,
-            });
+          return cachedOutcome;
+        }
 
-            this.emitTelemetry({
-              level: 'INFO',
-              context: 'SECURITY_PERIMETER',
-              message: '[Aduana] Consulta interceptada por Caché Semántica Vectorial',
-              statusCode: 200,
-              durationMs: Date.now() - startTime,
-              payload: {
-                eventType: 'TRIAGE_ROUTED',
-                sessionId: input.sessionId,
-                cacheHit: true,
-                ...(cached.tokensSaved !== undefined
-                  ? { tokensSaved: cached.tokensSaved }
-                  : {}),
-                similarity: cached.similarity,
-                prompt: trimmedPrompt,
-              },
-            });
-
-            return cachedOutcome;
-          }
-
-          if (cached && !cachedOutcome) {
-            this.emitTelemetry({
-              level: 'WARN',
-              context: 'SECURITY_PERIMETER',
-              message: '[Aduana] Acierto de caché semántica descartado por esquema inválido',
-              statusCode: 200,
-              durationMs: Date.now() - startTime,
-              payload: { sessionId: input.sessionId, matrixId },
-            });
-          }
+        if (cached && !cachedOutcome) {
+          this.emitTelemetry({
+            level: 'WARN',
+            context: 'SECURITY_PERIMETER',
+            message: '[Aduana] Acierto de caché semántica descartado por esquema inválido',
+            statusCode: 200,
+            durationMs: Date.now() - startTime,
+            payload: { sessionId: input.sessionId, matrixId },
+          });
         }
       } catch {
         // Fail-soft en lectura de caché semántica
@@ -845,7 +908,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
 
   private emitTelemetry(params: {
     level: 'INFO' | 'WARN' | 'ERROR';
-    context: 'SECURITY_PERIMETER';
+    context: TelemetryContext;
     message: string;
     statusCode: number;
     durationMs: number;

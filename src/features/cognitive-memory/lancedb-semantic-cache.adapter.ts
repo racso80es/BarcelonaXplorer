@@ -44,7 +44,7 @@ export class LanceDbSemanticCacheAdapter implements ISemanticCachePort {
       const results = await this.vectorStore.search(
         LanceDbSemanticCacheAdapter.TABLE_NAME,
         vector,
-        8,
+        { limit: 8 },
       );
 
       for (const top of results) {

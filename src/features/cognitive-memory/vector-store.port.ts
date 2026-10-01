@@ -26,6 +26,11 @@ export interface VectorStorePingResult {
 
 export type VectorDeleteFilter = string | { ids: string[] };
 
+export interface VectorSearchOptions {
+  readonly limit?: number;
+  readonly where?: string;
+}
+
 export interface IVectorStorePort {
   /**
    * Inserta o actualiza un lote de documentos vectoriales en la tabla indicada.
@@ -34,8 +39,13 @@ export interface IVectorStorePort {
 
   /**
    * Búsqueda por similitud vectorial (K-Nearest Neighbors / Cosine).
+   * Admite prefiltro SQL ('where') antes de calcular el top-K (PBI-MEM-003 CA-1).
    */
-  search(tableName: string, queryVector: number[], limit?: number): Promise<VectorSearchResult[]>;
+  search(
+    tableName: string,
+    queryVector: number[],
+    limitOrOptions?: number | VectorSearchOptions,
+  ): Promise<VectorSearchResult[]>;
 
   /**
    * Poda y eliminación higiénica de vectores según predicado SQL o lista de identificadores.

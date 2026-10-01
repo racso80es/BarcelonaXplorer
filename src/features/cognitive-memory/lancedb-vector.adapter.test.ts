@@ -131,4 +131,34 @@ describe('LanceDbVectorAdapter', () => {
 
     accessSpy.mockRestore();
   });
+
+  it('CA-1: debe aplicar prefiltro where antes del top-K (50 filas de otras sesiones más cercanas y 1 de sesión objetivo)', async () => {
+    // 50 documentos de otras sesiones muy cercanos a [1, 0, 0]
+    const otherDocs = Array.from({ length: 50 }, (_, i) => ({
+      id: `other-sess-${i}:matrix`,
+      vector: [0.99, 0.01 * (i / 50), 0.01],
+      text: `Other session doc ${i}`,
+      metadata: { sessionId: `other-sess-${i}` },
+    }));
+
+    // 1 documento de la sesión objetivo con menor similitud a [1, 0, 0]
+    const targetDoc = {
+      id: 'target-sess-1:matrix',
+      vector: [0.7, 0.3, 0.0],
+      text: 'Target session doc',
+      metadata: { sessionId: 'target-sess-1' },
+    };
+
+    await adapter.upsert('prefilter_test', [...otherDocs, targetDoc]);
+
+    // Búsqueda con limit: 1 y prefiltro where
+    const results = await adapter.search('prefilter_test', [1, 0, 0], {
+      limit: 1,
+      where: "id LIKE 'target-sess-1:%'",
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0].document.id).toBe('target-sess-1:matrix');
+  });
 });
+

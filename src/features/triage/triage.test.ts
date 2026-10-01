@@ -371,6 +371,201 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(mockRouteUseCase.execute).toHaveBeenCalled();
     });
 
+    describe('PBI-MEM-003: Recuperación K-NN Acotada a Sesión y Telemetría', () => {
+      it('CA-7 & CA-5 (Escenario 2): debe recuperar memoria por K-NN al no haber coincidencia exacta y emitir telemetría', async () => {
+        const gastronomyMatrix = DenseSemanticMatrix.create({
+          sessionId: 'sess-knn-user',
+          matrixId: 'gastronomy',
+          payload: {
+            group_size: 3,
+            vibe: 'tapas gourmet',
+            constraints: ['sin gluten'],
+            time_window: 'ayer',
+          },
+          score: 85,
+          survivalThreshold: 70,
+        });
+
+        const mockCognitiveMemory = {
+          persistMemory: vi.fn().mockResolvedValue(undefined),
+          getLatestSessionMemory: vi.fn().mockResolvedValue(null), // Fallo en exact
+          searchSimilarMemories: vi.fn().mockResolvedValue([
+            { matrix: gastronomyMatrix, score: 0.82 },
+          ]),
+          getRecentMemories: vi.fn().mockResolvedValue([]),
+          clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+        };
+
+        const mockEmbedding = {
+          generateEmbedding: vi.fn().mockResolvedValue({
+            vector: new Array(768).fill(0.05),
+            source: 'provider' as const,
+          }),
+          getDimensions: vi.fn().mockReturnValue(768),
+        };
+
+        const mockTelemetry = {
+          log: vi.fn().mockResolvedValue(undefined),
+          getRecentLogs: vi.fn().mockResolvedValue([]),
+          prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+        };
+
+        const knnUseCase = new TriageInputUseCase(
+          mockDecisionEngine,
+          mockConversationalSlm,
+          mockMatrixRepo,
+          mockRouteUseCase,
+          mockTelemetry,
+          undefined,
+          mockCognitiveMemory,
+          mockEmbedding,
+          undefined,
+          mockItineraryRepo,
+        );
+
+        mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({});
+
+        const result = await knnUseCase.execute({
+          sessionId: 'sess-knn-user',
+          prompt: 'algo para 3 horas esta tarde',
+        });
+
+        expect(result.status).toBe('DISPATCH_READY');
+        expect(result.payload?.group_size).toBe(3);
+        expect(result.payload?.vibe).toBe('tapas gourmet');
+        expect(result.payload?.constraints).toContain('sin gluten');
+        // CA-2 (PBI-MEM-002): time_window no debe ser 'ayer'
+        expect(result.payload?.time_window).toBe('algo para 3 horas esta tarde');
+
+        // CA-5: Telemetría de memory recall
+        expect(mockTelemetry.log).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: expect.stringContaining('Recuperación de memoria'),
+            payload: expect.objectContaining({
+              eventType: 'COGNITIVE_MEMORY_RECALL',
+              sessionId: 'sess-knn-user',
+              memoryHit: true,
+              strategy: 'knn',
+              similarity: 0.82,
+            }),
+          }),
+        );
+      });
+
+      it('CA-4: debe calcular el embedding del prompt una sola vez por turno reutilizándolo para memoria y caché semántica', async () => {
+        const mockEmbedding = {
+          generateEmbedding: vi.fn().mockResolvedValue({
+            vector: new Array(768).fill(0.01),
+            source: 'provider' as const,
+          }),
+          getDimensions: vi.fn().mockReturnValue(768),
+        };
+
+        const mockSemanticCache = {
+          get: vi.fn().mockResolvedValue(null),
+          set: vi.fn().mockResolvedValue(undefined),
+        };
+
+        const mockCognitiveMemory = {
+          persistMemory: vi.fn().mockResolvedValue(undefined),
+          getLatestSessionMemory: vi.fn().mockResolvedValue(null),
+          searchSimilarMemories: vi.fn().mockResolvedValue([]),
+          getRecentMemories: vi.fn().mockResolvedValue([]),
+          clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+        };
+
+        const uc = new TriageInputUseCase(
+          mockDecisionEngine,
+          mockConversationalSlm,
+          mockMatrixRepo,
+          mockRouteUseCase,
+          undefined,
+          undefined,
+          mockCognitiveMemory,
+          mockEmbedding,
+          undefined,
+          mockItineraryRepo,
+          mockSemanticCache,
+        );
+
+        const testPrompt = 'Quiero visitar el Born 2 horas con 2 amigos';
+        await uc.execute({
+          sessionId: 'sess-single-embed',
+          prompt: testPrompt,
+        });
+
+        // Exactamente una llamada con el prompt del usuario (reutilizada entre memoria y caché semántica)
+        const promptCalls = mockEmbedding.generateEmbedding.mock.calls.filter(
+          (args) => args[0] === testPrompt,
+        );
+        expect(promptCalls).toHaveLength(1);
+        expect(mockSemanticCache.get).toHaveBeenCalledWith(
+          expect.objectContaining({
+            vector: expect.any(Array),
+            matrixId: 'default',
+          }),
+        );
+      });
+
+      it('CA-6: fail-soft si el embedding es de fallback o LanceDB colapsa', async () => {
+        const mockEmbedding = {
+          generateEmbedding: vi.fn().mockResolvedValue({
+            vector: new Array(768).fill(0),
+            source: 'fallback' as const,
+          }),
+          getDimensions: vi.fn().mockReturnValue(768),
+        };
+
+        const mockCognitiveMemory = {
+          persistMemory: vi.fn().mockResolvedValue(undefined),
+          getLatestSessionMemory: vi.fn().mockRejectedValue(new Error('LanceDB connection refused')),
+          searchSimilarMemories: vi.fn().mockResolvedValue([]),
+          getRecentMemories: vi.fn().mockResolvedValue([]),
+          clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+        };
+
+        const mockTelemetry = {
+          log: vi.fn().mockResolvedValue(undefined),
+          getRecentLogs: vi.fn().mockResolvedValue([]),
+          prune: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+        };
+
+        const uc = new TriageInputUseCase(
+          mockDecisionEngine,
+          mockConversationalSlm,
+          mockMatrixRepo,
+          mockRouteUseCase,
+          mockTelemetry,
+          undefined,
+          mockCognitiveMemory,
+          mockEmbedding,
+          undefined,
+          mockItineraryRepo,
+        );
+
+        mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({});
+
+        const result = await uc.execute({
+          sessionId: 'sess-fail-soft',
+          prompt: 'Quiero comer tapas 2 horas con 2 amigos',
+        });
+
+        // Continúa sin colapsar
+        expect(result).toBeDefined();
+        expect(result.status).toBe('DISPATCH_READY');
+        expect(mockTelemetry.log).toHaveBeenCalledWith(
+          expect.objectContaining({
+            payload: expect.objectContaining({
+              eventType: 'COGNITIVE_MEMORY_RECALL',
+              strategy: 'none',
+              memoryHit: false,
+            }),
+          }),
+        );
+      });
+    });
+
+
     it('HU-10: debe propagar thermalState "saturated" al enriquecedor y persistir en MySQL al saturar al 100%', async () => {
       const result = await useCase.execute({
         sessionId: 'sess-logistics-saturated',

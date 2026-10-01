@@ -10,6 +10,14 @@ export interface CognitiveMemoryItem {
   readonly timestamp: number;
 }
 
+export const COGNITIVE_MEMORY_KNN_MIN_SIMILARITY = 0.75;
+
+export interface SearchSimilarMemoriesOptions {
+  readonly sessionId: string;
+  readonly limit?: number;
+  readonly minSimilarity?: number;
+}
+
 /**
  * Puerto de Salida Hexagonal para la gestión de Memoria Cognitiva Vectorial (LanceDB RAG).
  * 
@@ -33,11 +41,12 @@ export interface ICognitiveMemoryPort {
   ): Promise<DenseSemanticMatrix | null>;
 
   /**
-   * Búsqueda por similitud semántica K-NN sobre la memoria de la sesión (o global).
+   * Búsqueda por similitud semántica K-NN sobre la memoria de la sesión (PBI-MEM-003 CA-2).
+   * sessionId es obligatorio en el tipo para blindar el aislamiento por sesión.
    */
   searchSimilarMemories(
     queryVector: number[],
-    options?: { sessionId?: string; limit?: number },
+    options: SearchSimilarMemoriesOptions,
   ): Promise<Array<{ matrix: DenseSemanticMatrix; score: number }>>;
 
   /**
