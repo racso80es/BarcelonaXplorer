@@ -11,6 +11,7 @@ import {
   ItineraryPersistencePort,
 } from '@/features/planner';
 import type { GenerateTacticalRouteUseCase } from '@/features/planner/server';
+import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 
 describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
   it('debe validar la estructura de entrada de TriageInputSchema localmente', () => {
@@ -309,6 +310,65 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
 
       expect(result.status).toBe('INCOMPLETE_REPROMPT');
       expect(persistMemory).toHaveBeenCalledTimes(1);
+    });
+
+    it('PBI-MEM-002 CA-2 (Escenario 5): debe rehidratar solo variables duraderas y aceptar nueva ventana temporal sin repregunta', async () => {
+      const historicalMatrix = DenseSemanticMatrix.create({
+        sessionId: 'sess-cross-session',
+        matrixId: 'default',
+        payload: {
+          group_size: 4,
+          vibe: 'familiar',
+          constraints: ['niños'],
+          time_window: 'sábado',
+        },
+        score: 100,
+        survivalThreshold: 60,
+      });
+
+      const mockCognitiveMemory = {
+        persistMemory: vi.fn().mockResolvedValue(undefined),
+        getLatestSessionMemory: vi.fn().mockResolvedValue(historicalMatrix),
+        searchSimilarMemories: vi.fn().mockResolvedValue([]),
+        getRecentMemories: vi.fn().mockResolvedValue([]),
+        clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.01),
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const crossSessionUseCase = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        undefined,
+        undefined,
+        mockCognitiveMemory,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+      );
+
+      mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({});
+
+      const result = await crossSessionUseCase.execute({
+        sessionId: 'sess-cross-session',
+        prompt: 'algo para mañana por la tarde',
+      });
+
+      expect(result.status).toBe('DISPATCH_READY');
+      expect(result.isThresholdSatisfied).toBe(true);
+      expect(result.payload?.group_size).toBe(4);
+      expect(result.payload?.vibe).toBe('familiar');
+      expect(result.payload?.time_window).toBe('algo para mañana por la tarde');
+      expect(mockConversationalSlm.generateRepromptMessage).not.toHaveBeenCalled();
+      expect(mockRouteUseCase.execute).toHaveBeenCalled();
     });
 
     it('HU-10: debe propagar thermalState "saturated" al enriquecedor y persistir en MySQL al saturar al 100%', async () => {

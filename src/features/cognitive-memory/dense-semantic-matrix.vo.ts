@@ -1,4 +1,6 @@
 import { DefaultDensityPayload } from '@/features/planner';
+import { SupportedLanguage } from '@/features/i18n';
+import type { CognitiveMemoryMetadata } from './cognitive-memory-metadata.schema';
 
 export interface DenseSemanticMatrixProps {
   readonly sessionId: string;
@@ -6,6 +8,8 @@ export interface DenseSemanticMatrixProps {
   readonly timeWindow?: string;
   readonly groupSize?: number;
   readonly vibe?: string;
+  readonly mood?: 'relaxed' | 'adventurous' | 'cultural' | 'gastronomic';
+  readonly language?: SupportedLanguage;
   readonly constraints: readonly string[];
   readonly districts: readonly string[];
   readonly score: number;
@@ -62,6 +66,15 @@ export class DenseSemanticMatrix {
         : rawVibe
       : undefined;
 
+    const validMoods = ['relaxed', 'adventurous', 'cultural', 'gastronomic'] as const;
+    const rawMood = payload.mood;
+    const mood =
+      typeof rawMood === 'string' && (validMoods as readonly string[]).includes(rawMood)
+        ? (rawMood as 'relaxed' | 'adventurous' | 'cultural' | 'gastronomic')
+        : undefined;
+
+    const language = payload.language;
+
     const constraints = Array.isArray(payload.constraints)
       ? Array.from(
           new Set(
@@ -92,6 +105,8 @@ export class DenseSemanticMatrix {
       timeWindow,
       groupSize: typeof payload.group_size === 'number' && payload.group_size > 0 ? payload.group_size : undefined,
       vibe,
+      mood,
+      language,
       constraints: Object.freeze(constraints),
       districts: Object.freeze(districts),
       score,
@@ -101,8 +116,36 @@ export class DenseSemanticMatrix {
   }
 
   /**
+   * Reconstruye una instancia de DenseSemanticMatrix a partir de un metadato parseado (PBI-MEM-002 CA-5).
+   */
+  public static fromMetadata(meta: CognitiveMemoryMetadata): DenseSemanticMatrix {
+    const updatedAt = meta.updatedAt
+      ? typeof meta.updatedAt === 'string'
+        ? new Date(meta.updatedAt)
+        : meta.updatedAt
+      : new Date();
+
+    return DenseSemanticMatrix.create({
+      sessionId: meta.sessionId,
+      matrixId: meta.matrixId,
+      payload: {
+        time_window: meta.timeWindow ?? undefined,
+        group_size: meta.groupSize ?? undefined,
+        vibe: meta.vibe ?? undefined,
+        mood: meta.mood ?? undefined,
+        language: meta.language ?? undefined,
+        constraints: meta.constraints,
+        districts: meta.districts,
+      },
+      score: meta.score,
+      survivalThreshold: meta.survivalThreshold,
+      updatedAt,
+    });
+  }
+
+  /**
    * Genera la representación sintética hiper-densa para el embedding y la inyección silenciosa en el prompt.
-   * Formato canónico: [Grupo: N | Ventana: ... | Vibe: ... | Distritos: ... | Restricciones: ...]
+   * Formato canónico: [Grupo: N | Ventana: ... | Vibe: ... | Ánimo: ... | Distritos: ... | Restricciones: ...]
    */
   public toDensePromptString(): string {
     const segments: string[] = [];
@@ -119,6 +162,10 @@ export class DenseSemanticMatrix {
       segments.push(`Vibe: ${this.props.vibe}`);
     }
 
+    if (this.props.mood) {
+      segments.push(`Ánimo: ${this.props.mood}`);
+    }
+
     if (this.props.districts.length > 0) {
       segments.push(`Distritos: ${this.props.districts.join(', ')}`);
     }
@@ -131,7 +178,14 @@ export class DenseSemanticMatrix {
       return '[Contexto: Base]';
     }
 
-    return `[${segments.join(' | ')}]`;
+    const candidate = `[${segments.join(' | ')}]`;
+    // Control termodinámico: si la cadena excede el presupuesto y contiene mood, omitir mood (CA-3)
+    if (candidate.length > 280 && this.props.mood) {
+      const trimmedSegments = segments.filter((s) => !s.startsWith('Ánimo:'));
+      return `[${trimmedSegments.join(' | ')}]`;
+    }
+
+    return candidate;
   }
 
   /**
@@ -144,6 +198,8 @@ export class DenseSemanticMatrix {
       timeWindow: this.props.timeWindow ?? null,
       groupSize: this.props.groupSize ?? null,
       vibe: this.props.vibe ?? null,
+      mood: this.props.mood ?? null,
+      language: this.props.language ?? null,
       constraints: [...this.props.constraints],
       districts: [...this.props.districts],
       score: this.props.score,
@@ -161,6 +217,8 @@ export class DenseSemanticMatrix {
       time_window: this.props.timeWindow,
       group_size: this.props.groupSize,
       vibe: this.props.vibe,
+      mood: this.props.mood,
+      language: this.props.language,
       constraints: [...this.props.constraints],
       districts: [...this.props.districts],
     };

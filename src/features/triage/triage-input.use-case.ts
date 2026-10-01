@@ -32,6 +32,7 @@ import {
   TRIAGE_SEMANTIC_CACHE_POLICY,
   DenseSemanticMatrix,
   IndexSessionMemoryService,
+  MEMORY_VARIABLE_DURABILITY,
 } from '@/features/cognitive-memory';
 import { IEmbeddingPort } from '@/features/ai-engine';
 import { SupportedLanguage, SupportedLanguageVo } from '@/features/i18n';
@@ -94,6 +95,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
       (await this.matrixRepo.getMatrixPayload(input.sessionId, matrixId)) ?? {};
 
     // 1.1 Si el borrador de sesión está vacío, rescatar la memoria cognitiva consolidada desde LanceDB (RAG)
+    // PBI-MEM-002 CA-2: Rehidratar exclusivamente variables duraderas (descartando time_window efímera)
     if (Object.keys(priorPayload).length === 0 && this.cognitiveMemory) {
       try {
         const historical = await this.cognitiveMemory.getLatestSessionMemory(
@@ -101,7 +103,21 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
           matrixId,
         );
         if (historical) {
-          priorPayload = historical.toPayload();
+          const fullPayload = historical.toPayload();
+          const durablePayload: Partial<DefaultDensityPayload> = {};
+          (
+            Object.keys(MEMORY_VARIABLE_DURABILITY) as Array<
+              keyof DefaultDensityPayload
+            >
+          ).forEach((key) => {
+            if (
+              MEMORY_VARIABLE_DURABILITY[key] === 'durable' &&
+              fullPayload[key] !== undefined
+            ) {
+              Object.assign(durablePayload, { [key]: fullPayload[key] });
+            }
+          });
+          priorPayload = durablePayload;
         }
       } catch {
         // Fail-soft en lectura de memoria histórica LanceDB

@@ -5,6 +5,7 @@ import {
 } from './cognitive-memory.port';
 import type { IVectorStorePort, VectorDocument } from './vector-store.port';
 import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
+import { CognitiveMemoryMetadataSchema } from './cognitive-memory-metadata.schema';
 import { getLanceDbConnection } from './lancedb-client';
 import { LanceDbVectorAdapter } from './lancedb-vector.adapter';
 
@@ -69,22 +70,16 @@ export class LanceDbCognitiveMemoryAdapter implements ICognitiveMemoryPort {
       }
 
       const row = rows[0];
-      const parsedMeta = this.parseRowMetadata(row.metadata);
+      const parsed = CognitiveMemoryMetadataSchema.safeParse(row.metadata);
+      if (!parsed.success) {
+        console.warn(
+          `[LanceDbCognitiveMemoryAdapter] Metadatos inválidos en memoria de sesión ${sessionId}:`,
+          parsed.error.message,
+        );
+        return null;
+      }
 
-      return DenseSemanticMatrix.create({
-        sessionId: String(parsedMeta.sessionId || sessionId),
-        matrixId: String(parsedMeta.matrixId || matrixId),
-        payload: {
-          time_window: typeof parsedMeta.timeWindow === 'string' ? parsedMeta.timeWindow : undefined,
-          group_size: typeof parsedMeta.groupSize === 'number' ? parsedMeta.groupSize : undefined,
-          vibe: typeof parsedMeta.vibe === 'string' ? parsedMeta.vibe : undefined,
-          constraints: Array.isArray(parsedMeta.constraints) ? parsedMeta.constraints : [],
-          districts: Array.isArray(parsedMeta.districts) ? parsedMeta.districts : [],
-        },
-        score: typeof parsedMeta.score === 'number' ? parsedMeta.score : 0,
-        survivalThreshold: typeof parsedMeta.survivalThreshold === 'number' ? parsedMeta.survivalThreshold : 60,
-        updatedAt: parsedMeta.updatedAt ? new Date(String(parsedMeta.updatedAt)) : new Date(),
-      });
+      return DenseSemanticMatrix.fromMetadata(parsed.data);
     } catch (err) {
       console.warn(`[LanceDbCognitiveMemoryAdapter] Error al recuperar memoria de sesión ${sessionId}:`, err);
       return null;
@@ -105,27 +100,23 @@ export class LanceDbCognitiveMemoryAdapter implements ICognitiveMemoryPort {
     const matches: Array<{ matrix: DenseSemanticMatrix; score: number }> = [];
 
     for (const res of searchResults) {
-      const meta = res.document.metadata as Record<string, unknown>;
-      if (options?.sessionId && meta.sessionId !== options.sessionId) {
+      const parsed = CognitiveMemoryMetadataSchema.safeParse(res.document.metadata);
+      if (!parsed.success) {
+        console.warn(
+          `[LanceDbCognitiveMemoryAdapter] Metadatos inválidos en búsqueda K-NN:`,
+          parsed.error.message,
+        );
         continue;
       }
 
-      const matrix = DenseSemanticMatrix.create({
-        sessionId: String(meta.sessionId || res.document.id.split(':')[0]),
-        matrixId: String(meta.matrixId || 'default'),
-        payload: {
-          time_window: typeof meta.timeWindow === 'string' ? meta.timeWindow : undefined,
-          group_size: typeof meta.groupSize === 'number' ? meta.groupSize : undefined,
-          vibe: typeof meta.vibe === 'string' ? meta.vibe : undefined,
-          constraints: Array.isArray(meta.constraints) ? meta.constraints : [],
-          districts: Array.isArray(meta.districts) ? meta.districts : [],
-        },
-        score: typeof meta.score === 'number' ? meta.score : 0,
-        survivalThreshold: typeof meta.survivalThreshold === 'number' ? meta.survivalThreshold : 60,
-        updatedAt: meta.updatedAt ? new Date(String(meta.updatedAt)) : new Date(),
-      });
+      if (options?.sessionId && parsed.data.sessionId !== options.sessionId) {
+        continue;
+      }
 
-      matches.push({ matrix, score: res.score });
+      matches.push({
+        matrix: DenseSemanticMatrix.fromMetadata(parsed.data),
+        score: res.score,
+      });
     }
 
     return matches;

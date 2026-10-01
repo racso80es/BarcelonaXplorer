@@ -147,4 +147,107 @@ describe('DenseSemanticMatrix (Value Object)', () => {
     // Verificar que la cadena resultante es estrictamente compacta (<= 280 caracteres, cota ~45 tokens)
     expect(denseString.length).toBeLessThanOrEqual(280);
   });
+
+  describe('PBI-MEM-002: Metadatos, Mood, Language y Matriz de Durabilidad', () => {
+    it('CA-1: debe clasificar exhaustivamente todas las variables en MEMORY_VARIABLE_DURABILITY', async () => {
+      const { MEMORY_VARIABLE_DURABILITY } = await import(
+        './cognitive-memory-metadata.schema'
+      );
+      expect(MEMORY_VARIABLE_DURABILITY.time_window).toBe('ephemeral');
+      expect(MEMORY_VARIABLE_DURABILITY.group_size).toBe('durable');
+      expect(MEMORY_VARIABLE_DURABILITY.vibe).toBe('durable');
+      expect(MEMORY_VARIABLE_DURABILITY.constraints).toBe('durable');
+      expect(MEMORY_VARIABLE_DURABILITY.districts).toBe('durable');
+      expect(MEMORY_VARIABLE_DURABILITY.mood).toBe('durable');
+      expect(MEMORY_VARIABLE_DURABILITY.language).toBe('durable');
+    });
+
+    it('CA-3: debe incorporar mood y language en props, toMetadata y toPayload', () => {
+      const matrix = DenseSemanticMatrix.create({
+        sessionId: 'sess-mood-lang',
+        payload: {
+          group_size: 2,
+          mood: 'cultural',
+          language: 'ca',
+        },
+      });
+
+      expect(matrix.propsSnapshot.mood).toBe('cultural');
+      expect(matrix.propsSnapshot.language).toBe('ca');
+
+      const meta = matrix.toMetadata();
+      expect(meta.mood).toBe('cultural');
+      expect(meta.language).toBe('ca');
+
+      const payload = matrix.toPayload();
+      expect(payload.mood).toBe('cultural');
+      expect(payload.language).toBe('ca');
+
+      expect(matrix.toDensePromptString()).toContain('Ánimo: cultural');
+    });
+
+    it('CA-3: debe omitir mood de toDensePromptString si la cadena excede el presupuesto de 280 caracteres', () => {
+      const longVibe = 'experiencia gastronómica sumamente refinada en los mejores rincones del ensanche';
+      const longTime = 'desde el amanecer hasta altas horas de la noche con múltiples paradas';
+      const longConstraints = ['accesibilidad total en silla de ruedas', 'opción vegana y sin gluten'];
+      const longDistricts = ['Eixample', 'Sarrià-Sant Gervasi', 'Ciutat Vella'];
+
+      const matrix = DenseSemanticMatrix.create({
+        sessionId: 'sess-budget',
+        payload: {
+          vibe: longVibe,
+          time_window: longTime,
+          constraints: longConstraints,
+          districts: longDistricts,
+          group_size: 4,
+          mood: 'adventurous',
+        },
+      });
+
+      const denseString = matrix.toDensePromptString();
+      expect(denseString.length).toBeLessThanOrEqual(280);
+    });
+
+    it('CA-5 y CA-6: fromMetadata debe reconstruir fielmente filas nuevas y legadas (compatibilidad hacia atrás)', () => {
+      // Fila legada sin mood ni language
+      const legacyMeta = {
+        sessionId: 'sess-legacy',
+        matrixId: 'default',
+        timeWindow: '2 horas',
+        groupSize: 2,
+        vibe: 'relax',
+        constraints: ['terraza'],
+        districts: ['Gràcia'],
+        score: 70,
+        survivalThreshold: 60,
+      };
+
+      const matrixLegacy = DenseSemanticMatrix.fromMetadata(legacyMeta);
+      expect(matrixLegacy.propsSnapshot.sessionId).toBe('sess-legacy');
+      expect(matrixLegacy.propsSnapshot.mood).toBeUndefined();
+      expect(matrixLegacy.propsSnapshot.language).toBeUndefined();
+      expect(matrixLegacy.propsSnapshot.groupSize).toBe(2);
+
+      // Fila moderna con mood y language
+      const modernMeta = {
+        sessionId: 'sess-modern',
+        matrixId: 'default',
+        timeWindow: null,
+        groupSize: 4,
+        vibe: 'familiar',
+        mood: 'cultural' as const,
+        language: 'es' as const,
+        constraints: ['niños'],
+        districts: [],
+        score: 65,
+        survivalThreshold: 60,
+      };
+
+      const matrixModern = DenseSemanticMatrix.fromMetadata(modernMeta);
+      expect(matrixModern.propsSnapshot.sessionId).toBe('sess-modern');
+      expect(matrixModern.propsSnapshot.mood).toBe('cultural');
+      expect(matrixModern.propsSnapshot.language).toBe('es');
+      expect(matrixModern.propsSnapshot.groupSize).toBe(4);
+    });
+  });
 });

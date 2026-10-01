@@ -100,4 +100,45 @@ describe('LanceDbCognitiveMemoryAdapter (LanceDB RAG S+ Grade)', () => {
     const recovered = await adapter.getLatestSessionMemory('sess-user-1', 'default');
     expect(recovered).toBeNull();
   });
+
+  describe('PBI-MEM-002: Contrato Zod y Rehidratación Fiel', () => {
+    it('debe persistir y recuperar fielmente mood y language con el contrato Zod', async () => {
+      const matrix = DenseSemanticMatrix.create({
+        sessionId: 'sess-zod-1',
+        matrixId: 'default',
+        payload: {
+          group_size: 3,
+          vibe: 'gastronómico',
+          mood: 'relaxed',
+          language: 'es',
+        },
+        score: 60,
+      });
+
+      const vector = new Array(768).fill(0.02);
+      await adapter.persistMemory(matrix, vector);
+
+      const recovered = await adapter.getLatestSessionMemory('sess-zod-1', 'default');
+      expect(recovered).not.toBeNull();
+      expect(recovered?.propsSnapshot.mood).toBe('relaxed');
+      expect(recovered?.propsSnapshot.language).toBe('es');
+      expect(recovered?.propsSnapshot.groupSize).toBe(3);
+    });
+
+    it('CA-4: debe retornar null ante fila con metadatos inválidos sin romper el flujo', async () => {
+      // Inyectar directamente documento corrupto en LanceDB
+      const corruptDoc = {
+        id: 'sess-corrupt:default',
+        vector: new Array(768).fill(0.01),
+        text: 'Corrupt',
+        metadata: {
+          sessionId: '', // Inválido según el esquema (min: 1)
+        },
+      };
+      await vectorStore.upsert(LanceDbCognitiveMemoryAdapter.TABLE_NAME, [corruptDoc]);
+
+      const recovered = await adapter.getLatestSessionMemory('sess-corrupt', 'default');
+      expect(recovered).toBeNull();
+    });
+  });
 });

@@ -52,3 +52,9 @@ export {
   type MemoryIndexingOutcome,
   type MemoryIndexingResult,
 } from './index-session-memory.service';
+
+export {
+  MEMORY_VARIABLE_DURABILITY,
+  CognitiveMemoryMetadataSchema,
+  type CognitiveMemoryMetadata,
+} from './cognitive-memory-metadata.schema';
