@@ -1,0 +1,147 @@
+---
+# ═══════════════════════════════════════════════════════════════
+# Playbook Operativo: Saneamiento y Purga de Vectores Fallback en LanceDB
+# Identificador: PBI-MEM-004 · Grado S+ (Protocolo de Acero)
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axioma I: Localidad de Comportamiento — Aislamiento del volumen lancedb_data
+# Axioma II: Tolerancia Cero a la Inferencia — Parámetro explícito purge_apply=true
+# Axioma III: Diseño Declarativo sobre Lógica Imperativa — Pipeline Ansible Canónico
+# Axioma IV: El Peaje del Oráculo — Verificación dry-run previa y post-purga
+# Axioma V: Ejecución Encapsulada — Ejecución en contenedor efímero runner
+# ═══════════════════════════════════════════════════════════════
+
+- name: Purga Controlada de Vectores Fallback en LanceDB (Producción Nodo 11)
+  hosts: nodos_pro
+  gather_facts: true
+  vars:
+    # Axioma I: Directorio base de despliegues Ansistrano en Nodo 11
+    ansistrano_deploy_to: "/home/racso/Despliegues/BarcelonaXplorer"
+    # Ruta física persistente del corpus vectorial LanceDB
+    lancedb_data_path: "{{ ansistrano_deploy_to }}/lancedb_data"
+    # Directorio para copias de seguridad previas a la mutación
+    backup_dir: "{{ ansistrano_deploy_to }}/backups/lancedb"
+    # Axioma II: Por defecto dry-run (cero mutaciones); requiere -e purge_apply=true explícito
+    purge_apply: false
+
+  tasks:
+    # ── Fase 0: Preparación de Directorios y Respaldo ──────────
+    - name: Asegurar existencia de directorios de backup y scripts
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ backup_dir }}"
+        - "{{ ansistrano_deploy_to }}/shared/scripts"
+
+    - name: Generar marca temporal determinista para el backup
+      ansible.builtin.set_fact:
+        backup_timestamp: "{{ ansible_date_time.iso8601_basic_short | default(lookup('pipe', 'date +%Y%m%d%H%M%S')) }}"
+
+    - name: Crear backup comprimido de seguridad de lancedb_data
+      ansible.builtin.command: >
+        docker run --rm
+        -u 0:0
+        -v {{ lancedb_data_path }}:/data:ro
+        -v {{ backup_dir }}:/backup
+        alpine tar -czf /backup/lancedb_backup_{{ backup_timestamp }}.tar.gz -C /data .
+      changed_when: true
+
+
+    - name: Notificar ruta del backup generado
+      ansible.builtin.debug:
+        msg: "Backup de seguridad generado en: {{ backup_dir }}/lancedb_backup_{{ backup_timestamp }}.tar.gz"
+
+    # ── Fase 1: Sincronización del Script Autónomo ────────────
+    - name: Transferir script de purga hacia shared/scripts
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../scripts/purge-lancedb-fallback-vectors.cjs"
+        dest: "{{ ansistrano_deploy_to }}/shared/scripts/purge-lancedb-fallback-vectors.cjs"
+        mode: '0755'
+
+    - name: Leer etiqueta de release activa (.bx_release_tag)
+      ansible.builtin.slurp:
+        src: "{{ ansistrano_deploy_to }}/current/.bx_release_tag"
+      register: release_tag_b64
+      ignore_errors: true
+
+    - name: Establecer hecho de etiqueta de release Docker
+      ansible.builtin.set_fact:
+        bx_release_tag: "{{ (release_tag_b64.content | b64decode | trim) if (release_tag_b64 is defined and release_tag_b64.content is defined) else 'local' }}"
+
+    # ── Fase 2: Escaneo Preventivo Dry-Run ─────────────────────
+    - name: Ejecutar escaneo dry-run en contenedor efímero
+      ansible.builtin.command: >
+        docker run --rm
+        --name lancedb_purge_dryrun
+        -v {{ lancedb_data_path }}:/app/vector_storage
+        -v {{ ansistrano_deploy_to }}/shared/scripts:/app/scripts:ro
+        -e LANCEDB_URI=/app/vector_storage
+        barcelonaxplorer-web:{{ bx_release_tag }}
+        node /app/scripts/purge-lancedb-fallback-vectors.cjs
+      register: dryrun_output
+      changed_when: false
+
+    - name: Presentar reporte del escaneo dry-run
+      ansible.builtin.debug:
+        msg: "{{ dryrun_output.stdout }}"
+
+    # ── Fase 3: Mutación y Purga (Solo si purge_apply=true) ────
+    - name: Notificación preventiva en modo dry-run
+      ansible.builtin.debug:
+        msg: "Ejecución completada en modo Dry-Run. Para purgar los vectores identificados en el volumen de producción, invoque el playbook con: -e purge_apply=true"
+      when: not (purge_apply | bool)
+
+    - name: Bloque de Purga en Caliente
+      when: purge_apply | bool
+      block:
+        - name: Pausa táctica de confirmación humana previa a la parada del servicio
+          ansible.builtin.pause:
+            seconds: 5
+            prompt: "CONFIRMACIÓN OPERATIVA: Se detendrá temporalmente barcelonaxplorer_web para purgar vectores fallback en disco. Aguardando 5 segundos para proceder..."
+
+
+        - name: Detener contenedor barcelonaxplorer_web para liberar locks de archivo LanceDB
+          ansible.builtin.command: docker stop barcelonaxplorer_web
+          changed_when: true
+
+        - name: Ejecutar purga efectiva (--apply) en contenedor efímero aislado
+          ansible.builtin.command: >
+            docker run --rm
+            --name lancedb_purge_apply
+            -v {{ lancedb_data_path }}:/app/vector_storage
+            -v {{ ansistrano_deploy_to }}/shared/scripts:/app/scripts:ro
+            -e LANCEDB_URI=/app/vector_storage
+            barcelonaxplorer-web:{{ bx_release_tag }}
+            node /app/scripts/purge-lancedb-fallback-vectors.cjs --apply
+          register: apply_output
+          changed_when: true
+
+        - name: Mostrar reporte de purga aplicada
+          ansible.builtin.debug:
+            msg: "{{ apply_output.stdout }}"
+
+      always:
+        - name: Reanudar contenedor barcelonaxplorer_web
+          ansible.builtin.command: docker start barcelonaxplorer_web
+          changed_when: true
+          when: purge_apply | bool
+
+    # ── Fase 4: Sonda de Verificación y Pureza Final ───────────
+    - name: Ejecutar verificación final post-purga en contenedor efímero
+      ansible.builtin.command: >
+        docker run --rm
+        --name lancedb_purge_verify
+        -v {{ lancedb_data_path }}:/app/vector_storage
+        -v {{ ansistrano_deploy_to }}/shared/scripts:/app/scripts:ro
+        -e LANCEDB_URI=/app/vector_storage
+        barcelonaxplorer-web:{{ bx_release_tag }}
+        node /app/scripts/purge-lancedb-fallback-vectors.cjs
+      register: verify_output
+      changed_when: false
+      when: purge_apply | bool
+
+    - name: Presentar reporte de pureza final post-purga
+      ansible.builtin.debug:
+        msg: "{{ verify_output.stdout }}"
+      when: purge_apply | bool

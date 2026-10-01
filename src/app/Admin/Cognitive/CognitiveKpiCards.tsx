@@ -4,21 +4,26 @@ import { prisma } from '@/shared/persistence/prisma';
 import {
   ICognitiveMetricsPort,
   CognitiveMetricsSummary,
+  AuditLanceDbHealthUseCasePort,
+  AuditLanceDbHealthResult,
 } from '@/features/cognitive-memory';
 import {
   PrismaCognitiveMetricsRepository,
   LanceDbVectorAdapter,
+  AuditLanceDbHealthUseCase,
 } from '@/features/cognitive-memory/server';
-import { IVectorStorePort, VectorStorePingResult } from '@/features/cognitive-memory';
+import { IVectorStorePort } from '@/features/cognitive-memory';
 
 export interface CognitiveKpiCardsProps {
   readonly metricsPort?: ICognitiveMetricsPort;
   readonly vectorStorePort?: IVectorStorePort;
+  readonly auditHealthUseCase?: AuditLanceDbHealthUseCasePort;
 }
 
 export async function CognitiveKpiCards({
   metricsPort = new PrismaCognitiveMetricsRepository(),
   vectorStorePort = new LanceDbVectorAdapter(),
+  auditHealthUseCase = new AuditLanceDbHealthUseCase(vectorStorePort),
 }: CognitiveKpiCardsProps = {}) {
   let metrics: CognitiveMetricsSummary = {
     zeigarnikScore: 0,
@@ -27,23 +32,25 @@ export async function CognitiveKpiCards({
     totalSessionsRecorded: 0,
   };
 
-  let ping: VectorStorePingResult = {
-    ok: false,
-    latencyMs: 0,
+  let health: AuditLanceDbHealthResult = {
+    state: 'error',
+    msg: 'No inicializado',
     path: '',
+    latencyMs: 0,
     tableCount: 0,
-    error: 'No inicializado',
+    isHealthy: false,
+    fallbackVectorCount: 0,
   };
 
   let tokensSavedTotal = 0;
 
   try {
-    const [fetchedMetrics, fetchedPing] = await Promise.all([
+    const [fetchedMetrics, fetchedHealth] = await Promise.all([
       metricsPort.getCognitiveMetrics(),
-      vectorStorePort.ping(),
+      auditHealthUseCase.execute(),
     ]);
     metrics = fetchedMetrics;
-    ping = fetchedPing;
+    health = fetchedHealth;
   } catch (error) {
     console.warn('[CognitiveKpiCards] Error recuperando métricas cognitivas:', error);
   }
@@ -86,8 +93,14 @@ export async function CognitiveKpiCards({
   // 3. Tendencia y semáforo Anclaje Táctico (MySQL)
   const anchorTrend: KpiTrend = metrics.anchorRate >= 20 ? 'positive' : 'neutral';
 
-  // 4. Tendencia LanceDB (Sonda in-process)
-  const vectorTrend: KpiTrend = ping.ok ? 'positive' : 'negative';
+  // 4. Tendencia LanceDB (Sonda in-process y pureza del corpus)
+  const isContaminated = (health.fallbackVectorCount ?? 0) > 0;
+  const vectorTrend: KpiTrend =
+    health.state === 'ok'
+      ? 'positive'
+      : health.state === 'warn'
+        ? 'warning'
+        : 'negative';
 
   return (
     <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -121,13 +134,13 @@ export async function CognitiveKpiCards({
         icon={<Send className="h-4 w-4 text-amber-600" />}
       />
 
-      {/* Tarjeta 4: Salud de Memoria LanceDB */}
+      {/* Tarjeta 4: Salud de Memoria LanceDB y Sonda de Pureza */}
       <KpiMetricCard
         title="Salud LanceDB (Vector)"
-        value={ping.ok ? 'OPERATIVO' : 'DEGRADADO'}
-        description={`${ping.tableCount} tablas | ${ping.latencyMs}ms latencia`}
+        value={health.state === 'ok' ? 'OPERATIVO' : 'DEGRADADO'}
+        description={`${health.tableCount} tablas | ${health.latencyMs}ms | ${health.fallbackVectorCount ?? 0} fallback`}
         trend={vectorTrend}
-        trendLabel={ping.ok ? 'Apache Arrow' : 'Fallo'}
+        trendLabel={isContaminated ? `${health.fallbackVectorCount} fallback` : health.isHealthy ? 'Apache Arrow' : 'Fallo'}
         icon={<Database className="h-4 w-4 text-zinc-500" />}
       />
 

@@ -6,6 +6,15 @@ import type {
 import type { IVectorStorePort } from './vector-store.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TelemetryEntry } from '@/features/telemetry';
+import {
+  purgeFallbackVectors,
+  PurgeFallbackVectorsReport,
+} from './purge-fallback-vectors';
+
+export type FallbackScannerFn = (options?: {
+  dryRun?: boolean;
+  uri?: string;
+}) => Promise<PurgeFallbackVectorsReport>;
 
 export interface AuditLanceDbHealthConfig {
   readonly latencyWarnThresholdMs?: number;
@@ -20,26 +29,65 @@ export interface AuditLanceDbHealthConfig {
  */
 export class AuditLanceDbHealthUseCase implements AuditLanceDbHealthUseCasePort {
   private readonly latencyWarnThresholdMs: number;
+  private readonly fallbackScanner: FallbackScannerFn;
 
   constructor(
     private readonly vectorStore: IVectorStorePort,
     private readonly telemetryRepository?: TelemetryRepositoryPort,
-    config?: AuditLanceDbHealthConfig
+    config?: AuditLanceDbHealthConfig,
+    fallbackScanner?: FallbackScannerFn,
   ) {
     this.latencyWarnThresholdMs = config?.latencyWarnThresholdMs ?? 50;
+    this.fallbackScanner = fallbackScanner ?? purgeFallbackVectors;
   }
 
   async execute(): Promise<AuditLanceDbHealthResult> {
     const probe = await this.vectorStore.ping();
 
     if (probe.ok) {
-      const isDegraded = probe.latencyMs >= this.latencyWarnThresholdMs;
-      const state: LanceDbHealthState = isDegraded ? 'warn' : 'ok';
-      const msg = isDegraded
-        ? `Latencia Alta (${probe.latencyMs}ms)`
-        : 'Almacén Vectorial Saludable';
+      let fallbackVectorCount = 0;
+      try {
+        const scanReport = await this.fallbackScanner({
+          dryRun: true,
+          uri: probe.path,
+        });
+        fallbackVectorCount = scanReport.tables.reduce(
+          (acc, table) => acc + table.matches,
+          0,
+        );
+      } catch {
+        // Fail-Soft perimetral ante error en el escaneo de pureza
+      }
 
-      if (isDegraded && this.telemetryRepository) {
+      const isLatencyDegraded = probe.latencyMs >= this.latencyWarnThresholdMs;
+      const isContaminated = fallbackVectorCount > 0;
+      const isDegraded = isLatencyDegraded || isContaminated;
+      const state: LanceDbHealthState = isDegraded ? 'warn' : 'ok';
+
+      let msg: string;
+      if (isContaminated && isLatencyDegraded) {
+        msg = `Latencia Alta (${probe.latencyMs}ms) y ${fallbackVectorCount} vectores fallback detectados`;
+      } else if (isContaminated) {
+        msg = `${fallbackVectorCount} vectores fallback detectados en corpus`;
+      } else if (isLatencyDegraded) {
+        msg = `Latencia Alta (${probe.latencyMs}ms)`;
+      } else {
+        msg = 'Almacén Vectorial Saludable';
+      }
+
+      if (isContaminated && this.telemetryRepository) {
+        await this.logSafely(
+          'WARN',
+          `[LanceDB] Vectores de fallback detectados en corpus: ${fallbackVectorCount}`,
+          {
+            fallbackVectorCount,
+            path: probe.path,
+            tableCount: probe.tableCount,
+          },
+          200,
+          probe.latencyMs,
+        );
+      } else if (isLatencyDegraded && this.telemetryRepository) {
         await this.logSafely(
           'WARN',
           `[LanceDB] Latencia de acceso a disco degradada: ${probe.latencyMs}ms`,
@@ -50,7 +98,7 @@ export class AuditLanceDbHealthUseCase implements AuditLanceDbHealthUseCasePort 
             tableCount: probe.tableCount,
           },
           200,
-          probe.latencyMs
+          probe.latencyMs,
         );
       }
 
@@ -61,6 +109,7 @@ export class AuditLanceDbHealthUseCase implements AuditLanceDbHealthUseCasePort 
         latencyMs: probe.latencyMs,
         tableCount: probe.tableCount,
         isHealthy: true,
+        fallbackVectorCount,
       };
     }
 

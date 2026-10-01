@@ -1,8 +1,12 @@
 import * as lancedb from '@lancedb/lancedb';
 import path from 'path';
 import { vectorMatchesDeterministicFallback } from '@/features/ai-engine/deterministic-embedding-fallback';
-import { LanceDbCognitiveMemoryAdapter } from './lancedb-cognitive-memory.adapter';
-import { LanceDbSemanticCacheAdapter } from './lancedb-semantic-cache.adapter';
+
+export const PURGE_TARGET_TABLES = [
+  'cognitive_memories',
+  'semantic_prompt_cache',
+] as const;
+
 
 function resolveUriForPurge(customUri?: string): string {
   if (customUri && customUri.trim().length > 0) {
@@ -102,10 +106,7 @@ export async function purgeFallbackVectors(options?: {
   const uri = resolveUriForPurge(options?.uri);
   const db = await lancedb.connect(uri);
 
-  const tables = [
-    LanceDbCognitiveMemoryAdapter.TABLE_NAME,
-    LanceDbSemanticCacheAdapter.TABLE_NAME,
-  ];
+  const tables = [...PURGE_TARGET_TABLES];
 
   const reports: PurgeTableReport[] = [];
   for (const tableName of tables) {

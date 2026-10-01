@@ -7,7 +7,9 @@ export interface AuditLanceDbHealthResult {
   readonly latencyMs: number;
   readonly tableCount: number;
   readonly isHealthy: boolean;
+  readonly fallbackVectorCount?: number;
 }
+
 
 export interface AuditLanceDbHealthUseCasePort {
   execute(): Promise<AuditLanceDbHealthResult>;
