@@ -17,8 +17,9 @@ export default defineConfig({
       ...configDefaults.exclude,
       '**/playwright-e2e/**',
       '**/*.live.test.ts',
-      '**/*.integration.test.ts',
+      '**/telemetry-audit.integration.test.ts',
       'ia-gateway/**',
+
     ],
   },
   resolve: {
