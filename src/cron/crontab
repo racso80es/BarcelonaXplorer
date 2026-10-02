@@ -13,3 +13,6 @@
 # Ingesta diaria de fuentes de contexto hiperlocal (diaria a las 04:00 AM)
 0 4 * * * wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/ingest > /dev/null 2>&1
 
+# Sonda Argos de mantenimiento y exploración de contexto (semanal domingos a las 05:00 AM)
+0 5 * * 0 wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/maintain > /dev/null 2>&1
+
