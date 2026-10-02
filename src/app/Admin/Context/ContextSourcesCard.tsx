@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe2, ShieldCheck, Activity, AlertTriangle } from 'lucide-react';
 import { ContextAdminService } from '@/features/context-sources/context-admin.service';
+import type { ContextSourceSnapshot } from '@/features/context-sources/context-source.types';
 import { ContextSourcesTableClient } from './ContextSourcesTableClient';
 
 export interface ContextSourcesCardProps {
@@ -23,7 +24,15 @@ export function ContextSourcesCardSkeleton() {
 export async function ContextSourcesCard({
   service = new ContextAdminService(),
 }: ContextSourcesCardProps = {}) {
-  const sources = await service.listSources();
+  let sources: ContextSourceSnapshot[] = [];
+  let dbError: string | null = null;
+
+  try {
+    sources = await service.listSources();
+  } catch (error) {
+    console.warn('[ContextSourcesCard] Error listando fuentes de contexto:', error);
+    dbError = error instanceof Error ? error.message : 'Error en la conexión a la base de datos de fuentes';
+  }
 
   const activeCount = sources.filter((s) => s.status === 'ACTIVE').length;
   const degradedCount = sources.filter((s) => s.status === 'DEGRADED').length;
@@ -66,7 +75,19 @@ export async function ContextSourcesCard({
       </CardHeader>
 
       <CardContent className="pt-6">
-        <ContextSourcesTableClient sources={sources} />
+        {dbError ? (
+          <div className="p-4 rounded-lg bg-rose-50/60 border border-rose-200 text-rose-800 text-sm flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Aviso de Persistencia Relacional</p>
+              <p className="text-xs text-rose-700 mt-1">
+                No se pudo consultar la tabla <code>context_sources</code> en MySQL: {dbError}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <ContextSourcesTableClient sources={sources} />
+        )}
       </CardContent>
     </Card>
   );

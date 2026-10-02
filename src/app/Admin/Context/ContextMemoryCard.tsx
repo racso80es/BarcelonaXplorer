@@ -23,7 +23,17 @@ export function ContextMemoryCardSkeleton() {
 export async function ContextMemoryCard({
   service = new ContextAdminService(),
 }: ContextMemoryCardProps = {}) {
-  const { entries, isAvailable } = await service.listMemoryEntries(100);
+  let entries: import('@/features/context-sources/context-admin.service').ContextMemoryEntryItem[] = [];
+  let isAvailable = true;
+
+  try {
+    const res = await service.listMemoryEntries(100);
+    entries = res.entries;
+    isAvailable = res.isAvailable;
+  } catch (error) {
+    console.warn('[ContextMemoryCard] Error listando memoria contextual:', error);
+    isAvailable = false;
+  }
 
   const eventCount = entries.filter((e) => e.category === 'EVENT').length;
   const venueCount = entries.filter((e) => e.category === 'VENUE' || e.category === 'POI').length;
