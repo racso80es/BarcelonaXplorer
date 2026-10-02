@@ -30,6 +30,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/features/context-sources/context-sources.seed.yml ./features/context-sources/context-sources.seed.yml
+COPY --from=builder --chown=nextjs:nodejs /app/features/context-sources/context-sources.seed.yml ./src/features/context-sources/context-sources.seed.yml
 
 USER nextjs
 EXPOSE 3000
