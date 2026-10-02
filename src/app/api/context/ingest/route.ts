@@ -12,6 +12,7 @@ import { SparqlContextAdapter } from '@/features/context-sources/adapters/sparql
 import { RssContextAdapter } from '@/features/context-sources/adapters/rss-context.adapter';
 import { IcalContextAdapter } from '@/features/context-sources/adapters/ical-context.adapter';
 import { ApiRestContextAdapter } from '@/features/context-sources/adapters/api-rest-context.adapter';
+import { JsonLdContextAdapter } from '@/features/context-sources/adapters/json-ld.adapter';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,7 @@ export const defaultContextAdapters: ContextAdapterRegistry = {
   RSS: new RssContextAdapter(),
   ICAL: new IcalContextAdapter(),
   API_REST: new ApiRestContextAdapter(),
+  JSON_LD: new JsonLdContextAdapter(),
 };
 
 export function createIngestUseCase(
