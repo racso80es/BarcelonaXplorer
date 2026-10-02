@@ -1,4 +1,6 @@
 import { AiGeneratorPort } from '@/features/ai-engine';
+import { IEmbeddingPort } from '@/features/ai-engine/embedding.port';
+import { IContextRetrievalPort } from '@/features/context-sources/context-retrieval.port';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TacticalRoute } from './tactical-route.entity';
 import { TelemetryEntry } from '@/features/telemetry';
@@ -24,17 +26,121 @@ export class GenerateTacticalRouteUseCase {
   constructor(
     private readonly aiPort: AiGeneratorPort,
     private readonly telemetryRepo?: TelemetryRepositoryPort,
+    private readonly contextRetrievalPort?: IContextRetrievalPort,
+    private readonly embeddingPort?: IEmbeddingPort,
   ) {}
 
   async execute(input: GenerateTacticalRouteInput): Promise<TacticalRoute | string> {
     const startTime = Date.now();
     const prompt = input.prompt;
+    let effectivePrompt = prompt;
+    let injectedContextIds: string[] = [];
+
     const environment: LlmEnvironmentContext = input.environment ?? {
       localTime: new Date().toISOString(),
     };
 
+    // 0. Recuperación RAG de Contexto Hiperlocal Vigente (PBI-CTX-011)
+    if (this.contextRetrievalPort && this.embeddingPort) {
+      try {
+        const embRes = await this.embeddingPort.generateEmbedding(prompt);
+
+        if (embRes.source === 'fallback') {
+          // CA-3: No buscar con embedding de fallback para evitar falsos vecinos sintéticos
+          this.emitTelemetry({
+            level: 'WARN',
+            context: 'LLM_ENGINE',
+            message:
+              '[Context Retrieval] Embedding de consulta en modo fallback; omitiendo recuperación vectorial para evitar falsos vecinos.',
+            statusCode: 422,
+            durationMs: 0,
+            payload: {
+              model: this.resolveModelName(),
+              prompt,
+              promptLength: prompt.length,
+              reason: 'FALLBACK_EMBEDDING_REJECTED',
+              environmentVariables: environment,
+              request: {
+                prompt,
+                promptLength: prompt.length,
+                environmentVariables: environment,
+              },
+              response: {
+                status: 'CLAUDICATION',
+                message: 'Embedding en modo fallback',
+              },
+            },
+          });
+        } else {
+          // CA-1 & CA-4: Búsqueda acotada con fail-soft
+          try {
+            const searchEnv = await this.contextRetrievalPort.search(embRes.vector, {
+              limit: 5,
+              notExpired: true,
+            });
+
+            if (searchEnv.success && searchEnv.result && searchEnv.result.length > 0) {
+              const entries = searchEnv.result;
+              injectedContextIds = entries.map((e) => e.id);
+
+              const contextBlock = [
+                '[CONTEXTO HIPERLOCAL VIGENTE EN BARCELONA]:',
+                ...entries.map(
+                  (e) =>
+                    `- ${e.title} · ${e.startsAt ? new Date(e.startsAt).toLocaleDateString('es-ES') : 'Permanente'} · ${e.location?.name ?? 'Barcelona'} · ${e.url ?? ''}`
+                ),
+                '',
+              ].join('\n');
+
+              effectivePrompt = `${contextBlock}\n${prompt}`;
+            } else if (!searchEnv.success && this.telemetryRepo) {
+              const errorText = searchEnv.errors?.join('; ') || 'Fallo recuperando contexto';
+              void this.telemetryRepo
+                .log(
+                  new TelemetryEntry(
+                    'WARN',
+                    'SYSTEM',
+                    `[Context Retrieval WARN] Fallo recuperando contexto: ${errorText}`,
+                    { error: searchEnv.errors }
+                  )
+                )
+                .catch(() => {});
+            }
+          } catch (retrievalErr) {
+            if (this.telemetryRepo) {
+              const msg = retrievalErr instanceof Error ? retrievalErr.message : String(retrievalErr);
+              void this.telemetryRepo
+                .log(
+                  new TelemetryEntry(
+                    'WARN',
+                    'SYSTEM',
+                    `[Context Retrieval WARN] Excepción en contextRetrievalPort: ${msg}`,
+                    { error: msg }
+                  )
+                )
+                .catch(() => {});
+            }
+          }
+        }
+      } catch (embErr) {
+        if (this.telemetryRepo) {
+          const msg = embErr instanceof Error ? embErr.message : String(embErr);
+          void this.telemetryRepo
+            .log(
+              new TelemetryEntry(
+                'WARN',
+                'SYSTEM',
+                `[Context Retrieval WARN] Excepción generando embedding de consulta: ${msg}`,
+                { error: msg }
+              )
+            )
+            .catch(() => {});
+        }
+      }
+    }
+
     try {
-      const route = await this.aiPort.generateTacticalRoute(prompt);
+      const route = await this.aiPort.generateTacticalRoute(effectivePrompt);
       const durationMs = Date.now() - startTime;
 
       // Detección de Fricción Cognitiva en la respuesta del modelo
@@ -106,10 +212,12 @@ export class GenerateTacticalRouteUseCase {
           promptLength: prompt.length,
           routeId: route.id,
           waypointsCount: route.waypoints?.length ?? 0,
+          injectedContextIds,
           environmentVariables: environment,
           request: {
             prompt,
             promptLength: prompt.length,
+            injectedContextIds,
             environmentVariables: environment,
           },
           response: returnedRouteData,

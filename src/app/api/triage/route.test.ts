@@ -40,6 +40,7 @@ vi.mock('@/features/ai-engine/server', () => ({
 vi.mock('@/features/cognitive-memory/server', () => ({
   LanceDbCognitiveMemoryAdapter: class {},
   LanceDbSemanticCacheAdapter: class {},
+  LanceDbVectorAdapter: class {},
 }));
 vi.mock('@/features/telemetry/server', () => ({
   PrismaTelemetryRepository: class {

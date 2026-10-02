@@ -15,7 +15,9 @@ import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import {
   LanceDbCognitiveMemoryAdapter,
   LanceDbSemanticCacheAdapter,
+  LanceDbVectorAdapter,
 } from '@/features/cognitive-memory/server';
+import { LanceDbContextRetrievalAdapter } from '@/features/context-sources/lancedb-context-retrieval.adapter';
 import { TelemetryEntry } from '@/features/telemetry';
 import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
 import {
@@ -116,9 +118,12 @@ export async function POST(req: NextRequest) {
       telemetryRepo,
     );
     const embeddingPort = new GeminiEmbeddingAdapter(undefined, telemetryRepo);
+    const contextRetrievalPort = new LanceDbContextRetrievalAdapter(new LanceDbVectorAdapter());
     const routeUseCase = new GenerateTacticalRouteUseCase(
       iaGatewayClient,
       telemetryRepo,
+      contextRetrievalPort,
+      embeddingPort,
     );
     const itineraryRepo = new PrismaItineraryRepository();
     const affiliateEnricher = new AffiliateEnricherService();

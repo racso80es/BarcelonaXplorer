@@ -352,4 +352,146 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
     const parsedArray = TacticalRouteZodSchema.parse(rawDataWithArrayRec);
     expect(parsedArray.waypoints[0].recommendations).toEqual(['Pedir vermut', 'Reservar mesa']);
   });
+
+  describe('PBI-CTX-011: Recuperación RAG de Contexto Hiperlocal', () => {
+    const mockRoute = new TacticalRoute('route-ctx-1', 'Ruta contextualizada', [
+      new TacticalWaypoint('wp-ctx-1', 'Plaça del Sol', 'Concierto en vivo'),
+    ]);
+
+    const dummyContextEntry = {
+      id: 'socrata:event-1',
+      sourceTag: 'socrata',
+      category: 'EVENT' as const,
+      title: 'Festival de Música al Carrer',
+      summary: 'Actuaciones gratuitas en las plazas de Gràcia.',
+      startsAt: '2026-10-15T18:00:00.000Z',
+      expiresAt: '2026-10-16T00:00:00.000Z',
+      location: { name: 'Plaça del Sol' },
+      url: 'https://ajuntament.barcelona.cat/agenda',
+      contentHash: 'd'.repeat(64),
+      tags: ['música'],
+    };
+
+    it('CA-2 & CA-5: Inyecta bloque compacto de contexto y registra injectedContextIds en telemetría', async () => {
+      mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
+
+      const mockEmbeddingPort = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: [0.1, 0.2],
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const mockRetrievalPort = {
+        search: vi.fn().mockResolvedValue({
+          success: true,
+          exitCode: 0,
+          result: [dummyContextEntry],
+        }),
+      };
+
+      const useCase = new GenerateTacticalRouteUseCase(
+        mockAiPort,
+        mockTelemetryRepo,
+        mockRetrievalPort,
+        mockEmbeddingPort
+      );
+
+      const result = await useCase.execute({
+        prompt: 'Ruta bohemia por Gràcia de noche',
+      });
+
+      expect(result).toBe(mockRoute);
+      expect(mockAiPort.generateTacticalRoute).toHaveBeenCalledWith(
+        expect.stringContaining('[CONTEXTO HIPERLOCAL VIGENTE EN BARCELONA]:')
+      );
+      expect(mockAiPort.generateTacticalRoute).toHaveBeenCalledWith(
+        expect.stringContaining('Festival de Música al Carrer')
+      );
+
+      // CA-5: Trazabilidad en la telemetría
+      expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'INFO',
+          payload: expect.objectContaining({
+            injectedContextIds: ['socrata:event-1'],
+          }),
+        })
+      );
+    });
+
+    it('CA-3: Omite la búsqueda vectorial si el embedding es de tipo fallback y emite WARN', async () => {
+      mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
+
+      const mockEmbeddingPort = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: [0.0, 0.0],
+          source: 'fallback' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const mockRetrievalPort = {
+        search: vi.fn(),
+      };
+
+      const useCase = new GenerateTacticalRouteUseCase(
+        mockAiPort,
+        mockTelemetryRepo,
+        mockRetrievalPort,
+        mockEmbeddingPort
+      );
+
+      await useCase.execute({
+        prompt: 'Ruta por la Barceloneta',
+      });
+
+      expect(mockRetrievalPort.search).not.toHaveBeenCalled();
+      expect(mockAiPort.generateTacticalRoute).toHaveBeenCalledWith('Ruta por la Barceloneta');
+      expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'WARN',
+          message: expect.stringContaining('Embedding de consulta en modo fallback'),
+        })
+      );
+    });
+
+    it('CA-4: Opera en fail-soft si el puerto de recuperación falla (la ruta se genera igual)', async () => {
+      mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
+
+      const mockEmbeddingPort = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: [0.1, 0.2],
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const mockRetrievalPort = {
+        search: vi.fn().mockRejectedValue(new Error('LanceDB connection timeout')),
+      };
+
+      const useCase = new GenerateTacticalRouteUseCase(
+        mockAiPort,
+        mockTelemetryRepo,
+        mockRetrievalPort,
+        mockEmbeddingPort
+      );
+
+      const result = await useCase.execute({
+        prompt: 'Ruta arquitectónica por el Born',
+      });
+
+      expect(result).toBe(mockRoute);
+      expect(mockAiPort.generateTacticalRoute).toHaveBeenCalledWith('Ruta arquitectónica por el Born');
+      expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'WARN',
+          message: expect.stringContaining('Excepción en contextRetrievalPort'),
+        })
+      );
+    });
+  });
 });
+
