@@ -10,6 +10,7 @@ import { IContextSourceRepository } from './context-source.repository.port';
 import { ContextAdapterRegistry } from './context-source-adapter.port';
 import { applyIngestionResult } from './context-source-state-machine';
 import { ContextEntry, ContextEntrySchema } from './context-entry.schema';
+import { ContextSourceSeedService } from './context-source-seed.service';
 
 export const CONTEXT_MEMORY_TABLE = 'context_memory';
 
@@ -43,7 +44,15 @@ export class IngestContextUseCase {
 
     try {
       // 1. Obtener todas las fuentes actualmente en estado ACTIVE
-      const activeSources = await this.sourceRepository.findByStatus('ACTIVE');
+      let activeSources = await this.sourceRepository.findByStatus('ACTIVE');
+      if (activeSources.length === 0) {
+        const allSources = await this.sourceRepository.findAll();
+        if (allSources.length === 0) {
+          const seedService = new ContextSourceSeedService(this.sourceRepository);
+          await seedService.loadSeed();
+          activeSources = await this.sourceRepository.findByStatus('ACTIVE');
+        }
+      }
 
       for (const source of activeSources) {
         sourcesProcessed += 1;
