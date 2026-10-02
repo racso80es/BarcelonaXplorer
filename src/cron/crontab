@@ -1,0 +1,11 @@
+# ═══════════════════════════════════════════════════════════════
+# CRONTAB MAESTRO DE MANTENIMIENTO: BARCELONAXPLORER
+# Marco Constitucional: Protocolo de Acero — Grado S+
+# Axioma I: Localidad de Comportamiento e Inmutabilidad IaaC
+# Axioma V: Fail-Closed y Aislamiento Perimetral
+# ═══════════════════════════════════════════════════════════════
+
+# Minuto Hora DíaMes Mes DíaSemana Comando
+
+# Poda ontológica de telemetría (diaria a las 03:30 AM)
+30 3 * * * wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/telemetry/prune > /dev/null 2>&1

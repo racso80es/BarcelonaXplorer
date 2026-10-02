@@ -145,6 +145,36 @@ fi
 
 echo -e "${GREEN}[OK] Ficheros segregados (.env.web y .env.ia-gateway) validados con IA_GATEWAY_SECRET idéntico y seguro.${NC}"
 
+# Aduana de igualdad de CRON_SECRET (PBI-CTX-003 CA-5)
+ENV_CRON="${PROJECT_ROOT}/src/.env.cron"
+if [[ ! -f "${ENV_CRON}" ]]; then
+    echo -e "${RED}[ERROR] No se encuentra el archivo de entorno del sidecar cron en ${ENV_CRON}.${NC}"
+    exit 1
+fi
+
+CRON_SEC_WEB_LINE=$(grep -E '^CRON_SECRET=' "${ENV_WEB}" | tail -n 1 || true)
+CRON_SEC_CRON_LINE=$(grep -E '^CRON_SECRET=' "${ENV_CRON}" | tail -n 1 || true)
+
+if [[ -z "${CRON_SEC_WEB_LINE}" ]] || [[ -z "${CRON_SEC_CRON_LINE}" ]]; then
+    echo -e "${RED}[ERROR] CRON_SECRET debe estar definido en ambos ficheros (.env.web y .env.cron).${NC}"
+    exit 1
+fi
+
+CRON_SEC_WEB="${CRON_SEC_WEB_LINE#CRON_SECRET=}"
+CRON_SEC_WEB="${CRON_SEC_WEB%\"}"
+CRON_SEC_WEB="${CRON_SEC_WEB#\"}"
+
+CRON_SEC_CRON="${CRON_SEC_CRON_LINE#CRON_SECRET=}"
+CRON_SEC_CRON="${CRON_SEC_CRON%\"}"
+CRON_SEC_CRON="${CRON_SEC_CRON#\"}"
+
+if [[ "${CRON_SEC_WEB}" != "${CRON_SEC_CRON}" ]]; then
+    echo -e "${RED}[ERROR] Discrepancia crítica: CRON_SECRET difiere entre .env.web y .env.cron. Deben ser estrictamente idénticos.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}[OK] Fichero segregado .env.cron validado con CRON_SECRET idéntico a .env.web.${NC}"
+
 # 5. Aduana Empírica — Playwright E2E (bloqueo atómico; ver HU-13 Anexo B)
 # Prohibido: npm run test:e2e || true, ramas if sin exit 1, o desacoplar el exit code del hilo principal.
 echo -e "${YELLOW}>>> Ejecutando puerta empírica E2E (CI=1 npm run test:e2e)...${NC}"

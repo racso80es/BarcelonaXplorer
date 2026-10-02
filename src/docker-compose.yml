@@ -86,3 +86,18 @@ services:
     ports:
       - "127.0.0.1:3306:3306"
 
+  # ─────────────────────────────────────────────────────────────
+  # Servicio Cron: Sidecar Planificador de Mantenimiento (Alpine)
+  # ─────────────────────────────────────────────────────────────
+  cron:
+    image: alpine:3.20
+    container_name: barcelonaxplorer_cron
+    restart: unless-stopped
+    depends_on:
+      - web
+    env_file: .env.cron
+    volumes:
+      # Axioma I y II: Crontab versionado montado en solo lectura
+      - ./cron/crontab:/etc/crontabs/root:ro
+    command: ["crond", "-f", "-l", "2"]
+

@@ -24,6 +24,7 @@
     ansistrano_shared_files:
       - .env.web
       - .env.ia-gateway
+      - .env.cron
     # Axioma I: Rutas compartidas y enlazadas simbólicamente por Ansistrano
     ansistrano_shared_paths:
       - ia-gateway
@@ -94,6 +95,12 @@
       ansible.builtin.copy:
         src: "../src/.env.ia-gateway"
         dest: "{{ ansistrano_deploy_to }}/shared/.env.ia-gateway"
+        mode: '0600'
+
+    - name: Transferir automáticamente .env.cron a shared
+      ansible.builtin.copy:
+        src: "../src/.env.cron"
+        dest: "{{ ansistrano_deploy_to }}/shared/.env.cron"
         mode: '0600'
 
     # Axioma I: Sincronización diferencial ultrarrápida del microservicio ia-gateway hacia shared
