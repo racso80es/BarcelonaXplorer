@@ -2,13 +2,13 @@
 
 
 
+
 feature_name: e2e-workspace-1xn-ac9
 created: "2026-10-02"
 process: bug-fix
 branch_name: fix/e2e-workspace-1xn-ac9
 persist_ref: /home/racso/Proyectos/BarcelonaXplorer/docs/fixes/e2e-workspace-1xn-ac9
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md
-execution_id: "0240cb08-3aca-4b8e-a103-06ec453be2fc"
 ---
 # Objetivos — e2e-workspace-1xn-ac9
 
