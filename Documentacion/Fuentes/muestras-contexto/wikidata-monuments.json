@@ -1,0 +1,93 @@
+{
+  "head" : {
+    "vars" : [ "item", "itemLabel", "coord", "description" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q220013"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(2.191194 41.387883)"
+      },
+      "description" : {
+        "xml:lang" : "es",
+        "type" : "literal",
+        "value" : "parque zoológico histórico de la ciudad de Barcelona"
+      },
+      "itemLabel" : {
+        "xml:lang" : "es",
+        "type" : "literal",
+        "value" : "Zoo de Barcelona"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q21789897"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(2.131245 41.4314)"
+      },
+      "itemLabel" : {
+        "xml:lang" : "ca",
+        "type" : "literal",
+        "value" : "mirador de la Rabassada"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q113030948"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(2.189060877 41.385119973)"
+      },
+      "description" : {
+        "xml:lang" : "es",
+        "type" : "literal",
+        "value" : "complejo arquitectónico singular del Zoo de Barcelona"
+      },
+      "itemLabel" : {
+        "xml:lang" : "es",
+        "type" : "literal",
+        "value" : "Aquarama Barcelona"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q131443584"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(2.178601026 41.451652526)"
+      },
+      "itemLabel" : {
+        "xml:lang" : "ca",
+        "type" : "literal",
+        "value" : "Mirador de Torre Baró"
+      }
+    }, {
+      "item" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q136678669"
+      },
+      "coord" : {
+        "datatype" : "http://www.opengis.net/ont/geosparql#wktLiteral",
+        "type" : "literal",
+        "value" : "Point(2.11997741 41.422097956)"
+      },
+      "itemLabel" : {
+        "xml:lang" : "ca",
+        "type" : "literal",
+        "value" : "Hotel 666"
+      }
+    } ]
+  }
+}
