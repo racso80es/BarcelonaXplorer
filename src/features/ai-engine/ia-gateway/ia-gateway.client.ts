@@ -60,6 +60,19 @@ export interface IaGatewayClientConfig {
   timeoutMs?: number;
 }
 
+export class UnsupportedCapabilityError extends Error {
+  constructor(message: string, public readonly exitCode = 501) {
+    super(message);
+    this.name = 'UnsupportedCapabilityError';
+  }
+}
+
+export interface GenerateTextOptions {
+  grounding?: boolean;
+  systemInstruction?: string;
+  temperature?: number;
+}
+
 export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
   private readonly baseUrl: string;
   private readonly gatewaySecret: string;
@@ -347,7 +360,8 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
 
   async generateText(
     prompt: string,
-    engineType: 'FAST_LLM' | 'REASONING_LLM' = 'FAST_LLM'
+    engineType: 'FAST_LLM' | 'REASONING_LLM' = 'FAST_LLM',
+    options?: GenerateTextOptions
   ): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -360,6 +374,9 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
           prompt,
           engineType,
           responseFormat: 'text',
+          grounding: options?.grounding ?? false,
+          systemInstruction: options?.systemInstruction,
+          temperature: options?.temperature,
         }),
         signal: controller.signal,
       });
@@ -370,6 +387,10 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
       const envelope = IaGatewayLlmEnvelopeSchema.parse(rawJson);
 
       if (!envelope.success || !envelope.result) {
+        const firstError = envelope.errors?.[0];
+        if (envelope.exitCode === 501 && firstError?.startsWith('UNSUPPORTED_CAPABILITY:')) {
+          throw new UnsupportedCapabilityError(firstError, envelope.exitCode);
+        }
         const errorMsg = envelope.errors?.join('; ') || envelope.feedback || 'Fallo en generateText';
         throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
       }
@@ -377,6 +398,65 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
       this.recordTelemetry(envelope.result.metrics, response.status);
 
       return envelope.result.text;
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  }
+
+  async generateWithGrounding(
+    prompt: string,
+    options?: {
+      systemInstruction?: string;
+      temperature?: number;
+    }
+  ): Promise<{ text: string; groundingSources: Array<{ uri: string; title?: string }> }> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const response = await this.fetchFn(`${this.baseUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          prompt,
+          engineType: 'REASONING_LLM',
+          responseFormat: 'text',
+          grounding: true,
+          systemInstruction: options?.systemInstruction,
+          temperature: options?.temperature,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      const rawJson: unknown = await response.json();
+      const envelope = IaGatewayLlmEnvelopeSchema.parse(rawJson);
+
+      if (!envelope.success || !envelope.result) {
+        const firstError = envelope.errors?.[0];
+        if (envelope.exitCode === 501 && firstError?.startsWith('UNSUPPORTED_CAPABILITY:')) {
+          throw new UnsupportedCapabilityError(firstError, envelope.exitCode);
+        }
+        const errorMsg =
+          envelope.errors?.join('; ') || envelope.feedback || 'Fallo en generateWithGrounding';
+        throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
+      }
+
+      this.recordTelemetry(envelope.result.metrics, response.status);
+
+      const rawGroundingSources = envelope.result.json?.['groundingSources'];
+      const groundingSources: Array<{ uri: string; title?: string }> = Array.isArray(
+        rawGroundingSources
+      )
+        ? (rawGroundingSources as Array<{ uri: string; title?: string }>)
+        : [];
+
+      return {
+        text: envelope.result.text,
+        groundingSources,
+      };
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       throw err;

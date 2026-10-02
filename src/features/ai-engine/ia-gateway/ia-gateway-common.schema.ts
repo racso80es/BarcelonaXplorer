@@ -11,6 +11,7 @@ export const IaGatewayMetricsSchema = z.object({
   attemptedProviders: z.array(z.string()),
   attemptedModels: z.array(z.string()).default([]),
   durationMs: z.number().nonnegative(),
+  grounded: z.boolean().default(false),
 });
 
 export type IaGatewayMetrics = z.infer<typeof IaGatewayMetricsSchema>;

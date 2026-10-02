@@ -54,12 +54,22 @@ export function createLlmHandler(
       return;
     }
 
-    const { prompt, engineType, responseFormat, schemaId, systemInstruction, temperature } =
-      validation.data;
+    const {
+      prompt,
+      engineType,
+      responseFormat,
+      schemaId,
+      systemInstruction,
+      temperature,
+      grounding,
+    } = validation.data;
 
-    // Matriz declarativa acordada en D-3
-    const candidateOrder: ProviderId[] =
-      engineType === 'FAST_LLM' ? ['GROQ', 'GOOGLE'] : ['GOOGLE', 'GROQ'];
+    // Matriz declarativa acordada en D-3. Si grounding es true, solo GOOGLE es apto (CA-4)
+    const candidateOrder: ProviderId[] = grounding
+      ? ['GOOGLE']
+      : engineType === 'FAST_LLM'
+        ? ['GROQ', 'GOOGLE']
+        : ['GOOGLE', 'GROQ'];
 
     // Filtramos proveedores sanos (CLOSED o HALF_OPEN)
     const healthyCandidates = candidateOrder.filter((p) =>
@@ -85,6 +95,133 @@ export function createLlmHandler(
 
         try {
           const adapter = provider === 'GOOGLE' ? geminiAdapter : groqAdapter;
+
+          // Manejo especial con grounding: true (CA-3, CA-5, CA-8)
+          if (grounding && provider === 'GOOGLE') {
+            if (responseFormat === 'json') {
+              // Plan de contingencia de dos pasos (CA-8):
+              // Paso 1: Búsqueda con respuesta de texto y captura de groundingSources
+              const step1 = await geminiAdapter.generate({
+                prompt,
+                systemInstruction,
+                responseFormat: 'text',
+                temperature,
+                modelId,
+                grounding: true,
+              });
+
+              // Paso 2: Estructuración JSON sin grounding a partir del texto y las fuentes obtenidas
+              const structuringPrompt = `A partir de la siguiente información recuperada en tiempo real de la web:\n\n${step1.text}\n\nEstructura los datos para cumplir con la siguiente petición original:\n${prompt}\n\nDevuelve exclusivamente un JSON conforme al esquema requerido.`;
+              const step2 = await geminiAdapter.generate({
+                prompt: structuringPrompt,
+                systemInstruction:
+                  systemInstruction ??
+                  'Eres un extractor y estructurador de datos en formato JSON estricto.',
+                responseFormat: 'json',
+                temperature: 0,
+                modelId,
+                grounding: false,
+              });
+
+              let parsedUnknown: unknown;
+              try {
+                parsedUnknown = JSON.parse(step2.text);
+              } catch {
+                lastFailureDurationMs = Math.round(performance.now() - t0);
+                collectedErrors.push(`${modelTag}: El paso de estructuración JSON devolvió texto inválido`);
+                continue;
+              }
+
+              const schema = getZodSchemaById(schemaId);
+              const schemaValidation = schema.safeParse(parsedUnknown);
+              if (!schemaValidation.success) {
+                lastFailureDurationMs = Math.round(performance.now() - t0);
+                collectedErrors.push(
+                  `${modelTag}: El JSON estructurado no cumple el esquema ${schemaId}`
+                );
+                continue;
+              }
+
+              const parsedJsonRecord = schemaValidation.data as Record<string, unknown>;
+              if (step1.groundingSources && step1.groundingSources.length > 0) {
+                parsedJsonRecord['groundingSources'] = step1.groundingSources;
+              }
+
+              const durationMs = step1.durationMs + step2.durationMs;
+              const promptTokens = (step1.promptTokens ?? 0) + (step2.promptTokens ?? 0);
+              const completionTokens = (step1.completionTokens ?? 0) + (step2.completionTokens ?? 0);
+              const totalTokens = (step1.totalTokens ?? 0) + (step2.totalTokens ?? 0);
+
+              healthSensor.recordSuccess(provider, durationMs, 200);
+              providerSucceeded = true;
+
+              const metrics: GatewayMetrics = {
+                engineType,
+                provider,
+                modelId,
+                promptTokens: promptTokens > 0 ? promptTokens : null,
+                completionTokens: completionTokens > 0 ? completionTokens : null,
+                totalTokens: totalTokens > 0 ? totalTokens : null,
+                fallbackTriggered: false,
+                attemptedProviders,
+                attemptedModels,
+                durationMs,
+                grounded: true,
+              };
+
+              const output: LlmGenerateOutput = {
+                text: step2.text,
+                json: parsedJsonRecord,
+                metrics,
+              };
+
+              sendJson(res, 200, createSuccessEnvelope(output));
+              return;
+            } else {
+              // Búsqueda directa en texto libre
+              const result = await geminiAdapter.generate({
+                prompt,
+                systemInstruction,
+                responseFormat: 'text',
+                temperature,
+                modelId,
+                grounding: true,
+              });
+
+              let parsedJsonRecord: Record<string, unknown> | undefined = undefined;
+              if (result.groundingSources && result.groundingSources.length > 0) {
+                parsedJsonRecord = { groundingSources: result.groundingSources };
+              }
+
+              healthSensor.recordSuccess(provider, result.durationMs, 200);
+              providerSucceeded = true;
+
+              const metrics: GatewayMetrics = {
+                engineType,
+                provider,
+                modelId: result.modelId,
+                promptTokens: result.promptTokens,
+                completionTokens: result.completionTokens,
+                totalTokens: result.totalTokens,
+                fallbackTriggered: false,
+                attemptedProviders,
+                attemptedModels,
+                durationMs: result.durationMs,
+                grounded: true,
+              };
+
+              const output: LlmGenerateOutput = {
+                text: result.text,
+                json: parsedJsonRecord,
+                metrics,
+              };
+
+              sendJson(res, 200, createSuccessEnvelope(output));
+              return;
+            }
+          }
+
+          // Generación estándar sin grounding
           const result = await adapter.generate({
             prompt,
             systemInstruction,
@@ -134,6 +271,7 @@ export function createLlmHandler(
             attemptedProviders,
             attemptedModels,
             durationMs: result.durationMs,
+            grounded: false,
           };
 
           const output: LlmGenerateOutput = {
@@ -154,6 +292,23 @@ export function createLlmHandler(
       if (!providerSucceeded) {
         healthSensor.recordFailure(provider, lastFailureDurationMs, 502);
       }
+    }
+
+    // Fail-Closed para grounding (CA-4): Omitir Groq y anclaje
+    if (grounding) {
+      sendJson(
+        res,
+        501,
+        createErrorEnvelope(
+          [
+            'UNSUPPORTED_CAPABILITY: grounding requiere proveedor GOOGLE disponible',
+            ...collectedErrors,
+          ],
+          501,
+          'Capacidad no disponible'
+        )
+      );
+      return;
     }
 
     // 2. Jerarquía de Anclaje Base (PBI-GW-005): Si todos los proveedores sanos fallaron
@@ -214,6 +369,7 @@ export function createLlmHandler(
         attemptedProviders,
         attemptedModels,
         durationMs: result.durationMs,
+        grounded: false,
       };
 
       const output: LlmGenerateOutput = {

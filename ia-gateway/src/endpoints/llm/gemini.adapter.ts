@@ -5,6 +5,11 @@ export interface GeminiAdapterConfig {
   defaultModel?: string;
 }
 
+export interface GroundingSource {
+  uri: string;
+  title?: string;
+}
+
 export interface LlmAdapterResult {
   text: string;
   modelId: string;
@@ -12,6 +17,7 @@ export interface LlmAdapterResult {
   completionTokens: number | null;
   totalTokens: number | null;
   durationMs: number;
+  groundingSources?: GroundingSource[];
 }
 
 export interface LlmInvocationParams {
@@ -20,6 +26,7 @@ export interface LlmInvocationParams {
   responseFormat?: 'text' | 'json';
   modelId?: string;
   temperature?: number;
+  grounding?: boolean;
 }
 
 export class GeminiAdapter {
@@ -59,6 +66,9 @@ export class GeminiAdapter {
     if (params.systemInstruction) {
       configPayload['systemInstruction'] = params.systemInstruction;
     }
+    if (params.grounding === true) {
+      configPayload['tools'] = [{ googleSearch: {} }];
+    }
 
     const response = await this.client.models.generateContent({
       model,
@@ -74,6 +84,25 @@ export class GeminiAdapter {
     const completionTokens = usage?.candidatesTokenCount ?? null;
     const totalTokens = usage?.totalTokenCount ?? null;
 
+    const groundingSources: GroundingSource[] = [];
+    const candidate = response.candidates?.[0];
+    const groundingMetadata = candidate?.groundingMetadata as
+      | {
+          groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
+        }
+      | undefined;
+
+    if (groundingMetadata?.groundingChunks) {
+      for (const chunk of groundingMetadata.groundingChunks) {
+        if (chunk.web?.uri) {
+          groundingSources.push({
+            uri: chunk.web.uri,
+            title: chunk.web.title ?? undefined,
+          });
+        }
+      }
+    }
+
     return {
       text,
       modelId: model,
@@ -81,6 +110,7 @@ export class GeminiAdapter {
       completionTokens,
       totalTokens,
       durationMs,
+      groundingSources: groundingSources.length > 0 ? groundingSources : undefined,
     };
   }
 }

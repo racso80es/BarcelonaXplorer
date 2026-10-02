@@ -584,4 +584,81 @@ describe('IaGatewayClient (PBI-GW-006)', () => {
       process.env.TELEMETRY_LLM_ENABLED = previousEnv;
     }
   });
+
+  describe('Grounding y Discriminación de Capacidades (PBI-CTX-002)', () => {
+    it('CA-9: debe ejecutar generateWithGrounding y devolver texto con fuentes citadas', async () => {
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          exitCode: 0,
+          result: {
+            text: 'Información con grounding de Gemini',
+            json: {
+              groundingSources: [{ uri: 'https://barcelona.cat', title: 'Ajuntament de Barcelona' }],
+            },
+            metrics: {
+              engineType: 'REASONING_LLM',
+              provider: 'GOOGLE',
+              modelId: 'gemini-3.5-flash',
+              promptTokens: 100,
+              completionTokens: 20,
+              totalTokens: 120,
+              fallbackTriggered: false,
+              attemptedProviders: ['GOOGLE'],
+              attemptedModels: ['GOOGLE:gemini-3.5-flash'],
+              durationMs: 200,
+              grounded: true,
+            },
+          },
+        }),
+      });
+
+      const client = new IaGatewayClient(
+        { baseUrl, gatewaySecret: secret },
+        undefined,
+        mockFetch as unknown as typeof fetch
+      );
+
+      const res = await client.generateWithGrounding('Consulta cultural');
+      expect(res.text).toBe('Información con grounding de Gemini');
+      expect(res.groundingSources).toHaveLength(1);
+      expect(res.groundingSources[0]?.uri).toBe('https://barcelona.cat');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://ia-gateway:3001/v1/llm/generate',
+        expect.objectContaining({
+          body: JSON.stringify({
+            prompt: 'Consulta cultural',
+            engineType: 'REASONING_LLM',
+            responseFormat: 'text',
+            grounding: true,
+          }),
+        })
+      );
+    });
+
+    it('CA-9: debe discriminar error 501 UNSUPPORTED_CAPABILITY lanzando UnsupportedCapabilityError', async () => {
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 501,
+        json: async () => ({
+          success: false,
+          exitCode: 501,
+          feedback: 'Capacidad no disponible',
+          errors: ['UNSUPPORTED_CAPABILITY: grounding requiere proveedor GOOGLE disponible'],
+        }),
+      });
+
+      const client = new IaGatewayClient(
+        { baseUrl, gatewaySecret: secret },
+        undefined,
+        mockFetch as unknown as typeof fetch
+      );
+
+      await expect(client.generateWithGrounding('Consulta')).rejects.toThrowError(
+        'UNSUPPORTED_CAPABILITY: grounding requiere proveedor GOOGLE disponible'
+      );
+    });
+  });
 });

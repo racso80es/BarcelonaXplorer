@@ -33,10 +33,36 @@ export const FastInsightSchema = z.object({
 
 export const GenericJsonSchema = z.record(z.string(), z.unknown());
 
+export const ContextEntryItemSchema = z.object({
+  id: z.string().min(1),
+  sourceTag: z.string().min(1),
+  category: z.enum(['EVENT', 'VENUE', 'POI', 'NEWS']),
+  title: z.string().min(3).max(200),
+  summary: z.string().min(10).max(1200),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional(),
+  location: z
+    .object({
+      name: z.string().optional(),
+      lat: z.number().optional(),
+      lng: z.number().optional(),
+    })
+    .optional(),
+  url: z.string().url().optional(),
+  price: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  expiresAt: z.string().datetime().optional(),
+});
+
+export const ContextEntriesSchema = z.object({
+  entries: z.array(ContextEntryItemSchema),
+});
+
 const registry: Record<string, z.ZodTypeAny> = {
   'tactical-route': TacticalRouteSchema,
   'fast-insight': FastInsightSchema,
   'generic-json': GenericJsonSchema,
+  'context-entries': ContextEntriesSchema,
 };
 
 export function getZodSchemaById(schemaId?: string): z.ZodTypeAny {

@@ -153,6 +153,7 @@ export class JevAdapter {
         attemptedProviders: ['JEV'],
         attemptedModels: [`JEV:${parsed.data.model || this.config.model}`],
         durationMs,
+        grounded: false,
       };
 
       if (input.primitive === 'noul') {

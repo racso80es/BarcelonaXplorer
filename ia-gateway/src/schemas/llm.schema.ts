@@ -11,6 +11,7 @@ export const GatewayMetricsSchema = z.object({
   attemptedProviders: z.array(z.string()),
   attemptedModels: z.array(z.string()).default([]),
   durationMs: z.number().nonnegative(),
+  grounded: z.boolean().default(false),
 });
 
 export type GatewayMetrics = z.infer<typeof GatewayMetricsSchema>;
@@ -23,6 +24,7 @@ export const LlmGenerateInputSchema = z
     schemaId: z.string().optional(),
     systemInstruction: z.string().optional(),
     temperature: z.number().min(0).max(2).optional(),
+    grounding: z.boolean().default(false),
   })
   .refine(
     (data) => {
@@ -34,6 +36,18 @@ export const LlmGenerateInputSchema = z
     {
       message: 'schemaId es obligatorio cuando responseFormat es "json"',
       path: ['schemaId'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.grounding && data.engineType === 'FAST_LLM') {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'grounding solo se admite con engineType REASONING_LLM',
+      path: ['grounding'],
     }
   );
 

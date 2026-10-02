@@ -347,4 +347,147 @@ describe('POST /v1/llm/generate (PBI-GW-003)', () => {
       await new Promise<void>((resolve) => srv.close(() => resolve()));
     }
   });
+
+  describe('Grounding Fail-Closed y Búsqueda Web (PBI-CTX-002)', () => {
+    it('CA-2: debe rechazar grounding: true con FAST_LLM con HTTP 400', async () => {
+      const res = await fetch(`${baseUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Busca eventos',
+          engineType: 'FAST_LLM',
+          grounding: true,
+        }),
+      });
+
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as OperationEnvelope<unknown>;
+      expect(body.success).toBe(false);
+      expect(body.errors?.[0]).toContain('grounding solo se admite con engineType REASONING_LLM');
+    });
+
+    it('CA-3 y CA-5: debe generar texto con grounding y retornar fuentes citadas', async () => {
+      mockGeminiGenerate.mockResolvedValueOnce({
+        text: 'Eventos encontrados en Barcelona: Festival Grec y Festes de Gràcia.',
+        modelId: 'gemini-3.5-flash',
+        promptTokens: 120,
+        completionTokens: 40,
+        totalTokens: 160,
+        durationMs: 450,
+        groundingSources: [
+          { uri: 'https://barcelona.cat/grec', title: 'Festival Grec' },
+          { uri: 'https://festesdegracia.cat', title: 'Festes de Gràcia' },
+        ],
+      });
+
+      const res = await fetch(`${baseUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Encuentra eventos en Barcelona',
+          engineType: 'REASONING_LLM',
+          grounding: true,
+          responseFormat: 'text',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as OperationEnvelope<LlmGenerateOutput>;
+      expect(body.success).toBe(true);
+      expect(body.result?.text).toContain('Festival Grec');
+      expect(body.result?.metrics.grounded).toBe(true);
+      expect(body.result?.metrics.provider).toBe('GOOGLE');
+      expect(body.result?.json?.groundingSources).toHaveLength(2);
+      expect(mockGeminiGenerate).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          grounding: true,
+        })
+      );
+    });
+
+    it('CA-4: debe fallar fail-closed con HTTP 501 UNSUPPORTED_CAPABILITY si Google falla, sin intentar Groq ni anclaje', async () => {
+      mockGroqGenerate.mockClear();
+      mockGeminiGenerate.mockRejectedValue(new Error('Google search offline'));
+
+      const res = await fetch(`${baseUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Busca fuentes',
+          engineType: 'REASONING_LLM',
+          grounding: true,
+          responseFormat: 'text',
+        }),
+      });
+
+      expect(res.status).toBe(501);
+      const body = (await res.json()) as OperationEnvelope<unknown>;
+      expect(body.success).toBe(false);
+      expect(body.exitCode).toBe(501);
+      expect(body.errors?.[0]).toContain('UNSUPPORTED_CAPABILITY: grounding requiere proveedor GOOGLE disponible');
+      // Aseguramos que Groq nunca fue llamado
+      expect(mockGroqGenerate).not.toHaveBeenCalled();
+    });
+
+    it('CA-8: plan de contingencia de dos pasos para grounding: true con responseFormat: json', async () => {
+      // Paso 1: búsqueda texto con grounding
+      mockGeminiGenerate.mockResolvedValueOnce({
+        text: 'Muestra web: Primavera Sound 2027 en Parc del Fòrum.',
+        modelId: 'gemini-3.5-flash',
+        promptTokens: 100,
+        completionTokens: 30,
+        totalTokens: 130,
+        durationMs: 300,
+        groundingSources: [{ uri: 'https://primaverasound.com', title: 'Primavera Sound' }],
+      });
+
+      // Paso 2: estructuración json sin grounding
+      mockGeminiGenerate.mockResolvedValueOnce({
+        text: JSON.stringify({
+          category: 'music',
+          observation: 'Primavera Sound confirmado',
+          severityLevel: 1,
+        }),
+        modelId: 'gemini-3.5-flash',
+        promptTokens: 80,
+        completionTokens: 25,
+        totalTokens: 105,
+        durationMs: 200,
+      });
+
+      const res = await fetch(`${baseUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Extrae eventos musicales',
+          engineType: 'REASONING_LLM',
+          responseFormat: 'json',
+          schemaId: 'fast-insight',
+          grounding: true,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as OperationEnvelope<LlmGenerateOutput>;
+      expect(body.success).toBe(true);
+      expect(body.result?.metrics.grounded).toBe(true);
+      expect(body.result?.metrics.totalTokens).toBe(235); // 130 + 105
+      expect(body.result?.json?.category).toBe('music');
+      expect(body.result?.json?.groundingSources).toEqual([
+        { uri: 'https://primaverasound.com', title: 'Primavera Sound' },
+      ]);
+    });
+  });
 });
