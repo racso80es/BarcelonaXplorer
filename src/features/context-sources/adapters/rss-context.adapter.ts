@@ -14,6 +14,7 @@ export class RssContextAdapter implements IContextSourceAdapter {
         headers: {
           Accept: 'application/rss+xml, application/xml, text/xml',
         },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

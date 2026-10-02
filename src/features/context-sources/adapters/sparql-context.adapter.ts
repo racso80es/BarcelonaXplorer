@@ -29,8 +29,16 @@ export class SparqlContextAdapter implements IContextSourceAdapter {
         'User-Agent': 'BarcelonaXplorer/1.0 (https://barcelonaxplorer.cat; context-engine)',
       };
 
-      const response = await this.fetchFn(source.endpoint, {
+      const defaultSparqlQuery =
+        'SELECT ?item ?itemLabel ?coord ?description WHERE { ?item wdt:P31 wd:Q4989906; wdt:P131 wd:Q1492; wdt:P625 ?coord. SERVICE wikibase:label { bd:serviceParam wikibase:language "ca,es,en". } } LIMIT 25';
+
+      const targetUrl = source.endpoint.includes('query=')
+        ? source.endpoint
+        : `${source.endpoint}${source.endpoint.includes('?') ? '&' : '?'}query=${encodeURIComponent(defaultSparqlQuery)}`;
+
+      const response = await this.fetchFn(targetUrl, {
         headers,
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

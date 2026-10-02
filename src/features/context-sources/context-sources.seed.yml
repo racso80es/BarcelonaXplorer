@@ -15,7 +15,7 @@ sources:
   # Fuente A2: Socrata Agenda Cultural Generalitat de Catalunya
   - sourceTag: "gencat-agenda-cultural"
     displayName: "Agenda Cultural de Catalunya (Barcelona)"
-    endpoint: "https://analisi.transparenciacatalunya.cat/resource/rhpv-yr4f.json?municipi=agenda:ubicacions/barcelona/barcelones/barcelona"
+    endpoint: "https://analisi.transparenciacatalunya.cat/resource/rhpv-yr4f.json?municipi=agenda:ubicacions/barcelona/barcelones/barcelona&$limit=25"
     type: "SOCRATA"
     category: "EVENT"
     status: "ACTIVE"
@@ -24,7 +24,7 @@ sources:
   # Fuente A3: Socrata Equipaments Culturals de Catalunya
   - sourceTag: "gencat-equipaments-culturals"
     displayName: "Equipaments Culturals de Catalunya (Barcelona)"
-    endpoint: "https://analisi.transparenciacatalunya.cat/resource/48s6-82h2.json?municipi=Barcelona"
+    endpoint: "https://analisi.transparenciacatalunya.cat/resource/48s6-82h2.json?municipi=Barcelona&$limit=25"
     type: "SOCRATA"
     category: "VENUE"
     status: "ACTIVE"

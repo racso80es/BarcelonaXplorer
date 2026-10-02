@@ -116,9 +116,13 @@ export class IngestContextUseCase {
           }
         }
 
-        // 5. Vectorización verificada fail-closed (CA-6)
+        // 5. Acondicionamiento térmico: procesar máximo 20 entradas nuevas por fuente por ciclo
+        const MAX_NEW_ENTRIES_PER_SOURCE = 20;
+        const entriesToProcess = entriesToEmbed.slice(0, MAX_NEW_ENTRIES_PER_SOURCE);
+
+        // Vectorización verificada fail-closed (CA-6)
         const docsToPersist: VectorDocument[] = [];
-        for (const entry of entriesToEmbed) {
+        for (const entry of entriesToProcess) {
           try {
             const emb = await this.embeddingPort.generateEmbedding(entry.summary);
             if (emb.source === 'fallback') {

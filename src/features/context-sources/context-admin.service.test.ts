@@ -4,6 +4,10 @@ import { IContextSourceRepository } from './context-source.repository.port';
 import { ContextSourceSnapshot } from './context-source.types';
 import { createSuccessEnvelope } from '@/shared/operation-envelope';
 
+vi.mock('@/features/cognitive-memory/lancedb-client', () => ({
+  getLanceDbConnection: vi.fn(),
+}));
+
 describe('ContextAdminService', () => {
   let mockSourceRepo: IContextSourceRepository;
   const dummySource: ContextSourceSnapshot = {
@@ -71,5 +75,69 @@ describe('ContextAdminService', () => {
 
     expect(envelope.success).toBe(true);
     expect(envelope.result?.endpoint).toBe('https://test.bcn/events-corregido');
+  });
+
+  describe('listMemoryEntries', () => {
+    it('retorna lista vacía con isAvailable: true si context_memory no existe', async () => {
+      const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');
+      vi.mocked(getLanceDbConnection).mockResolvedValueOnce({
+        tableNames: vi.fn().mockResolvedValue(['other_table']),
+      } as unknown as import('@lancedb/lancedb').Connection);
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const res = await service.listMemoryEntries();
+
+      expect(res.isAvailable).toBe(true);
+      expect(res.entries).toEqual([]);
+    });
+
+    it('retorna registros mapeados correctamente cuando context_memory existe', async () => {
+      const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');
+      const mockTable = {
+        query: vi.fn().mockReturnValue({
+          limit: vi.fn().mockReturnValue({
+            toArray: vi.fn().mockResolvedValue([
+              {
+                id: 'test-1',
+                text: 'Resumen de prueba',
+                metadata: JSON.stringify({
+                  sourceTag: 'wikidata-monuments',
+                  category: 'POI',
+                  title: 'Sagrada Família',
+                  summary: 'Basílica monumental en Barcelona',
+                  expiresAt: '2026-12-31T23:59:59.000Z',
+                  contentHash: 'hash123',
+                }),
+              },
+            ]),
+          }),
+        }),
+      };
+
+      vi.mocked(getLanceDbConnection).mockResolvedValueOnce({
+        tableNames: vi.fn().mockResolvedValue(['context_memory']),
+        openTable: vi.fn().mockResolvedValue(mockTable),
+      } as unknown as import('@lancedb/lancedb').Connection);
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const res = await service.listMemoryEntries(10);
+
+      expect(res.isAvailable).toBe(true);
+      expect(res.entries).toHaveLength(1);
+      expect(res.entries[0].title).toBe('Sagrada Família');
+      expect(res.entries[0].category).toBe('POI');
+      expect(res.entries[0].sourceTag).toBe('wikidata-monuments');
+    });
+
+    it('retorna isAvailable: false cuando falla la conexión con LanceDB', async () => {
+      const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');
+      vi.mocked(getLanceDbConnection).mockRejectedValueOnce(new Error('LanceDB connection failed'));
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const res = await service.listMemoryEntries();
+
+      expect(res.isAvailable).toBe(false);
+      expect(res.entries).toEqual([]);
+    });
   });
 });

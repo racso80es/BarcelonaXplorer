@@ -14,6 +14,7 @@ export class ApiRestContextAdapter implements IContextSourceAdapter {
         headers: {
           Accept: 'application/json',
         },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

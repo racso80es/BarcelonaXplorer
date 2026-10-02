@@ -36,6 +36,7 @@ export class IcalContextAdapter implements IContextSourceAdapter {
         headers: {
           Accept: 'text/calendar, application/ics',
         },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

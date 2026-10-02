@@ -5,7 +5,7 @@
  */
 import { GoogleGenAI } from '@google/genai';
 
-const CANDIDATE_MODELS = ['text-embedding-004', 'embedding-001'] as const;
+const CANDIDATE_MODELS = ['gemini-embedding-001', 'text-embedding-004', 'embedding-001'] as const;
 const PROBE_TEXT = 'BarcelonaXplorer embedding ping';
 const DIMENSIONS = 768;
 

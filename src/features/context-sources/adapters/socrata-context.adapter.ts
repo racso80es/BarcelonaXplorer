@@ -20,6 +20,7 @@ export class SocrataContextAdapter implements IContextSourceAdapter {
 
       const response = await this.fetchFn(source.endpoint, {
         headers,
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

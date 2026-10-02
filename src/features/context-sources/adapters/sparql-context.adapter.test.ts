@@ -60,7 +60,7 @@ describe('SparqlContextAdapter', () => {
     await adapter.fetch(baseSource);
 
     expect(mockFetch).toHaveBeenCalledWith(
-      baseSource.endpoint,
+      expect.stringContaining(baseSource.endpoint),
       expect.objectContaining({
         headers: expect.objectContaining({
           'User-Agent': expect.stringContaining('BarcelonaXplorer'),

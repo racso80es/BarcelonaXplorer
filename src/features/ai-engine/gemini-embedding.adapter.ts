@@ -7,7 +7,7 @@ import {
   EMBEDDING_DIMENSIONS,
 } from '@/features/ai-engine/deterministic-embedding-fallback';
 
-const DEFAULT_EMBEDDING_MODEL = 'embedding-001';
+const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-001';
 
 type EmbeddingFailureKind = 'permanent' | 'transient';
 

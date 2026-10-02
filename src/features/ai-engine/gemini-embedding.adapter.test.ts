@@ -31,17 +31,40 @@ describe('GeminiEmbeddingAdapter', () => {
       },
     } as unknown as GoogleGenAI;
 
-    const adapter = new GeminiEmbeddingAdapter(mockGenAi, undefined, 'embedding-001');
+    const adapter = new GeminiEmbeddingAdapter(mockGenAi, undefined, 'gemini-embedding-001');
     const result = await adapter.generateEmbedding('Ruta gótica');
 
     expect(mockEmbedContent).toHaveBeenCalledWith({
-      model: 'embedding-001',
+      model: 'gemini-embedding-001',
       contents: 'Ruta gótica',
       config: { outputDimensionality: 768 },
     });
     expect(result.source).toBe('provider');
     expect(result.vector.length).toBe(768);
     expect(result.vector[0]).toBe(0.123);
+  });
+
+  it('debe usar gemini-embedding-001 por defecto y extraer vector desde res.embeddings[0].values', async () => {
+    const mockEmbedContent = vi.fn().mockResolvedValue({
+      embeddings: [{ values: new Array(768).fill(0.456) }],
+    });
+    const mockGenAi = {
+      models: {
+        embedContent: mockEmbedContent,
+      },
+    } as unknown as GoogleGenAI;
+
+    const adapter = new GeminiEmbeddingAdapter(mockGenAi);
+    const result = await adapter.generateEmbedding('Parc de la Ciutadella');
+
+    expect(mockEmbedContent).toHaveBeenCalledWith({
+      model: 'gemini-embedding-001',
+      contents: 'Parc de la Ciutadella',
+      config: { outputDimensionality: 768 },
+    });
+    expect(result.source).toBe('provider');
+    expect(result.vector.length).toBe(768);
+    expect(result.vector[0]).toBe(0.456);
   });
 
   it('debe rechazar respuesta con dimensión distinta de 768 y usar fallback', async () => {

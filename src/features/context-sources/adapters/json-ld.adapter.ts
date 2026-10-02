@@ -80,6 +80,7 @@ export class JsonLdContextAdapter implements IContextSourceAdapter {
           'User-Agent': 'BarcelonaXplorer-Bot/1.0 (+https://barcelonaxplorer.cat)',
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9',
         },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
