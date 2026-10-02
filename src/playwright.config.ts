@@ -15,7 +15,7 @@ export default defineConfig({
   reporter: 'list',
   timeout: 60_000,
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3099',
     trace: 'on-first-retry',
   },
   projects: [
@@ -26,8 +26,8 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'NEXT_PUBLIC_E2E_DISPATCH_HOOK=1 npm run build && rm -rf .next/standalone/.next/static .next/standalone/public && mkdir -p .next/standalone/.next && cp -a .next/static .next/standalone/.next/static && cp -a public .next/standalone/public && PORT=3000 node .next/standalone/server.js',
-    url: 'http://localhost:3000',
+      'NEXT_PUBLIC_E2E_DISPATCH_HOOK=1 npm run build && rm -rf .next/standalone/.next/static .next/standalone/public && mkdir -p .next/standalone/.next && cp -a .next/static .next/standalone/.next/static && cp -a public .next/standalone/public && PORT=3099 node .next/standalone/server.js',
+    url: 'http://localhost:3099',
     reuseExistingServer: !process.env.CI && !process.env.BX_AUDIT,
     timeout: 300_000,
   },

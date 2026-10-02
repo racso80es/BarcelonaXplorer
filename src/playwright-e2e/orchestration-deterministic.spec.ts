@@ -7,11 +7,12 @@ test.describe('Escenario 1: Orquestación determinista (inline itinerary)', () =
     await installOrchestratorNetworkMocks(page, 'base-inline');
   });
 
-  test('renderiza HybridCanvas sin llamadas externas al generar ruta', async ({ page }) => {
+  test('renderiza HybridCanvas sin llamadas externas al generar ruta', async ({ page, baseURL }) => {
+    const ownHost = new URL(baseURL!).host;
     const leakedHosts: string[] = [];
     page.on('request', (request) => {
       const host = new URL(request.url()).host;
-      if (host !== 'localhost:3000') {
+      if (host !== ownHost) {
         leakedHosts.push(request.url());
       }
     });

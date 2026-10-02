@@ -19,6 +19,7 @@
     docker compose --env-file "$ENV_FILE" -p barcelonaxplorer build ia-gateway web
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
+    executable: /bin/bash
   environment:
     BX_RELEASE_TAG: "{{ ansistrano_release_path | basename }}"
 
@@ -32,6 +33,7 @@
     docker compose --env-file "$ENV_FILE" -p barcelonaxplorer up -d --remove-orphans
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
+    executable: /bin/bash
 
 # Axioma II: Ventana de estabilización temporal para apertura de sockets TCP/InnoDB
 - name: Pausa táctica para ignición y estabilización del socket InnoDB (MySQL)
@@ -50,6 +52,7 @@
     docker exec barcelonaxplorer_mysql mysqladmin ping -h localhost -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" --silent
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
+    executable: /bin/bash
   register: mysql_ping
   until: mysql_ping.rc == 0
   retries: 20
@@ -62,7 +65,7 @@
     set -euo pipefail
     set -a
     # shellcheck disable=SC1091
-    source .env.production
+    source "$([ -f .env.web ] && echo '.env.web' || echo '.env.production')"
     set +a
     docker exec -i barcelonaxplorer_mysql mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" << 'EOF'
     CREATE TABLE IF NOT EXISTS `SystemConfig` (
@@ -157,6 +160,7 @@
     EOF
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"
+    executable: /bin/bash
 
 # Axioma IV: El Peaje del Oráculo — Sonda sintética post-despliegue con reversión automática
 - name: Oráculo de Salud Sintético y Mitigación Automática Post-Despliegue
@@ -239,6 +243,8 @@
         else
           echo "ADVERTENCIA: No se localizó release previa para restaurar."
         fi
+      args:
+        executable: /bin/bash
       changed_when: true
 
     - name: Abortar despliegue por fallo del Oráculo de Salud

@@ -96,12 +96,23 @@
         dest: "{{ ansistrano_deploy_to }}/shared/.env.ia-gateway"
         mode: '0600'
 
-    # Axioma I: Sincronización del código fuente del microservicio ia-gateway hacia shared
-    - name: Transferir código fuente del microservicio ia-gateway a shared
-      ansible.builtin.copy:
-        src: "../ia-gateway"
+    # Axioma I: Sincronización diferencial ultrarrápida del microservicio ia-gateway hacia shared
+    - name: Sincronizar código fuente del microservicio ia-gateway a shared vía rsync
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../ia-gateway"
         dest: "{{ ansistrano_deploy_to }}/shared/"
-        mode: '0755'
+        delete: true
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=dist"
+          - "--exclude=.git"
+          - "--exclude=.env*"
+
+    # Axioma I: Purgado de dependencias locales remanentes en el host remoto
+    - name: Asegurar eliminación higiénica de node_modules remanente en shared/ia-gateway
+      ansible.builtin.file:
+        path: "{{ ansistrano_deploy_to }}/shared/ia-gateway/node_modules"
+        state: absent
   roles:
     # Rol Ansistrano: orquestación atómica cero-downtime (setup -> update -> symlink -> cleanup)
     - ansistrano.deploy

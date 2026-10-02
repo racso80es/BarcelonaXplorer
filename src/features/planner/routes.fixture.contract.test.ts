@@ -6,7 +6,7 @@ import {
   saturatedSGradeItinerary,
   triageDispatchBaseDto,
   triageDispatchSaturatedDto,
-} from './routes.fixture';
+} from '@/playwright-e2e/fixtures/routes.fixture';
 
 describe('PBI-STEEL-006: fixtures E2E alineados con contrato Zod', () => {
   it('valida itinerarios enriquecidos de Playwright', () => {
