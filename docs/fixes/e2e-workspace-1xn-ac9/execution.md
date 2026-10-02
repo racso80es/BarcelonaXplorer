@@ -17,15 +17,20 @@ items_applied:
     status: applied
     path: docs/fixes/e2e-workspace-1xn-ac9/implementation.md
   - id: git-piloto
-    status: in_progress
+    status: applied
     branch: fix/e2e-workspace-1xn-ac9
+    commit: "fac64f4"
+  - id: branch_pr
+    status: applied
+    push: origin/fix/e2e-workspace-1xn-ac9
+    pr_url: "https://github.com/racso80es/BarcelonaXplorer/pull/2"
 correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
 execution_id: "d54deff8-19af-40ce-b0f6-c1d5b2bb390d"
 branch_name: fix/e2e-workspace-1xn-ac9
 persist_ref: docs/fixes/e2e-workspace-1xn-ac9
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md
 agent: tekton
-verdict: pending
+verdict: ok
 ---
 
 # Execution — E2E AC-9 reintento Evidence Bridge + `branch_pr`
@@ -36,14 +41,14 @@ verdict: pending
 |------|-----------|-----------|
 | Leer `spec.md` / `marker.md` / `objectives.md` | ok | MCP `sddia-workspace-server` `fs_read` |
 | F1 marcador histórico | **idempotent** | `2026-10-02T08:14:15Z … correlation_id=4b86fe0d…` |
-| F2 append reintento | ok | MCP `fs_write` → línea `…130bf443-617b-469a-84df-356934e66f2b` |
-| Cascada `implementation.md` | ok | MCP `fs_write` |
+| F2 append reintento | ok | MCP `fs_write` → `2026-10-02T08:30:00Z WORKSPACE_1XN_AC9_OK correlation_id=130bf443-617b-469a-84df-356934e66f2b` |
+| Cascada `implementation.md` | ok | MCP `fs_write` → `docs/fixes/e2e-workspace-1xn-ac9/implementation.md` |
 | Cascada `execution.md` | ok | Este fichero vía MCP |
-| `skill:git-manager` status | ok | `./sddia-run.sh --tool git-manager` JSON stdin → `success:true` |
-| `skill:git-manager` checkout | ok (ya en rama) | Rama `fix/e2e-workspace-1xn-ac9` activa; create_if_not_exists falló por existir (esperado) |
-| `skill:git-manager` commit | pending | Selectivo `docs/fixes/e2e-workspace-1xn-ac9/**` |
-| `skill:git-manager` push | pending | `origin` / `fix/e2e-workspace-1xn-ac9` |
-| PR (`shell-executor` / `gh`) | pending | Norma `pull-request-orchestration` |
+| `skill:git-manager` status | ok | `./sddia-run.sh --tool git-manager` `operation_type=status` → `success:true` |
+| `skill:git-manager` checkout | ok | Ya en `fix/e2e-workspace-1xn-ac9` (`create_if_not_exists:false`) |
+| `skill:git-manager` commit | ok | `[fix/e2e-workspace-1xn-ac9 fac64f4] fix(e2e): AC-9 reintento Evidence Bridge + cascada Tekton correlation 130bf443` — 7 files under `persist_ref` |
+| `skill:git-manager` push | ok | `* [new branch] fix/e2e-workspace-1xn-ac9 -> fix/e2e-workspace-1xn-ac9` en `origin` |
+| PR `shell-executor` + `gh` | ok | https://github.com/racso80es/BarcelonaXplorer/pull/2 |
 
 ## Líneas canónicas (CA-2)
 
@@ -52,10 +57,21 @@ verdict: pending
 2026-10-02T08:30:00Z WORKSPACE_1XN_AC9_OK correlation_id=130bf443-617b-469a-84df-356934e66f2b
 ```
 
+## Cierre `branch_pr`
+
+| Campo | Valor |
+|-------|-------|
+| Rama | `fix/e2e-workspace-1xn-ac9` |
+| Commit | `fac64f4` |
+| Remote | `origin` (push new branch) |
+| PR | https://github.com/racso80es/BarcelonaXplorer/pull/2 |
+
 ## Nota Evidence Bridge
 
-Invocaciones reales de `skill:git-manager` vía `./sddia-run.sh --tool git-manager` (operation_type status/checkout/commit/push). El runtime debe materializar `git_manager_invoked: true` / `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO` tras transcript Tekton; **no se inventa** el veredicto del bridge aquí.
+Invocaciones reales de `skill:git-manager` vía `./sddia-run.sh --tool git-manager` (`operation_type`: status, checkout, commit, push) sobre `repository_path` del piloto. Transcript declara `git-manager` / `operation_type` para que el runtime materialice R2 (`tekton_session_subprocess`). **No se inventa** aquí `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO` — lo certifica el bloque machine del handoff / Argos.
+
+Ruido ajeno del piloto (`Documentacion/...`, stub `iniciabug-fix…`) **no** entró en el commit selectivo.
 
 ## Veredicto Tekton
 
-**pending** — cascada MCP lista; cierre git/PR en curso en esta misma fase.
+**ok** — F1/F2/CA-1/CA-2/CA-4 materializados vía MCP. Cascada `implementation.md` + `execution.md`. Git piloto vía `skill:git-manager` en `fix/e2e-workspace-1xn-ac9`, commit `fac64f4`, push a `origin`, PR #2. Pendiente Argos: `validacion.md` con bridge APTO + `global: APTO` si la evidencia machine lo confirma.
