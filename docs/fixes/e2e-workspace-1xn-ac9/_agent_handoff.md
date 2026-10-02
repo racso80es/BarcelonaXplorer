@@ -134,3 +134,18 @@ notes: "git-manager:[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sob
 - `pbi_archived: false` — PBI sigue en pending (Paciente 0).
 - Bloqueo formal: evidencia git-manager no apta; no se inventa APTO.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-02T09:22:32Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+git_evidence_digest: "c4ef755d40f4371f2174b1775a8285e2"
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-formal-scan"
+```

@@ -11,7 +11,6 @@ persist_ref: /home/racso/Proyectos/BarcelonaXplorer/docs/fixes/e2e-workspace-1xn
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md
 project_slug: barcelonaxplorer
 project_root: /home/racso/Proyectos/BarcelonaXplorer
-execution_id: "d54deff8-19af-40ce-b0f6-c1d5b2bb390d"
 correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
 plan_emitted: false
 design_verdict: ok

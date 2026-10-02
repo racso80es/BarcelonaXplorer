@@ -25,7 +25,6 @@ items_applied:
     push: origin/fix/e2e-workspace-1xn-ac9
     pr_url: "https://github.com/racso80es/BarcelonaXplorer/pull/2"
 correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
-execution_id: "d54deff8-19af-40ce-b0f6-c1d5b2bb390d"
 branch_name: fix/e2e-workspace-1xn-ac9
 persist_ref: docs/fixes/e2e-workspace-1xn-ac9
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md
