@@ -189,7 +189,7 @@
   block:
     # CA-1 (PBI-GW-013): Verificar que el contenedor barcelonaxplorer_ia_gateway alcance estado healthy
     - name: Verificar salud del contenedor IA Gateway vía Docker Healthcheck
-      ansible.builtin.command: docker inspect --format '{{.State.Health.Status}}' barcelonaxplorer_ia_gateway
+      ansible.builtin.command: docker inspect --format '{% raw %}{{.State.Health.Status}}{% endraw %}' barcelonaxplorer_ia_gateway
       register: ia_gateway_container_health
       until: ia_gateway_container_health.stdout == 'healthy'
       retries: 20
