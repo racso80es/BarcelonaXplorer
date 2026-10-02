@@ -23,6 +23,12 @@ describe('Fallback and Base Anchor Hierarchy (PBI-GW-005)', () => {
       expect(parsedGroq.modelId).toBe('llama-3.3-70b-versatile');
     });
 
+    it('debe limpiar comillas envolventes de variables de entorno de docker', () => {
+      const parsedQuoted = parseAnchorString('"google:gemini-3.5-flash"');
+      expect(parsedQuoted.provider).toBe('GOOGLE');
+      expect(parsedQuoted.modelId).toBe('gemini-3.5-flash');
+    });
+
     it('debe rechazar formato inválido mediante Zod', () => {
       expect(() => parseAnchorString('invalid-string')).toThrow();
       expect(() => parseAnchorString('openai:gpt-4')).toThrow(); // Solo google o groq

@@ -13,7 +13,8 @@ export const AnchorConfigStringSchema = z
   });
 
 export function parseAnchorString(raw: string): AnchorDefinition {
-  const validated = AnchorConfigStringSchema.parse(raw);
+  const clean = raw.trim().replace(/^["']|["']$/g, '');
+  const validated = AnchorConfigStringSchema.parse(clean);
   const colonIndex = validated.indexOf(':');
   const rawProvider = validated.slice(0, colonIndex).toUpperCase();
   const modelId = validated.slice(colonIndex + 1);

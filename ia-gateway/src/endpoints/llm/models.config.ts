@@ -11,7 +11,8 @@ export const ModelListSchema = z
   .min(1, 'La lista de modelos debe tener al menos un elemento');
 
 export function parseModelList(raw: string): string[] {
-  const items = raw.split(',').map((s) => s.trim());
+  const clean = raw.trim().replace(/^["']|["']$/g, '');
+  const items = clean.split(',').map((s) => s.trim().replace(/^["']|["']$/g, ''));
   return ModelListSchema.parse(items);
 }
 
