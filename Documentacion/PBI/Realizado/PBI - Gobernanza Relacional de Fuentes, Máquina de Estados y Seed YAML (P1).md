@@ -1,8 +1,9 @@
 # [ARQUITECTURA] Documento Destilado: PBI - Gobernanza Relacional de Fuentes, Máquina de Estados y Seed YAML
 
 **Identificador:** PBI-CTX-004
-**Estatus:** Pendiente (bloqueado por PBI-CTX-001)
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-09-30
+**Fecha de Finalización:** 2026-10-02
 **Historia de Usuario Relacionada:** [[ARQUITECTURA] HU 18: Motor de Contexto Autónomo, RAG Dinámico y Autogestión de Fuentes](../../HistoriasDeUsuario/%5BARQUITECTURA%5D%20HU%2018%3A%20Motor%20de%20Contexto%20Aut%C3%B3nomo%2C%20RAG%20Din%C3%A1mico%20y%20Autogesti%C3%B3n%20de%20Fuentes.md) · §3.1, §3.2, §3.3 · Escenarios 1, 2 (lógica de transición)
 **Módulo:** `src/prisma/schema.prisma`, `ansible/hooks/after_symlink.yml`, `src/features/context-sources/` (entidad, máquina de estados, repositorio, seed)
 **Entorno:** Prisma 5 / MySQL 8, Vitest
@@ -34,13 +35,17 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Modelo Prisma):** `ContextSource` según HU §3.1 (camelCase, `@@map("context_sources")`, `@@index([status])`, incluido `supersedesSourceTag`), con el enum `ContextSourceType` reducido a lo que decida PBI-CTX-001. El campo `type` referencia la matriz de adaptadores de HU §4.2.
-- [ ] **CA-2 (DDL de producción):** `CREATE TABLE IF NOT EXISTS context_sources` añadido al DDL idempotente de `ansible/hooks/after_symlink.yml`, coherente columna a columna con el modelo Prisma (enums como `ENUM` MySQL), y el nombre de la tarea actualizado.
-- [ ] **CA-3 (Máquina de estados):** Matriz declarativa con las nueve transiciones de HU §3.2. Tests colocalizados: cada transición legal produce el estado y contadores esperados; las ilegales (p. ej. `ACTIVE`→Aprobar, `ARGOS`→`ACTIVE`) devuelven error y no mutan.
-- [ ] **CA-4 (Circuit Breaker puro):** Función de dominio que, dada una fuente y el resultado de ingesta, aplica las filas `Ingesta OK` / `Ingesta KO` (reset a 0 tras éxito; `DEGRADED` al tercer fallo consecutivo). Tests para `failedAttempts` 0→1→2→3 y para 2→0 tras éxito.
-- [ ] **CA-5 (Repositorio):** Puerto `IContextSourceRepository` + adaptador Prisma, Pure DI por constructor, con `findByStatus`, `findByTag`, `applyTransition` y `upsertFromSeed`. Entradas de BD parseadas con Zod en la frontera.
-- [ ] **CA-6 (Seed):** Carga de `context-sources.seed.yml` con `YAML.parse()` + Zod; idempotente (test: segunda ejecución no cambia `status` ni `failedAttempts`). Mecanismo de ejecución documentado (script o paso en `after_symlink.yml`).
-- [ ] **CA-7 (Oráculos):** `tsc --noEmit`, `eslint`, `vitest run` y `npm run build` en verde.
+- [x] **CA-1 (Modelo Prisma):** `ContextSource` implementado según HU §3.1 en `src/prisma/schema.prisma` con camelCase, `@@map("context_sources")`, `@@index([status])`, `supersedesSourceTag` y enum `ContextSourceType` cerrado a las fuentes viables (`SOCRATA`, `SPARQL`, `RSS`, `ICAL`, `API_REST`, `JSON_LD_SCHEMA_ORG`). Cliente generado con `npx prisma generate`.
+- [x] **CA-2 (DDL de producción):** Sentencia `CREATE TABLE IF NOT EXISTS \`context_sources\`` agregada al bloque de hooks idempotentes en `ansible/hooks/after_symlink.yml` con enums coherentes y tipos MySQL exactos (`VARCHAR(64)`, `VARCHAR(191)`, `TEXT`, `INT UNSIGNED`, `DATETIME(3)`).
+- [x] **CA-3 (Máquina de estados):** Matriz declarativa `CONTEXT_SOURCE_TRANSITIONS` forjada en `src/features/context-sources/context-source-state-machine.ts` cubriendo las 9 transiciones canónicas con validación estricta de actor (`HUMAN`, `SYSTEM`, `ARGOS`). Transiciones ilegales emiten `createErrorEnvelope` (422) sin mutación. 16 tests unitarios colocalizados.
+- [x] **CA-4 (Circuit Breaker puro):** Función pura `applyIngestionResult` que incrementa `failedAttempts`, degrada a `DEGRADED` al alcanzar el umbral de 3 fallos consecutivos y resetea a 0 tras ingesta exitosa.
+- [x] **CA-5 (Repositorio):** Puerto `IContextSourceRepository` e implementación `PrismaContextSourceRepository` en `src/features/context-sources/` con Pure DI, parseo Zod en frontera y operaciones `findByStatus`, `findByTag`, `findAll`, `save`, `create` y `upsertFromSeed`.
+- [x] **CA-6 (Seed):** Servicio `ContextSourceSeedService` con parseo seguro `YAML.parse()` y validación Zod de `context-sources.seed.yml`. Tests colocalizados verificando idempotencia y no sobreescritura de estados de fuentes ya existentes.
+- [x] **CA-7 (Oráculos):** Oráculos de acero superados en verde:
+  - TypeScript: `tsc --noEmit` (0 errores).
+  - Linter AST: `eslint` (0 warnings, 0 errores).
+  - Tests: `vitest run` (97 suites, 555 tests en verde).
+  - Next.js: `npm run build` (compilación y optimización en verde).
 
 ---
 

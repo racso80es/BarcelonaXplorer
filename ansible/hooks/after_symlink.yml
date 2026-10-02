@@ -60,7 +60,7 @@
   changed_when: false
 
 # Axioma I: Migración DDL idempotente ejecutada in-situ para garantizar consistencia relacional
-- name: Sincronizar esquemas de MySQL (SystemConfig, TelemetryLog, user_anchors, magic_link_nonces, tactical_itineraries)
+- name: Sincronizar esquemas de MySQL (SystemConfig, TelemetryLog, user_anchors, magic_link_nonces, tactical_itineraries, context_sources)
   ansible.builtin.shell: |
     set -euo pipefail
     set -a
@@ -156,6 +156,28 @@
         INDEX `tactical_itinerary_nodes_itineraryId_orderIndex_idx`(`itineraryId`, `orderIndex`),
         PRIMARY KEY (`id`),
         CONSTRAINT `tactical_itinerary_nodes_itineraryId_fkey` FOREIGN KEY (`itineraryId`) REFERENCES `tactical_itineraries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    CREATE TABLE IF NOT EXISTS `context_sources` (
+        `id` VARCHAR(191) NOT NULL,
+        `sourceTag` VARCHAR(64) NOT NULL,
+        `displayName` VARCHAR(191) NOT NULL,
+        `endpoint` VARCHAR(2048) NOT NULL,
+        `type` ENUM('API_REST', 'SOCRATA', 'JSON_LD', 'ICAL', 'RSS', 'SPARQL') NOT NULL,
+        `category` VARCHAR(64) NOT NULL,
+        `status` ENUM('ACTIVE', 'DEGRADED', 'PENDING_APPROVAL', 'INACTIVE') NOT NULL DEFAULT 'PENDING_APPROVAL',
+        `failedAttempts` INTEGER NOT NULL DEFAULT 0,
+        `lastSuccessAt` DATETIME(3) NULL,
+        `lastErrorAt` DATETIME(3) NULL,
+        `lastError` VARCHAR(512) NULL,
+        `proposedBy` VARCHAR(32) NOT NULL DEFAULT 'SEED',
+        `supersedesSourceTag` VARCHAR(64) NULL,
+        `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+
+        UNIQUE INDEX `context_sources_sourceTag_key`(`sourceTag`),
+        INDEX `context_sources_status_idx`(`status`),
+        PRIMARY KEY (`id`)
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     EOF
   args:

@@ -244,3 +244,44 @@ model TemplateItemTranslation {
   @@index([language])
   @@map("template_item_translations")
 }
+
+// ─────────────────────────────────────────────────────────────
+// Gobernanza de Fuentes de Contexto Hiperlocal (HU-18 / PBI-CTX-004)
+// ─────────────────────────────────────────────────────────────
+model ContextSource {
+  id                  String              @id @default(cuid())
+  sourceTag           String              @unique @db.VarChar(64)
+  displayName         String              @db.VarChar(191)
+  endpoint            String              @db.VarChar(2048)
+  type                ContextSourceType
+  category            String              @db.VarChar(64) // 'EVENT' | 'VENUE' | 'POI' | 'NEWS'
+  status              ContextSourceStatus @default(PENDING_APPROVAL)
+  failedAttempts      Int                 @default(0)
+  lastSuccessAt       DateTime?
+  lastErrorAt         DateTime?
+  lastError           String?             @db.VarChar(512)
+  proposedBy          String              @default("SEED") @db.VarChar(32) // 'SEED' | 'HUMAN' | 'ARGOS'
+  supersedesSourceTag String?             @db.VarChar(64)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([status])
+  @@map("context_sources")
+}
+
+enum ContextSourceType {
+  API_REST
+  SOCRATA
+  JSON_LD
+  ICAL
+  RSS
+  SPARQL
+}
+
+enum ContextSourceStatus {
+  ACTIVE
+  DEGRADED
+  PENDING_APPROVAL
+  INACTIVE
+}
+
