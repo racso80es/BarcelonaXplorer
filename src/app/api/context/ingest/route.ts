@@ -7,9 +7,21 @@ import { PrismaContextSourceRepository } from '@/features/context-sources/prisma
 import { IngestContextUseCase } from '@/features/context-sources/ingest-context.use-case';
 import { ContextAdapterRegistry } from '@/features/context-sources/context-source-adapter.port';
 
+import { SocrataContextAdapter } from '@/features/context-sources/adapters/socrata-context.adapter';
+import { SparqlContextAdapter } from '@/features/context-sources/adapters/sparql-context.adapter';
+import { RssContextAdapter } from '@/features/context-sources/adapters/rss-context.adapter';
+import { IcalContextAdapter } from '@/features/context-sources/adapters/ical-context.adapter';
+import { ApiRestContextAdapter } from '@/features/context-sources/adapters/api-rest-context.adapter';
+
 export const runtime = 'nodejs';
 
-export const defaultContextAdapters: ContextAdapterRegistry = {};
+export const defaultContextAdapters: ContextAdapterRegistry = {
+  SOCRATA: new SocrataContextAdapter(),
+  SPARQL: new SparqlContextAdapter(),
+  RSS: new RssContextAdapter(),
+  ICAL: new IcalContextAdapter(),
+  API_REST: new ApiRestContextAdapter(),
+};
 
 export function createIngestUseCase(
   adapters: ContextAdapterRegistry = defaultContextAdapters
