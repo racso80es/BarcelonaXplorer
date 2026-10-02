@@ -52,6 +52,16 @@ describe('AdminSidebarRight - HUD Táctico de Navegación', () => {
     expect(logsLink?.className).toContain('bg-emerald-50');
   });
 
+  it('debe marcar Contexto como activo cuando la ruta es /Admin/Context (CA-1)', () => {
+    mockUsePathname.mockReturnValue('/Admin/Context');
+
+    render(<AdminSidebarRight />);
+
+    const contextLink = screen.getByText('Contexto').closest('a');
+    expect(contextLink).not.toBeNull();
+    expect(contextLink?.className).toContain('bg-emerald-50');
+  });
+
   it('debe renderizar el enlace de retorno al ecosistema civil', () => {
     mockUsePathname.mockReturnValue('/Admin');
 

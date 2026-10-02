@@ -98,6 +98,29 @@ export const CONTEXT_SOURCE_TRANSITIONS: readonly TransitionRule[] = [
       status: 'DEGRADED',
     }),
   },
+  // 7b. DEGRADED + PROPOSE_CORRECTION por HUMAN -> PENDING_APPROVAL
+  {
+    from: 'DEGRADED',
+    event: 'PROPOSE_CORRECTION',
+    actor: 'HUMAN',
+    targetStatus: () => 'PENDING_APPROVAL',
+    applyMutation: () => ({
+      status: 'PENDING_APPROVAL',
+      failedAttempts: 0,
+      lastError: null,
+      lastErrorAt: null,
+    }),
+  },
+  // 7c. PENDING_APPROVAL + PROPOSE_CORRECTION por HUMAN -> PENDING_APPROVAL
+  {
+    from: 'PENDING_APPROVAL',
+    event: 'PROPOSE_CORRECTION',
+    actor: 'HUMAN',
+    targetStatus: () => 'PENDING_APPROVAL',
+    applyMutation: () => ({
+      status: 'PENDING_APPROVAL',
+    }),
+  },
   // 8a. ACTIVE + DEACTIVATE por HUMAN -> INACTIVE
   {
     from: 'ACTIVE',
@@ -201,3 +224,33 @@ export function applyIngestionResult(
     error: result.error,
   });
 }
+
+/**
+ * Predicado puro para determinar si una transición de estado es legal.
+ */
+export function canTransition(
+  status: ContextSourceStatus,
+  event: StateMachineEvent,
+  actor: StateMachineActor
+): boolean {
+  return CONTEXT_SOURCE_TRANSITIONS.some(
+    (r) => r.from === status && r.event === event && r.actor === actor
+  );
+}
+
+/**
+ * Aplica una transición retornando el snapshot mutado o lanzando error si es ilegal.
+ */
+export function applyTransition(
+  source: ContextSourceSnapshot,
+  event: StateMachineEvent,
+  actor: StateMachineActor,
+  meta?: TransitionMetadata
+): ContextSourceSnapshot {
+  const env = transitionContextSource(source, event, actor, meta);
+  if (!env.success || !env.result) {
+    throw new Error(env.errors?.join('; ') || 'Transición ilegal');
+  }
+  return env.result;
+}
+
