@@ -122,6 +122,41 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
     });
   }
 
+  async getByIds(tableName: string, ids: string[]): Promise<VectorDocument[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    const exists = await this.tableExists(tableName);
+    if (!exists) {
+      return [];
+    }
+
+    const db = await this.getDb();
+    const table = await db.openTable(tableName);
+    const escaped = ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(', ');
+    const rows = await table.query().where(`id IN (${escaped})`).toArray();
+
+    return rows.map((row) => {
+      let parsedMetadata: Record<string, unknown> = {};
+      try {
+        if (typeof row.metadata === 'string') {
+          parsedMetadata = JSON.parse(row.metadata);
+        } else if (typeof row.metadata === 'object' && row.metadata !== null) {
+          parsedMetadata = row.metadata as Record<string, unknown>;
+        }
+      } catch {
+        parsedMetadata = {};
+      }
+
+      return {
+        id: String(row.id),
+        vector: Array.from(row.vector as ArrayLike<number>),
+        text: String(row.text ?? ''),
+        metadata: parsedMetadata,
+      };
+    });
+  }
+
   async delete(tableName: string, filter: VectorDeleteFilter): Promise<void> {
     const exists = await this.tableExists(tableName);
     if (!exists) {
@@ -133,16 +168,53 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
 
     if (typeof filter === 'string') {
       if (filter.trim().length > 0) {
+        const expiresAtMatch = filter.match(/expiresAt\s*<\s*['"]?([^'"]+)['"]?/);
+        if (expiresAtMatch) {
+          const expirationIso = expiresAtMatch[1];
+          await this.deleteExpiredRows(table, expirationIso);
+          return;
+        }
         await table.delete(filter);
       }
       return;
     }
 
-    if (typeof filter === 'object' && Array.isArray(filter.ids)) {
-      if (filter.ids.length === 0) {
+    if (typeof filter === 'object' && filter !== null) {
+      if ('expiredBefore' in filter) {
+        await this.deleteExpiredRows(table, filter.expiredBefore);
         return;
       }
-      const escaped = filter.ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(', ');
+
+      if ('ids' in filter && Array.isArray(filter.ids)) {
+        if (filter.ids.length === 0) {
+          return;
+        }
+        const escaped = filter.ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(', ');
+        await table.delete(`id IN (${escaped})`);
+      }
+    }
+  }
+
+  private async deleteExpiredRows(table: import('@lancedb/lancedb').Table, expirationIso: string): Promise<void> {
+    const rows = await table.query().toArray();
+    const expiredIds: string[] = [];
+    for (const row of rows) {
+      let meta: Record<string, unknown> = {};
+      try {
+        if (typeof row.metadata === 'string') {
+          meta = JSON.parse(row.metadata);
+        } else if (typeof row.metadata === 'object' && row.metadata !== null) {
+          meta = row.metadata as Record<string, unknown>;
+        }
+      } catch {
+        meta = {};
+      }
+      if (typeof meta.expiresAt === 'string' && meta.expiresAt < expirationIso) {
+        expiredIds.push(String(row.id));
+      }
+    }
+    if (expiredIds.length > 0) {
+      const escaped = expiredIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(', ');
       await table.delete(`id IN (${escaped})`);
     }
   }

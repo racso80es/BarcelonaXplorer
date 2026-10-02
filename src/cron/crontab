@@ -9,3 +9,7 @@
 
 # Poda ontológica de telemetría (diaria a las 03:30 AM)
 30 3 * * * wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/telemetry/prune > /dev/null 2>&1
+
+# Ingesta diaria de fuentes de contexto hiperlocal (diaria a las 04:00 AM)
+0 4 * * * wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/ingest > /dev/null 2>&1
+

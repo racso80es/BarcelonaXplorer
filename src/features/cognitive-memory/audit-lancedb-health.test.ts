@@ -19,6 +19,7 @@ describe('AuditLanceDbHealthUseCase', () => {
     mockVectorStore = {
       upsert: vi.fn(),
       search: vi.fn(),
+      getByIds: vi.fn(),
       delete: vi.fn(),
       tableExists: vi.fn(),
       ping: vi.fn().mockResolvedValue({

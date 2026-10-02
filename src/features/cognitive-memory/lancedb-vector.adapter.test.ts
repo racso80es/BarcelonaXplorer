@@ -160,5 +160,67 @@ describe('LanceDbVectorAdapter', () => {
     expect(results).toHaveLength(1);
     expect(results[0].document.id).toBe('target-sess-1:matrix');
   });
+
+  it('debe recuperar documentos por lista de IDs con getByIds para deduplicación térmica', async () => {
+    const docs = [
+      {
+        id: 'dedup-1',
+        vector: [0.1, 0.2, 0.3],
+        text: 'Doc 1',
+        metadata: { contentHash: 'hash-abc-1' },
+      },
+      {
+        id: 'dedup-2',
+        vector: [0.4, 0.5, 0.6],
+        text: 'Doc 2',
+        metadata: { contentHash: 'hash-abc-2' },
+      },
+    ];
+
+    await adapter.upsert('dedup_test', docs);
+
+    const found = await adapter.getByIds('dedup_test', ['dedup-1', 'dedup-2', 'dedup-inexistente']);
+    expect(found).toHaveLength(2);
+    expect(found.map((d) => d.id).sort()).toEqual(['dedup-1', 'dedup-2']);
+    expect(found[0].metadata).toEqual(expect.objectContaining({ contentHash: expect.any(String) }));
+  });
+
+  it('CA-8: debe eliminar documentos caducados mediante { expiredBefore } y predicado expiresAt < ISO', async () => {
+    const expiredDoc = {
+      id: 'exp-old',
+      vector: [0.1, 0.1, 0.1],
+      text: 'Evento pasado',
+      metadata: { expiresAt: '2026-01-01T00:00:00.000Z' },
+    };
+    const futureDoc = {
+      id: 'exp-future',
+      vector: [0.2, 0.2, 0.2],
+      text: 'Evento futuro',
+      metadata: { expiresAt: '2026-12-31T23:59:59.000Z' },
+    };
+
+    await adapter.upsert('expiry_test', [expiredDoc, futureDoc]);
+
+    // Eliminar con expiredBefore
+    await adapter.delete('expiry_test', { expiredBefore: '2026-06-01T00:00:00.000Z' });
+
+    let remaining = await adapter.getByIds('expiry_test', ['exp-old', 'exp-future']);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].id).toBe('exp-future');
+
+    // Insertar otro caducado y probar con filtro string "expiresAt < '...'"
+    const anotherExpired = {
+      id: 'exp-old-2',
+      vector: [0.3, 0.3, 0.3],
+      text: 'Otro evento pasado',
+      metadata: { expiresAt: '2026-02-01T00:00:00.000Z' },
+    };
+    await adapter.upsert('expiry_test', [anotherExpired]);
+
+    await adapter.delete('expiry_test', "expiresAt < '2026-06-01T00:00:00.000Z'");
+    remaining = await adapter.getByIds('expiry_test', ['exp-old-2', 'exp-future']);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].id).toBe('exp-future');
+  });
 });
 

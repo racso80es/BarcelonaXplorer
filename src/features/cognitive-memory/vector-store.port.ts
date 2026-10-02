@@ -24,7 +24,7 @@ export interface VectorStorePingResult {
   readonly error?: string;
 }
 
-export type VectorDeleteFilter = string | { ids: string[] };
+export type VectorDeleteFilter = string | { ids: string[] } | { expiredBefore: string };
 
 export interface VectorSearchOptions {
   readonly limit?: number;
@@ -46,6 +46,11 @@ export interface IVectorStorePort {
     queryVector: number[],
     limitOrOptions?: number | VectorSearchOptions,
   ): Promise<VectorSearchResult[]>;
+
+  /**
+   * Recupera documentos existentes por su identificador primario para deduplicación térmica.
+   */
+  getByIds(tableName: string, ids: string[]): Promise<VectorDocument[]>;
 
   /**
    * Poda y eliminación higiénica de vectores según predicado SQL o lista de identificadores.
