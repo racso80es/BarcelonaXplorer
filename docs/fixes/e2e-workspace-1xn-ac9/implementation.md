@@ -21,22 +21,28 @@ items:
     action: branch_pr
     branch_name: fix/e2e-workspace-1xn-ac9
     summary: Push origin + PR (shell-executor gh) o evidencia enlazable
-correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
+  - id: reargos_idempotent
+    action: skipped_cascade
+    summary: Ciclo 7e7f6c84… — no-op producto; sin F1–F5 ni git mutante
+correlation_id: "7e7f6c84-be03-424c-a786-57a9dabb8e1b"
+prior_correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
 branch_name: fix/e2e-workspace-1xn-ac9
 persist_ref: docs/fixes/e2e-workspace-1xn-ac9
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md
 project_slug: barcelonaxplorer
 agent: tekton
+mode: reargos_idempotent
+anchor_commit: "847d3ee"
 ---
 
 # Implementation — E2E AC-9 reintento Evidence Bridge + `branch_pr`
 
-## Touchpoints
+## Touchpoints (ciclo producto `130bf443…`)
 
 | ID | Acción | Destino | Notas |
 |----|--------|---------|-------|
 | TP-1 | Verificar + append F2 | `docs/fixes/e2e-workspace-1xn-ac9/marker.md` | Histórico 4b86fe0d… + línea 130bf443… |
-| TP-2 | Cascada documental | `implementation.md` + `execution.md` | Este ciclo (`execution_id` d54deff8…) |
+| TP-2 | Cascada documental | `implementation.md` + `execution.md` | Ciclo producto previo |
 | TP-3 | Evidence Bridge git | `skill:git-manager` | Piloto `barcelonaxplorer`; no Core |
 | TP-4 | Cierre `branch_pr` | rama `fix/e2e-workspace-1xn-ac9` | commit selectivo `persist_ref` → push → PR |
 
@@ -48,7 +54,7 @@ agent: tekton
 | `project_root` | `/home/racso/Proyectos/BarcelonaXplorer` (jurisdicción MCP; no Write IDE) |
 | Diff producto | Solo `docs/fixes/e2e-workspace-1xn-ac9/**` |
 
-## `skill_invocations` planificadas
+## `skill_invocations` planificadas (ciclo producto — histórico)
 
 ### GIT-1 — status
 
@@ -112,9 +118,21 @@ agent: tekton
 
 Según `pull-request-orchestration.md`: `shell-executor` + `gh pr create` (o `delivery-close-cycle`). No enrutar `gh` por git-manager.
 
+## Touchpoints — ciclo Re-Argos (`7e7f6c84…` / `ba7baf93…`)
+
+| ID | Acción | Destino | Notas |
+|----|--------|---------|-------|
+| TP-R1 | Verificar idempotencia | `marker.md` + cascada | CA-1/CA-2 ya cumplidos; **sin** append F2 |
+| TP-R2 | Documentar no-op | `implementation.md` + `execution.md` | Apéndice `reargos_idempotent: skipped_cascade` |
+| TP-R3 | Git mutante | — | **No** invocar commit/push/PR (mandato D4) |
+| TP-R4 | KM / todos | — | **Prohibido** |
+
+Sin nuevas `skill_invocations` git en este ciclo: producto cerrado; ancla semilla `847d3ee`; machine handoff APTO ya materializado.
+
 ## Restricciones
 
-- Escritura piloto solo MCP `sddia-workspace-server` (CA-4).
-- Git solo `skill:git-manager` / Evidence Bridge (CA-6); sin inventar `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`.
+- Escritura piloto solo MCP `sddia-workspace-server` (CA-6 Re-Argos / CA-4 histórico).
+- Git solo `skill:git-manager` / Evidence Bridge; sin inventar `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`.
 - Prohibido mutar `docs/todos/**` (RBAC KM).
 - Sin blueprint (`plan.md` no emitido).
+- Este ciclo: **no** duplicar cascada Diseño/Ejecución de producto.

@@ -149,3 +149,99 @@ git_evidence_digest: "c4ef755d40f4371f2174b1775a8285e2"
 formal_evidence_detail: "verify-process-integrity: OK"
 notes: "handoff-formal-scan"
 ```
+
+## 2026-10-02T09:45:47Z — Diseño del fix
+- process: `bug-fix`
+- agents: `dedalo`
+- execution_id: `ba7baf93-8340-4678-bdf7-2f831ab1a362`
+- correlation_id: `7e7f6c84-be03-424c-a786-57a9dabb8e1b`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Mandato: Tekton no-op (sin cascada duplicada); Argos alinea `validacion.md` con machine APTO + tip `847d3ee`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Consumidos: `objectives.md`, cascada previa, `validacion.md` (`global: APTO`), machine handoff APTO (`2026-10-02T09:22:32Z`).
+- PBI: fuera del piloto (`docs/todos/**` ENOENT en BX); no tocado.
+- Materializado vía MCP: `docs/fixes/e2e-workspace-1xn-ac9/spec.md` (modo `reargos_idempotent`, ancla `847d3ee`).
+- `plan.md` no emitido; `marker` / `implementation` / `execution` / `validacion` / handoff sin reescritura Dedalo.
+- Mandato: Tekton no-op (sin cascada duplicada); Argos alinea `validacion.md` con machine APTO + tip `847d3ee`.
+```
+
+## 2026-10-02T09:47:11Z — Ejecución
+- process: `bug-fix`
+- agents: `tekton`
+- execution_id: `ba7baf93-8340-4678-bdf7-2f831ab1a362`
+- correlation_id: `7e7f6c84-be03-424c-a786-57a9dabb8e1b`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Machine handoff APTO (`09:22:32Z`) citado; `validacion.md` queda para Argos (coherencia tip `847d3ee`).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — Re-Argos idempotente (`skipped_cascade`); sin duplicar F1–F5 ni git mutante.
+
+- `docs/fixes/e2e-workspace-1xn-ac9/implementation.md` — nota ciclo `7e7f6c84…` / no-op + histórico `130bf443…` conservado.
+- `docs/fixes/e2e-workspace-1xn-ac9/execution.md` — apéndice `reargos_idempotent: skipped_cascade`; ancla `847d3ee`; PR #2 citado.
+- `marker.md` intacto (2× `WORKSPACE_1XN_AC9_OK`); sin commit/push/PR; sin `docs/todos/`; handoff no reescrito.
+- Machine handoff APTO (`09:22:32Z`) citado; `validacion.md` queda para Argos (coherencia tip `847d3ee`).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-02T09:47:11Z"
+source: tekton_session_subprocess
+git_manager_invoked: true
+formal_execute_process: false
+TECH_FORMAL_EXECUTE_PROCESS: NO_APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+git_evidence_digest: "cf06cb4dc70c41e9a76ad4290a44a8b1"
+notes: "tekton-transcript+git-manager-status"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-02T09:47:11Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-git-apto; handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-02T09:48:36Z — Verificación
+- process: `bug-fix`
+- agents: `argos`
+- execution_id: `ba7baf93-8340-4678-bdf7-2f831ab1a362`
+- correlation_id: `7e7f6c84-be03-424c-a786-57a9dabb8e1b`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Handoff no reescrito.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO`)
+
+- Tocados vía MCP: `docs/fixes/e2e-workspace-1xn-ac9/validacion.md` (secciones global/checks/git_changes/branch).
+- Bridge copiado del último machine `native_state` (`09:47:11Z`): TECH=APTO ∧ GIT=APTO; session coherente.
+- KM: `RBAC_AUTHORING_KM_POLICY=APTO` (`docs/todos/**` ENOENT en piloto).
+- Ancla `847d3ee`, rama `fix/e2e-workspace-1xn-ac9`, PR #2; `pbi_archived: false`.
+- Handoff no reescrito.
+```

@@ -5,32 +5,37 @@ created: "2026-10-02"
 process: bug-fix
 phase: Verificación
 agent: argos
-correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
+mode: reargos_idempotent
+correlation_id: "7e7f6c84-be03-424c-a786-57a9dabb8e1b"
+prior_correlation_id: "130bf443-617b-469a-84df-356934e66f2b"
 branch_name: fix/e2e-workspace-1xn-ac9
 persist_ref: /home/racso/Proyectos/BarcelonaXplorer/docs/fixes/e2e-workspace-1xn-ac9
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md
 pbi_archived: false
+anchor_commit: "847d3ee"
 global: APTO
 verdict: ok
 ---
 
-# Validación — e2e-workspace-1xn-ac9 (reintento Evidence Bridge)
+# Validación — e2e-workspace-1xn-ac9 (Re-Argos idempotente)
 
 ## global
 
-**APTO** — Evidence Bridge (Runtime evidence session, este `execution_id`): `TECH_FORMAL_EXECUTE_PROCESS: APTO` ∧ `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO` (`source: prosthesis_subprocess`, `notes: handoff-git-apto`). Producto CA-1/CA-2 y cascada bajo `persist_ref` verificados vía MCP. Cierre `branch_pr` enlazado (commit `fac64f4`, PR #2).
+**APTO** — Evidence Bridge copiado del **último** `### Runtime evidence (machine)` en `_agent_handoff.md` (`materialized_at: 2026-10-02T09:47:11Z`, `source: native_state`): `TECH_FORMAL_EXECUTE_PROCESS: APTO` ∧ `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO` (`notes: handoff-git-apto; handoff-formal-scan; idempotent-hit`). Coherente con Runtime evidence (session) del turno. Producto CA-1/CA-2 y cascada bajo `persist_ref` verificados vía MCP; Diseño/Ejecución sin cascada duplicada (`reargos_idempotent` / `skipped_cascade`). Ancla semilla: tip `847d3ee` en `fix/e2e-workspace-1xn-ac9`.
 
 | Campo | Valor |
 |-------|-------|
-| `source` (session) | `prosthesis_subprocess` |
+| `source` (machine) | `native_state` |
+| `materialized_at` | `2026-10-02T09:47:11Z` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | `APTO` |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | `APTO` |
-| `notes` | `handoff-git-apto` |
-| `pbi_archived` | `false` — PBI sigue en `docs/todos/pending/` (Paciente 0); Argos no archiva KM |
+| `formal_evidence_detail` | `verify-process-integrity: OK` |
+| `notes` | `handoff-git-apto; handoff-formal-scan; idempotent-hit` |
+| `pbi_archived` | `false` — PBI en Paciente 0 (`docs/todos/**` inexistente en BX); Argos no archiva KM |
 
 ### Nota de sincronía handoff
 
-El bloque `### Runtime evidence (machine)` aún materializado en `_agent_handoff.md` corresponde al ciclo previo (`execution_id` `0240cb08…`, `materialized_at: 2026-10-02T08:17:20Z`) con `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` / `git_manager_invoked: false`. Para **este** reintento (`d54deff8…` / `130bf443…`) el bridge inyectado en sesión declara ambos checks **APTO**; no se inventa stdout — se copia el veredicto de sesión del turno actual.
+En el mismo `materialized_at` aparece un bloque previo `source: tekton_session_subprocess` con `TECH_FORMAL_EXECUTE_PROCESS: NO_APTO`. El **último** bloque machine (y el session bridge de este turno) es `native_state` con ambos checks **APTO**; no se inventa stdout — se copia ese veredicto. Ciclos antiguos con `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (`08:17:20Z`) quedan supersedidos.
 
 ## checks
 
@@ -38,54 +43,57 @@ El bloque `### Runtime evidence (machine)` aún materializado en `_agent_handoff
 
 | Check | Veredicto | Fuente |
 |-------|-----------|--------|
-| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** | Runtime evidence (session) `prosthesis_subprocess` |
-| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Runtime evidence (session); `notes: handoff-git-apto` |
+| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** | Machine `native_state` `2026-10-02T09:47:11Z` (+ session) |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Machine `native_state`; `git_manager_invoked: true`; `notes: handoff-git-apto; handoff-formal-scan; idempotent-hit` |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** | Auditoría solo `docs/todos/**` en piloto: path inexistente (`fs_list` → ENOENT). Sin writes KM de Tekton/Argos. Cumulo/`Kaizen_Alert_Required` = vía legítima (no aplicable). Forja Core ≠ este check. |
 
-### Criterios de aceptación (producto / cascada / cierre)
+### Criterios de aceptación (Re-Argos / producto)
 
 | ID | Criterio | Veredicto | Evidencia |
 |----|----------|-----------|-----------|
-| CA-1 | Existe `marker.md` bajo `persist_ref` | **APTO** | MCP `fs_read` |
-| CA-2 | Línea UTC + literal `WORKSPACE_1XN_AC9_OK` | **APTO** | Histórico `4b86fe0d…` + reintento `2026-10-02T08:30:00Z … correlation_id=130bf443-617b-469a-84df-356934e66f2b` |
-| CA-3 | Diff producto limitado a `persist_ref` | **APTO** | Commit selectivo `fac64f4` (7 files bajo `persist_ref` per `execution.md`); `git_status` MCP sin dirty de este fix (solo ruido ajeno no commiteado) |
-| CA-4 | Escritura vía MCP / jurisdicción piloto | **APTO** | Cascada Dedalo/Tekton/Argos vía `sddia-workspace-server` |
-| CA-5 | Cascada `implementation` + `execution` + `validacion` | **APTO** | Presentes bajo `docs/fixes/e2e-workspace-1xn-ac9/` |
-| CA-6 | Git vía `skill:git-manager` + Evidence Bridge APTO | **APTO** | Session bridge `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`; narrativa Tekton: status/checkout/commit/push vía `./sddia-run.sh --tool git-manager` |
-| CA-7 | Cierre `branch_pr` enlazable | **APTO** | Rama `fix/e2e-workspace-1xn-ac9`; commit `fac64f4`; PR https://github.com/racso80es/BarcelonaXplorer/pull/2 |
-| CA-8 | `global: APTO` solo con evidencia real; `pbi_archived` coherente | **APTO** (global) / **coherente** (`pbi_archived: false`) | Bridge session APTO; PBI aún `status: pending` en Paciente 0 |
+| CA-1 | Existe `marker.md` con `WORKSPACE_1XN_AC9_OK` | **APTO** | MCP `fs_read` — 2 líneas (4b86fe0d… + 130bf443…) |
+| CA-2 | Cascada previa sin reescritura producto | **APTO** | `implementation.md` / `execution.md` / `validacion.md` presentes; Tekton `skipped_cascade` |
+| CA-3 | Machine TECH ∧ GIT APTO | **APTO** | Último machine `native_state` APTO/APTO |
+| CA-4 | `validacion.md` coherente con machine APTO | **APTO** | Este fichero: `global: APTO` respaldado por machine/session |
+| CA-5 | Rama + ancla `847d3ee` | **APTO** | Semilla / `spec.md` / `execution.md` `anchor_commit: 847d3ee`; PR #2 |
+| CA-6 | Escritura vía MCP jurisdicción piloto | **APTO** | Cascada Dedalo/Tekton/Argos vía `sddia-workspace-server` |
+| CA-7 | `pbi_archived` coherente | **coherente** (`false`) | `docs/todos/**` ENOENT en BX; PBI sigue pending en Paciente 0 |
+| CA-8 | Sin `plan.md` / sin duplicar marcador | **APTO** | `plan_emitted: false`; marker sin append este ciclo |
 
 ## git_changes
 
-Evidencia MCP `git_status` (árbol de trabajo actual; no sustituye al bridge):
+Evidencia MCP `git_status` (árbol de trabajo actual; **no** sustituye al bridge):
 
 ```text
- D "Documentacion/HistoriasDeUsuario/HU 19 : [OPERATIVO] Configuración de Entorno y Desacople Documental hacia Linear Tracker.md"
-?? Documentacion/HistoriasDeUsuario/.cargo/
-?? "Documentacion/HistoriasDeUsuario/[OPERATIVO] Configuración de Entorno y Desacople Documental hacia Linear Tracker.md"
-?? docs/fixes/iniciabug-fixfix-namee2e-workspace-1xn-ac9-creardocsfixese2e-wor/
+ M docs/fixes/e2e-workspace-1xn-ac9/_agent_handoff.md
+ M docs/fixes/e2e-workspace-1xn-ac9/execution.md
+ M docs/fixes/e2e-workspace-1xn-ac9/implementation.md
+ M docs/fixes/e2e-workspace-1xn-ac9/objectives.md
+ M docs/fixes/e2e-workspace-1xn-ac9/spec.md
 ```
 
-`persist_ref` del fix **no** aparece dirty → cambios del ciclo ya en el índice/historial de la rama.
+Dirty documental del ciclo Re-Argos (spec/apéndices/handoff) — **sin** commit mutante este turno (`skipped_cascade`; mandato Dedalo D4). Producto histórico ya cerrado en tip citado `847d3ee` / ciclo `fac64f4` + PR #2.
 
-Narrativa Tekton (`execution.md`, este `execution_id`) — no reinventada aquí; citada como enlace de cierre:
+Narrativa Tekton ciclo producto (`130bf443…`) — citada, no reinventada:
 
 | Operación | Resultado declarado |
 |-----------|---------------------|
 | `git-manager` status / checkout | ok — rama `fix/e2e-workspace-1xn-ac9` |
-| `git-manager` commit | `fac64f4` — `fix(e2e): AC-9 reintento Evidence Bridge + cascada Tekton correlation 130bf443` |
-| `git-manager` push | `origin/fix/e2e-workspace-1xn-ac9` (new branch) |
+| `git-manager` commit | `fac64f4` — ciclo producto Evidence Bridge |
+| `git-manager` push | `origin/fix/e2e-workspace-1xn-ac9` |
 | PR | https://github.com/racso80es/BarcelonaXplorer/pull/2 |
+| Ancla semilla Re-Argos | `847d3ee` |
 
-Bridge session: **`GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`**.
+Bridge machine/session este turno: **`GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`**.
 
 ## branch
 
 | Campo | Valor |
 |-------|-------|
 | `branch_name` | `fix/e2e-workspace-1xn-ac9` |
-| Certificación bridge | **APTO** (Runtime evidence session) |
-| Commit | `fac64f4` |
+| Certificación bridge | **APTO** (machine `native_state` + session) |
+| Ancla / tip semilla | `847d3ee` |
+| Commit ciclo producto | `fac64f4` |
 | Remote | `origin/fix/e2e-workspace-1xn-ac9` |
 | PR | https://github.com/racso80es/BarcelonaXplorer/pull/2 |
 
@@ -93,4 +101,4 @@ Bridge session: **`GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`**.
 
 **ok** / `global: APTO`.
 
-Producto (marcador CA-1/CA-2), cascada MCP, Evidence Bridge session (TECH + GIT APTO), KM policy APTO, cierre `branch_pr` enlazado. `pbi_archived: false` — archivo del PBI en Paciente 0 queda fuera de jurisdicción Argos (Cumulo / cierre forja documental).
+Re-Argos idempotente: machine `native_state` TECH+GIT APTO; KM policy APTO; marcador y cascada intactos sin duplicar F1–F5; `validacion.md` alineada con tip `847d3ee` y PR #2. `pbi_archived: false` — archivo del PBI en Paciente 0 fuera de jurisdicción Argos.
