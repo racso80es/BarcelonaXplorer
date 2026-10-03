@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Oráculo de Plantillas Go Escapadas en Ansible
 
 **Identificador:** PBI-OPS-027
-**Estatus:** Pendiente
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-10-03
 **Historia de Usuario Relacionada:** [[OPERATIVO] HU 20: Blindaje del Despliegue contra Rollback Silencioso y Fricciones de Producción](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20HU%2020%3A%20Blindaje%20del%20Despliegue%20contra%20Rollback%20Silencioso%20y%20Fricciones%20de%20Producci%C3%B3n%20%28Post-AUD-OPS-DEPLOY-002%29.md) · Escenarios 3 y 5
 **Auditoría:** [`AUD-OPS-DEPLOY-002`](../../Auditorias/Auditoria%20-%20Fricciones%20de%20Despliegue%20en%20Produccion%20y%20Ausencia%20de%20Admin%20Context%20%28HU-18%29.md) · Fricción 2 y lecciones 1 y 2
@@ -55,4 +55,5 @@
 
 ## 4. Evidencia
 
-*Pendiente.*
+Implementado `scripts/check-ansible-go-templates.sh` y añadido como paso `0/8` en `scripts/audit-anchor.sh`. Se comprobó con fixture que el script falla si detecta `{{.` sin el bloque `{% raw %}`.
+Se añadieron las directivas TC-INFRA-002 y TC-INFRA-003 al documento maestro `tech-master-nextjs-prisma.md`.

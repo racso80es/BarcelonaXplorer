@@ -155,6 +155,20 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 - **Cumplimiento:** `npx next build` + revisión
 - **Anclaje:** `src/ia-gateway`, `src/.dockerignore`, `src/tsconfig.json`, `src/vitest.config.mts`, originado por [`AUD-INFRA-GW-001`](../../Documentacion/Auditorias/Auditoria%20-%20Aplicacion%20de%20HU-16%20IA%20Gateway%20y%20Fallo%20de%20Arranque%20Local%20%28Symlink%20ia-gateway%20vs%20Turbopack%29.md)
 
+### TC-INFRA-002 — Sanitización de comillas en variables de entorno Docker
+
+- **Sentencia:** Docker `--env-file` no quita comillas. Todo parser de entorno las recorta antes del `regex` de Zod.
+- **Excepción:** Ninguna.
+- **Cumplimiento:** revisión
+- **Anclaje:** `src/shared/config/...` (`parseAnchorString`), originado por `AUD-OPS-DEPLOY-002` (Fricción 1).
+
+### TC-INFRA-003 — Plantillas Go en Ansible
+
+- **Sentencia:** Toda plantilla Go (`{{. ... }}`) dentro de un YAML de Ansible va dentro de `{% raw %}`.
+- **Excepción:** Ninguna.
+- **Cumplimiento:** `scripts/check-ansible-go-templates.sh`
+- **Anclaje:** `ansible/hooks/after_symlink.yml`, originado por `AUD-OPS-DEPLOY-002` (Fricción 2).
+
 ---
 
 ## Deuda heredada (no remediada en la forja del Códice)

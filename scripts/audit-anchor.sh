@@ -48,6 +48,14 @@ echo "════════════════════════�
 
 export BX_AUDIT=1
 
+echo "0/8 Oráculo de Plantillas Go en Ansible..."
+if "${REPO_ROOT}/scripts/check-ansible-go-templates.sh"; then
+  echo "✅ Oráculo de Plantillas Go: 0 errores."
+else
+  echo "❌ Oráculo de Plantillas Go: Falló la aduana (Revisar log)."
+  exit 1
+fi
+
 cd "${REPO_ROOT}/src"
 
 echo "1/8 Linter AST (eslint, --max-warnings 0, src/)..."
