@@ -15,11 +15,11 @@ export default defineConfig({
     setupFiles: [path.resolve(__dirname, 'vitest.setup.ts')],
     exclude: [
       ...configDefaults.exclude,
+      '.next/**',
       '**/playwright-e2e/**',
       '**/*.live.test.ts',
       '**/telemetry-audit.integration.test.ts',
       'ia-gateway/**',
-
     ],
   },
   resolve: {

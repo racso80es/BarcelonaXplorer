@@ -173,8 +173,8 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 
 - **Sentencia:** Todo fichero leído por filesystem en el monolito y no importado como módulo se declara en `docker-runtime-assets.yml` y se copia al stage `runner`.
 - **Excepción:** Ninguna.
-- **Cumplimiento:** `scripts/check-standalone-runtime-assets.ts`
-- **Anclaje:** `src/docker-runtime-assets.yml`, originado por `AUD-OPS-DEPLOY-002` (Fricción 4).
+- **Cumplimiento:** `scripts/check-standalone-runtime-assets.ts`, `src/features/governance/runtime-assets.oracle.ts`, `src/features/governance/runtime-assets.oracle.test.ts`
+- **Anclaje:** `src/docker-runtime-assets.yml`, originado por [`AUD-OPS-DEPLOY-002`](../../Documentacion/Auditorias/Auditoria%20-%20Fricciones%20de%20Despliegue%20en%20Produccion%20y%20Ausencia%20de%20Admin%20Context%20%28HU-18%29.md) (Fricción 4).
 
 ---
 
