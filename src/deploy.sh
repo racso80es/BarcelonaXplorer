@@ -55,10 +55,30 @@ echo -e "${GREEN}[OK] Canal SSH validado.${NC}"
 echo -e "${YELLOW}>>> Verificando capacidad de almacenamiento en partición raíz de ${TARGET_HOST}...${NC}"
 REMOTE_DISK_USE_PCT=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'")
 REMOTE_DISK_FREE_PCT=$((100 - REMOTE_DISK_USE_PCT))
+
 if (( REMOTE_DISK_FREE_PCT < 10 )); then
-    echo -e "${RED}[ERROR] Espacio crítico en ${TARGET_HOST}: solo ${REMOTE_DISK_FREE_PCT}% libre en / (mínimo requerido: 10%).${NC}"
-    exit 1
+    echo -e "${YELLOW}[WARNING] Espacio crítico detectado (${REMOTE_DISK_FREE_PCT}% libre). Intentando purgar caché de BuildKit...${NC}"
+    
+    PURGE_OUTPUT=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "docker builder prune -a -f" 2>&1) || {
+        echo -e "${RED}[ERROR] Falló la purga de BuildKit en ${TARGET_HOST}. Salida remota:${NC}\n${PURGE_OUTPUT}"
+        exit 1
+    }
+    
+    RECLAIMED=$(echo "$PURGE_OUTPUT" | grep -i "Total reclaimed space" || echo "Total reclaimed space: desconocido")
+    echo -e "${YELLOW}[INFO] ${RECLAIMED}${NC}"
+    
+    REMOTE_DISK_USE_PCT_AFTER=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'")
+    REMOTE_DISK_FREE_PCT_AFTER=$((100 - REMOTE_DISK_USE_PCT_AFTER))
+    
+    if (( REMOTE_DISK_FREE_PCT_AFTER < 10 )); then
+        echo -e "${RED}[ERROR] Abortando: Espacio insuficiente en ${TARGET_HOST}. Libre antes: ${REMOTE_DISK_FREE_PCT}%, Libre después: ${REMOTE_DISK_FREE_PCT_AFTER}%. ${RECLAIMED}.${NC}"
+        exit 1
+    fi
+    
+    REMOTE_DISK_USE_PCT=$REMOTE_DISK_USE_PCT_AFTER
+    REMOTE_DISK_FREE_PCT=$REMOTE_DISK_FREE_PCT_AFTER
 fi
+
 echo -e "${GREEN}[OK] Espacio en disco validado en el nodo destino: ${REMOTE_DISK_FREE_PCT}% disponible (${REMOTE_DISK_USE_PCT}% usado).${NC}"
 
 # 4. Verificación de persistencia de credenciales en ficheros segregados (PBI-GW-014)
