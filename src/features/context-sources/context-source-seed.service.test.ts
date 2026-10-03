@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import path from 'node:path';
+
 import {
   ContextSourceSeedService,
   SeedFileYamlSchema,
@@ -27,12 +27,7 @@ describe('ContextSourceSeedService', () => {
     const repo = createMockRepo();
     const service = new ContextSourceSeedService(repo);
 
-    const seedPath = path.resolve(
-      __dirname,
-      'context-sources.seed.yml'
-    );
-
-    const result = await service.loadSeed(seedPath);
+    const result = await service.loadSeed();
 
     expect(result.success).toBe(true);
     expect(result.result).toEqual(mockUpsertResult);

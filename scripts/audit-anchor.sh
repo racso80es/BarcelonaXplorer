@@ -48,7 +48,7 @@ echo "════════════════════════�
 
 export BX_AUDIT=1
 
-echo "0/8 Oráculo de Plantillas Go en Ansible..."
+echo "0/8 Oráculo de Plantillas Go en Ansible y Activos de Runtime..."
 if "${REPO_ROOT}/scripts/check-ansible-go-templates.sh"; then
   echo "✅ Oráculo de Plantillas Go: 0 errores."
 else
@@ -57,6 +57,13 @@ else
 fi
 
 cd "${REPO_ROOT}/src"
+
+if npx tsx "${REPO_ROOT}/scripts/check-standalone-runtime-assets.ts"; then
+  echo "✅ Oráculo de Activos de Runtime: 0 errores."
+else
+  echo "❌ Oráculo de Activos de Runtime: Falló la aduana (Revisar log)."
+  exit 1
+fi
 
 echo "1/8 Linter AST (eslint, --max-warnings 0, src/)..."
 if npm run lint; then

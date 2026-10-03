@@ -60,18 +60,10 @@ export class ContextSourceSeedService {
         } else {
           const defaultPath = path.join(
             process.cwd(),
-            'src/features/context-sources/context-sources.seed.yml'
-          );
-          const fallbackPath = path.join(
-            process.cwd(),
             'features/context-sources/context-sources.seed.yml'
           );
 
-          targetPath = fs.existsSync(defaultPath)
-            ? defaultPath
-            : fs.existsSync(fallbackPath)
-              ? fallbackPath
-              : null;
+          targetPath = fs.existsSync(defaultPath) ? defaultPath : null;
 
           if (!targetPath) {
             return createErrorEnvelope(

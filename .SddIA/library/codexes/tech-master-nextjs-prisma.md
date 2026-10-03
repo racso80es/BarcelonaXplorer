@@ -169,6 +169,13 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 - **Cumplimiento:** `scripts/check-ansible-go-templates.sh`
 - **Anclaje:** `ansible/hooks/after_symlink.yml`, originado por `AUD-OPS-DEPLOY-002` (Fricción 2).
 
+### TC-INFRA-004 — Activos de Runtime del Standalone
+
+- **Sentencia:** Todo fichero leído por filesystem en el monolito y no importado como módulo se declara en `docker-runtime-assets.yml` y se copia al stage `runner`.
+- **Excepción:** Ninguna.
+- **Cumplimiento:** `scripts/check-standalone-runtime-assets.ts`
+- **Anclaje:** `src/docker-runtime-assets.yml`, originado por `AUD-OPS-DEPLOY-002` (Fricción 4).
+
 ---
 
 ## Deuda heredada (no remediada en la forja del Códice)

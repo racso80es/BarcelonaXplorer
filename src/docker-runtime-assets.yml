@@ -1,0 +1,5 @@
+# Manifiesto de Activos de Runtime del Standalone
+# Gobernanza de Activos: AUD-OPS-DEPLOY-002, Fricción 4. Axioma V (Ejecución Encapsulada).
+assets:
+  - source: "features/context-sources/context-sources.seed.yml"
+    destination: "features/context-sources/context-sources.seed.yml"

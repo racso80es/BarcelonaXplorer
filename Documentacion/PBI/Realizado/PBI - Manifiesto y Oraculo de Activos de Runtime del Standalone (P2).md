@@ -1,7 +1,7 @@
 # [OPERATIVO] Documento Destilado: PBI - Manifiesto y Oráculo de Activos de Runtime del Standalone
 
 **Identificador:** PBI-OPS-028
-**Estatus:** Pendiente
+**Estatus:** Realizado
 **Fecha de Creación:** 2026-10-03
 **Historia de Usuario Relacionada:** [[OPERATIVO] HU 20: Blindaje del Despliegue contra Rollback Silencioso y Fricciones de Producción](../../HistoriasDeUsuario/%5BOPERATIVO%5D%20HU%2020%3A%20Blindaje%20del%20Despliegue%20contra%20Rollback%20Silencioso%20y%20Fricciones%20de%20Producci%C3%B3n%20%28Post-AUD-OPS-DEPLOY-002%29.md) · Escenarios 4 y 5
 **Auditoría:** [`AUD-OPS-DEPLOY-002`](../../Auditorias/Auditoria%20-%20Fricciones%20de%20Despliegue%20en%20Produccion%20y%20Ausencia%20de%20Admin%20Context%20%28HU-18%29.md) · Fricción 4
@@ -54,4 +54,5 @@
 
 ## 4. Evidencia
 
-*Pendiente.*
+Se creó el manifiesto `src/docker-runtime-assets.yml` y se centralizó el COPY en `src/Dockerfile`.
+Se implementó `scripts/check-standalone-runtime-assets.ts` el cual verifica directivas COPY en el Dockerfile contra el manifiesto y lecturas de ficheros YAML con `readFileSync`. Se añadió la regla `TC-INFRA-004` al Códice Tecnológico, y el test automatizado en `context-source-seed.service.test.ts` utiliza la ruta predeterminada validada exitosamente mediante Vitest. Se verificó con un fixture que el oráculo de revisión falla en caso de ausencia de copia. El oráculo se integró como parte de `scripts/audit-anchor.sh`.
