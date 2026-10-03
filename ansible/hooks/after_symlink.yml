@@ -242,18 +242,20 @@
       ansible.builtin.copy:
         dest: "{{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml"
         content: |
-          outcome: succeeded
-          release_path: "{{ ansistrano_release_path }}"
-          release_tag: "{{ ansistrano_release_path | basename }}"
+          outcome: "succeeded"
+          release_path: {{ ansistrano_release_path | to_json }}
+          release_tag: {{ (ansistrano_release_path | basename) | to_json }}
           failed_task: ""
-          finished_at: "{{ now(fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+          finished_at: {{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') | to_json }}
           playbook: "deploy.yml"
+        mode: '0644'
 
   rescue:
     - name: Alerta crítica — El Oráculo de Salud detectó fallo persistente post-despliegue
       ansible.builtin.debug:
         msg: "CRITICAL: La nueva release no responde satisfactoriamente tras 10 intentos. Iniciando reversión determinista automatizada..."
 
+    # CA-6 (PBI-OPS-026): Conmutar symlink con ignore_errors para registrar resultado sin abortar el bloque de diagnóstico
     - name: Conmutar symlink current a la release anterior y restaurar imagen etiquetada
       ansible.builtin.shell: |
         set -euo pipefail
@@ -263,7 +265,7 @@
           ln -sfn "$PREV_RELEASE" {{ ansistrano_deploy_to }}/current
           cd {{ ansistrano_deploy_to }}/current
           if [ ! -f .bx_release_tag ]; then
-            echo "ADVERTENCIA: release previa sin .bx_release_tag; abortando rescate determinista."
+            echo "ADVERTENCIA: release previa sin .bx_release_tag; abortando rescate determinista." >&2
             exit 1
           fi
           export BX_RELEASE_TAG="$(cat .bx_release_tag)"
@@ -276,40 +278,73 @@
           echo "BX_RESTORED_RELEASE=$PREV_RELEASE" > {{ ansistrano_deploy_to }}/shared/.bx_restored_info
           echo "BX_RESTORED_TAG=$BX_RELEASE_TAG" >> {{ ansistrano_deploy_to }}/shared/.bx_restored_info
         else
-          echo "ADVERTENCIA: No se localizó release previa para restaurar."
+          echo "ADVERTENCIA: No se localizó release previa para restaurar." >&2
           echo "BX_RESTORED_RELEASE=none" > {{ ansistrano_deploy_to }}/shared/.bx_restored_info
           echo "BX_RESTORED_TAG=none" >> {{ ansistrano_deploy_to }}/shared/.bx_restored_info
+          exit 1
         fi
       args:
         executable: /bin/bash
+      register: rollback_execution
+      ignore_errors: true
       changed_when: true
 
     - name: Leer información de la release restaurada
       ansible.builtin.shell: cat {{ ansistrano_deploy_to }}/shared/.bx_restored_info
       register: restored_info_raw
+      when: rollback_execution is not failed
+      ignore_errors: true
       changed_when: false
 
     - name: Parsear release restaurada
       ansible.builtin.set_fact:
-        restored_release: "{{ restored_info_raw.stdout | regex_search('BX_RESTORED_RELEASE=(.*)', '\\1') | first }}"
-        restored_tag: "{{ restored_info_raw.stdout | regex_search('BX_RESTORED_TAG=(.*)', '\\1') | first }}"
+        restored_release: "{{ (restored_info_raw.stdout | regex_search('BX_RESTORED_RELEASE=(.*)', '\\1') | first) if (restored_info_raw is defined and restored_info_raw.stdout is defined and (restored_info_raw.stdout | regex_search('BX_RESTORED_RELEASE=(.*)', '\\1') | length > 0)) else 'none' }}"
+        restored_tag: "{{ (restored_info_raw.stdout | regex_search('BX_RESTORED_TAG=(.*)', '\\1') | first) if (restored_info_raw is defined and restored_info_raw.stdout is defined and (restored_info_raw.stdout | regex_search('BX_RESTORED_TAG=(.*)', '\\1') | length > 0)) else 'none' }}"
+      when: rollback_execution is not failed
 
-    - name: Registrar acta de despliegue revertido
+    - name: Registrar acta de despliegue revertido con éxito
       ansible.builtin.copy:
         dest: "{{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml"
         content: |
-          outcome: rolled_back
-          release_path: "{{ restored_release }}"
-          release_tag: "{{ restored_tag }}"
-          failed_task: "{{ ansible_failed_task.name | default('desconocida') }}"
-          finished_at: "{{ now(fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+          outcome: "rolled_back"
+          release_path: {{ restored_release | to_json }}
+          release_tag: {{ restored_tag | to_json }}
+          failed_task: {{ (ansible_failed_task.name | default('desconocida')) | to_json }}
+          finished_at: {{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') | to_json }}
           playbook: "deploy.yml"
+        mode: '0644'
+      when: rollback_execution is not failed
 
-    - name: Abortar despliegue por fallo del Oráculo de Salud
+    - name: Registrar acta de despliegue cuando el propio rollback falló
+      ansible.builtin.copy:
+        dest: "{{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml"
+        content: |
+          outcome: "rollback_failed"
+          release_path: "none"
+          release_tag: "none"
+          failed_task: {{ (ansible_failed_task.name | default('desconocida')) | to_json }}
+          finished_at: {{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') | to_json }}
+          playbook: "deploy.yml"
+        mode: '0644'
+      when: rollback_execution is failed
+
+    - name: Abortar despliegue por fallo del Oráculo de Salud (con fallo en rollback)
+      ansible.builtin.fail:
+        msg: >
+          CRÍTICO: El despliegue falló en la tarea '{{ ansible_failed_task.name | default('desconocida') }}'
+          (Detalle: {{ ansible_failed_result.msg | default('N/A') }}) y además LA REVERSIÓN AUTOMÁTICA FALLÓ.
+          Error del rollback: {{ rollback_execution.stderr | default(rollback_execution.msg | default('N/A')) }}.
+          Salud IA Gateway: {{ ia_gateway_container_health.stdout | default('N/A') }}.
+          Revisa el estado de producción en el servidor de forma manual inmediatamente.
+      when: rollback_execution is failed
+
+    - name: Abortar despliegue por fallo del Oráculo de Salud (con rollback completado)
       ansible.builtin.fail:
         msg: >
           El despliegue fue revertido a la versión previa debido a que la tarea '{{ ansible_failed_task.name | default('desconocida') }}' falló.
           Detalle: {{ ansible_failed_result.msg | default('N/A') }}.
           Salud IA Gateway: {{ ia_gateway_container_health.stdout | default('N/A') }}.
           Release restaurada: {{ restored_release }}, Tag: {{ restored_tag }}.
+      when: rollback_execution is not failed
+
 

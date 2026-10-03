@@ -17,6 +17,8 @@ INVENTORY="${ANSIBLE_DIR}/inventory.ini"
 PLAYBOOK="${ANSIBLE_DIR}/deploy.yml"
 TARGET_HOST="10.0.10.11"
 SSH_USER="racso"
+# Corresponde a {{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml en ansible/deploy.yml
+DEPLOY_OUTCOME_FILE="/home/${SSH_USER}/Despliegues/BarcelonaXplorer/shared/last-deploy-outcome.yml"
 
 # Colores para salida por consola
 GREEN='\033[0;32m'
@@ -214,15 +216,24 @@ echo -e "${GREEN}[OK] Aduana Empírica E2E superada.${NC}"
 # 6. Ignición — Ejecución del pipeline Ansistrano
 echo -e "${YELLOW}>>> Disparando Ansistrano hacia el Nodo 11...${NC}"
 export ANSIBLE_CONFIG="${ANSIBLE_CONFIG:-${ANSIBLE_DIR}/ansible.cfg}"
-if ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@"; then
+PLAYBOOK_RC=0
+ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@" || PLAYBOOK_RC=$?
+
+if [[ ${PLAYBOOK_RC} -eq 0 ]]; then
     echo -e "${GREEN}>>> Despliegue finalizado con éxito en release activa symlink.${NC}"
-    EXIT_CODE=0
 else
-    echo -e "${RED}>>> Despliegue abortado o revertido por Ansible.${NC}"
-    EXIT_CODE=$?
+    echo -e "${RED}>>> Despliegue abortado o revertido por Ansible (código de salida: ${PLAYBOOK_RC}).${NC}"
 fi
 
-echo -e "${YELLOW}>>> Acta del despliegue (shared/last-deploy-outcome.yml):${NC}"
-ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "cat /home/${SSH_USER}/Despliegues/BarcelonaXplorer/shared/last-deploy-outcome.yml" || echo -e "${YELLOW}[INFO] No se encontró el acta de despliegue.${NC}"
+echo -e "${YELLOW}>>> Acta del despliegue (${DEPLOY_OUTCOME_FILE}):${NC}"
+OUTCOME_CONTENT=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "cat ${DEPLOY_OUTCOME_FILE}" 2>/dev/null) || OUTCOME_CONTENT=""
+if [[ -n "${OUTCOME_CONTENT}" ]]; then
+    echo "${OUTCOME_CONTENT}"
+    if echo "${OUTCOME_CONTENT}" | grep -q "outcome:.*in_progress"; then
+        echo -e "${RED}[ADVERTENCIA] El playbook terminó antes del oráculo de salud (estado in_progress); revisa 'current' a mano en el servidor.${NC}"
+    fi
+else
+    echo -e "${YELLOW}[INFO] No se encontró el acta de despliegue.${NC}"
+fi
 
-exit $EXIT_CODE
+exit "${PLAYBOOK_RC}"

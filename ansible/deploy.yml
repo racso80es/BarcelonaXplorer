@@ -31,6 +31,26 @@
     # Axioma III: Hook declarativo de post-enlace simbólico para ignición de contenedores
     ansistrano_after_symlink_tasks_file: "{{ playbook_dir }}/hooks/after_symlink.yml"
   pre_tasks:
+    # CA-5 (PBI-OPS-026): Inicializar acta de despliegue en shared/ para evitar actas rancias ante fallos tempranos
+    - name: Garantizar existencia del directorio shared de Ansistrano
+      ansible.builtin.file:
+        path: "{{ ansistrano_deploy_to }}/shared"
+        state: directory
+        mode: '0755'
+
+    - name: Inicializar acta de despliegue en estado in_progress
+      ansible.builtin.copy:
+        dest: "{{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml"
+        content: |
+          outcome: "in_progress"
+          release_path: ""
+          release_tag: ""
+          failed_task: ""
+          started_at: {{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') | to_json }}
+          finished_at: ""
+          playbook: "deploy.yml"
+        mode: '0644'
+
     # Axioma I: Auditoría preventiva de almacenamiento en la partición raíz
     - name: Comprobar espacio disponible en la partición raíz
       ansible.builtin.command: df -m --output=avail /
