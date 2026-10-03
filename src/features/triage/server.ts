@@ -10,3 +10,7 @@ export {
   CANONICAL_BARCELONA_WEATHER_FALLBACK,
   type WeatherAdapterConfig,
 } from './open-meteo-weather.adapter';
+export {
+  DensityPresenceSentinel,
+  DENSITY_SENTINEL_PROBES,
+} from './density-presence-sentinel.use-case';
