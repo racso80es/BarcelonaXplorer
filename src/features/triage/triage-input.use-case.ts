@@ -675,10 +675,17 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         });
 
 
-        // CA-4: Persistencia Relacional MySQL en Prisma
+        // CA-4 & PBI-ARCH-ORCH-008: Persistencia Relacional MySQL en Prisma y correlación de CUIDs
         if (this.itineraryRepo) {
           try {
-            await this.itineraryRepo.saveItinerary(input.sessionId, enriched);
+            const persisted = await this.itineraryRepo.saveItinerary(input.sessionId, enriched);
+            if (persisted && Array.isArray(persisted.waypoints) && persisted.waypoints.length > 0) {
+              enrichedItinerary = {
+                ...enriched,
+                id: persisted.id,
+                waypoints: persisted.waypoints,
+              };
+            }
           } catch (dbErr) {
             // Fail-soft en persistencia relacional
             this.emitTelemetry({

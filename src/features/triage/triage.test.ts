@@ -232,6 +232,38 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       );
     });
 
+    it('PBI-ARCH-ORCH-008 (CA-3): debe correlacionar los waypoints del itinerario con los CUIDs persistidos', async () => {
+      vi.mocked(mockItineraryRepo.saveItinerary).mockResolvedValueOnce({
+        id: 'itin-cuid-persisted',
+        sessionId: 'sess-cuid-test',
+        summary: 'Ruta con CUIDs',
+        status: 'ACTIVE',
+        waypoints: [
+          {
+            id: 'cuid-node-alpha',
+            title: 'Sagrada Família',
+            description: 'Templo expiatorio',
+            category: 'CULTURE',
+            affiliateProvider: 'CIVITATIS',
+            timeSpan: { start: '10:00', end: '11:30' },
+            recommendations: [],
+            options: [],
+          },
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await useCase.execute({
+        sessionId: 'sess-cuid-test',
+        prompt: 'Tengo 3 horas para ver la Sagrada Familia en pareja',
+      });
+
+      expect(result.status).toBe('DISPATCH_READY');
+      expect(result.itinerary?.id).toBe('itin-cuid-persisted');
+      expect(result.itinerary?.waypoints[0].id).toBe('cuid-node-alpha');
+    });
+
     it('PBI-STEEL-002: no debe persistir memoria cognitiva si el embedding es fallback', async () => {
       const persistMemory = vi.fn().mockResolvedValue(undefined);
       const mockCognitiveMemory = {

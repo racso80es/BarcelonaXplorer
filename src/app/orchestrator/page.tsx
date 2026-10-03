@@ -10,6 +10,7 @@ import { CloudRain, ShieldAlert, Navigation, Send, AlertTriangle, CheckCircle2, 
 
 import {
   EnrichedRoute,
+  EnrichedWaypoint,
   ChronologicalPropagator,
   TacticalRouteZodSchema,
 } from '@/features/planner';
@@ -487,6 +488,15 @@ export default function OrchestratorPage() {
         }),
       };
     });
+
+    // PBI-ARCH-ORCH-008: Persistencia de selección en base de datos MySQL (fail-soft)
+    void fetch('/api/planner/itinerary/select-option', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodeId, optionId }),
+    }).catch(() => {
+      // CA-4: Fail-soft. Un fallo de escritura no deshace la selección ni rompe la UI
+    });
   }, []);
 
   const handleTimeShift = useCallback(
@@ -495,6 +505,7 @@ export default function OrchestratorPage() {
         type: 'success' | 'error';
         message: string;
       } | null = null;
+      let recalculatedWaypoints: EnrichedWaypoint[] | null = null;
 
       flushSync(() => {
         setActiveItinerary((prev) => {
@@ -508,6 +519,7 @@ export default function OrchestratorPage() {
               newStartTime,
               newEndTime,
             );
+            recalculatedWaypoints = recalculated;
             notificationPayload = {
               type: 'success',
               message:
@@ -532,6 +544,33 @@ export default function OrchestratorPage() {
 
       if (notificationPayload) {
         setNotification(notificationPayload);
+      }
+
+      // PBI-ARCH-ORCH-008: Persistencia de tramo horario propagado en MySQL (fail-soft)
+      if (recalculatedWaypoints) {
+        const targetIdx = (recalculatedWaypoints as EnrichedWaypoint[]).findIndex(
+          (w) => w.id === nodeId,
+        );
+        if (targetIdx !== -1) {
+          const shiftedNodes = (recalculatedWaypoints as EnrichedWaypoint[])
+            .slice(targetIdx)
+            .filter((w) => w.timeSpan?.start)
+            .map((w) => ({
+              nodeId: w.id,
+              startTime: w.timeSpan!.start,
+              endTime: w.timeSpan?.end,
+            }));
+
+          if (shiftedNodes.length > 0) {
+            void fetch('/api/planner/itinerary/shift-times', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ updates: shiftedNodes }),
+            }).catch(() => {
+              // CA-4: Fail-soft. El horario permanece en pantalla y el fallo se aísla
+            });
+          }
+        }
       }
     },
     [ui.orchestrator.timeUpdateError, ui.orchestrator.timeUpdatedNotice],

@@ -52,3 +52,12 @@ export {
   formatSseMessage,
   type OrchestratorStreamEvent,
 } from './streaming-events.schema';
+
+export {
+  UpdateNodeSelectionSchema,
+  ShiftNodeTimesSchema,
+  NodeTimeUpdateSchema,
+  type UpdateNodeSelectionInput,
+  type ShiftNodeTimesInput,
+  type NodeTimeUpdate,
+} from './update-itinerary-node.use-case';
