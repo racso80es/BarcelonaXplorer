@@ -48,6 +48,8 @@ import { DensityPresenceSentinel } from './density-presence-sentinel.use-case';
 import { mergePresenceWithHeuristic } from './merge-presence-with-heuristic';
 import { inFlightSentinelProbes } from './sentinel-flight-map';
 
+export const DENSITY_SENTINEL_JOIN_TIMEOUT_MS = 1500;
+
 /**
  * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-ARCH-ORCH-001).
  *
@@ -495,7 +497,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     }
 
     // 4. Extracción de Variables y Fusión con el Estado Previo
-    const mergedPayload = await this.extractMatrixVariables(
+    let mergedPayload = await this.extractMatrixVariables(
       trimmedPrompt,
       stateContext,
       priorPayload,
@@ -505,7 +507,34 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     );
 
     // 5. Evaluación del Peaje Termodinámico (Reglas de Matriz HU 6)
-    const density = calculateMatrixDensity(matrixId, mergedPayload);
+    let density = calculateMatrixDensity(matrixId, mergedPayload);
+
+    // PBI-ARCH-JEV-006: Consolidación de la Matriz antes del Despacho (Join Acotado)
+    // El join existe solo en el camino de despacho (>= 60%). Los caminos INCOMPLETE_REPROMPT y CASUAL_DIALOGUE no esperan.
+    const flightKey = `${input.sessionId}:${matrixId}`;
+    const inFlightPromise = inFlightSentinelProbes.get(flightKey);
+
+    if (density.isThresholdSatisfied && inFlightPromise) {
+      const joinResolved = await this.awaitInFlightSentinel(
+        inFlightPromise,
+        input.sessionId,
+        matrixId,
+      );
+
+      if (joinResolved) {
+        const latestPayload = await this.matrixRepo.getMatrixPayload(
+          input.sessionId,
+          matrixId,
+        );
+        if (latestPayload) {
+          mergedPayload = {
+            ...mergedPayload,
+            ...latestPayload,
+          };
+          density = calculateMatrixDensity(matrixId, mergedPayload);
+        }
+      }
+    }
 
     // Registro de Telemetría Triage (incluyendo mood y densidad)
     this.emitTelemetry({
@@ -1123,6 +1152,48 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     })();
 
     inFlightSentinelProbes.set(flightKey, flightPromise);
+  }
+
+  private async awaitInFlightSentinel(
+    flightPromise: Promise<void>,
+    sessionId: string,
+    matrixId: string,
+  ): Promise<boolean> {
+    let timer: NodeJS.Timeout | undefined;
+    let didTimeout = false;
+
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      timer = setTimeout(() => {
+        didTimeout = true;
+        reject(new Error('SENTINEL_JOIN_TIMEOUT'));
+      }, DENSITY_SENTINEL_JOIN_TIMEOUT_MS);
+    });
+
+    try {
+      await Promise.race([flightPromise, timeoutPromise]);
+      return true;
+    } catch {
+      if (didTimeout) {
+        this.emitTelemetry({
+          level: 'WARN',
+          context: 'LLM_ENGINE',
+          message: `[Sentinel Join] Tiempo de espera de consolidación agotado (${DENSITY_SENTINEL_JOIN_TIMEOUT_MS}ms)`,
+          statusCode: 408,
+          durationMs: DENSITY_SENTINEL_JOIN_TIMEOUT_MS,
+          payload: {
+            eventType: 'DENSITY_PRESENCE_SENTINEL_JOIN_TIMEOUT',
+            sessionId,
+            matrixId,
+            timeoutMs: DENSITY_SENTINEL_JOIN_TIMEOUT_MS,
+          },
+        });
+      }
+      return false;
+    } finally {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    }
   }
 }
 

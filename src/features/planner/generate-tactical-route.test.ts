@@ -492,6 +492,13 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
         })
       );
     });
+
+    it('PBI-ARCH-JEV-006 CA-4: GenerateTacticalRouteUseCase no invoca evaluateNoul ni evaluateChoice', () => {
+      const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
+      expect('decisionEngine' in useCase).toBe(false);
+      expect('evaluateNoul' in mockAiPort).toBe(false);
+      expect('evaluateChoice' in mockAiPort).toBe(false);
+    });
   });
 });
 

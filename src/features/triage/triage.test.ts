@@ -1219,4 +1219,195 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       );
     });
   });
+
+  describe('PBI-ARCH-JEV-006: Consolidación de la Matriz antes del Despacho', () => {
+    let mockDecisionEngine: ITypedDecisionEngine;
+    let mockConversationalSlm: IConversationalSLMPort;
+    let mockMatrixRepo: DensityMatrixRepositoryPort;
+    let mockRouteUseCase: GenerateTacticalRouteUseCase;
+    let mockItineraryRepo: ItineraryPersistencePort;
+    let mockTelemetryRepo: TelemetryRepositoryPort;
+
+    beforeEach(() => {
+      inFlightSentinelProbes.clear();
+
+      mockDecisionEngine = {
+        evaluateHealth: vi.fn(),
+        evaluateNoul: vi.fn().mockResolvedValue({ probability: 0.1, isAffirmative: false }),
+        evaluateChoice: vi.fn(),
+      };
+
+      mockConversationalSlm = {
+        getActiveModelId: vi.fn().mockReturnValue('groq/llama-3.3-70b'),
+        generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
+        generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
+        generateEmpatheticDialogue: vi.fn().mockResolvedValue({
+          message: 'Barcelona puede agotar; tómate un café.',
+        }),
+        generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días! Barcelona amanece en movimiento.'),
+        detectLanguageIntent: vi.fn().mockResolvedValue('es'),
+      };
+
+      mockMatrixRepo = {
+        getMatrixPayload: vi.fn().mockResolvedValue({}),
+        saveMatrixPayload: vi.fn().mockResolvedValue(undefined),
+        clearMatrixPayload: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockRoute = new TacticalRoute('r-1', 'Ruta Sagrada Familia', []);
+      mockRouteUseCase = {
+        execute: vi.fn().mockResolvedValue(mockRoute),
+      } as unknown as GenerateTacticalRouteUseCase;
+
+      mockItineraryRepo = {
+        saveItinerary: vi.fn().mockResolvedValue({
+          id: 'itin-1',
+          sessionId: 's-1',
+          summary: 'Ruta',
+          status: 'ACTIVE',
+          waypoints: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        getItineraryBySessionId: vi.fn(),
+        updateNodeSelection: vi.fn(),
+        updateNodeTime: vi.fn(),
+      };
+
+      mockTelemetryRepo = {
+        log: vi.fn().mockResolvedValue(undefined),
+        getRecentLogs: vi.fn().mockResolvedValue([]),
+        prune: vi.fn().mockResolvedValue(0),
+      };
+    });
+
+    it('CA-1: con una sonda en vuelo que resuelve has_time_window: true y heurística que aporta time_window, el despacho ve ese time_window consolidado', async () => {
+      let resolveInFlight!: () => void;
+      const inFlightPromise = new Promise<void>((resolve) => {
+        resolveInFlight = resolve;
+      });
+
+      inFlightSentinelProbes.set('sess-join-ca1:default', inFlightPromise);
+
+      mockMatrixRepo.getMatrixPayload = vi.fn()
+        .mockResolvedValueOnce({ group_size: 4, vibe: 'gastronomía' })
+        .mockResolvedValueOnce({ group_size: 4, vibe: 'gastronomía', time_window: '3 horas de ruta' });
+
+      setTimeout(() => {
+        resolveInFlight();
+      }, 10);
+
+      const useCaseWithJoin = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockItineraryRepo,
+      );
+
+      const result = await useCaseWithJoin.execute({
+        sessionId: 'sess-join-ca1',
+        prompt: 'Tengo 3 horas de ruta para pasear',
+      });
+
+      expect(result.status).toBe('DISPATCH_READY');
+      expect(result.payload?.time_window).toBe('3 horas de ruta');
+      expect(mockRouteUseCase.execute).toHaveBeenCalled();
+    });
+
+    it('CA-2: si la sonda no resuelve en 1500 ms, el despacho continúa con el payload previo y registra DENSITY_PRESENCE_SENTINEL_JOIN_TIMEOUT', async () => {
+      vi.useFakeTimers();
+      try {
+        const hangingProbe = new Promise<void>(() => {});
+        inFlightSentinelProbes.set('sess-join-ca2:default', hangingProbe);
+
+        mockMatrixRepo.getMatrixPayload = vi.fn().mockResolvedValue({
+          time_window: '2 horas',
+          group_size: 2,
+        });
+
+        const useCaseWithJoin = new TriageInputUseCase(
+          mockDecisionEngine,
+          mockConversationalSlm,
+          mockMatrixRepo,
+          mockRouteUseCase,
+          mockTelemetryRepo,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          mockItineraryRepo,
+        );
+
+        const executePromise = useCaseWithJoin.execute({
+          sessionId: 'sess-join-ca2',
+          prompt: 'Tengo 2 horas disponibles',
+        });
+
+        await vi.advanceTimersByTimeAsync(1500);
+
+        const result = await executePromise;
+
+        expect(result.status).toBe('DISPATCH_READY');
+        expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+          expect.objectContaining({
+            level: 'WARN',
+            payload: expect.objectContaining({
+              eventType: 'DENSITY_PRESENCE_SENTINEL_JOIN_TIMEOUT',
+              sessionId: 'sess-join-ca2',
+              timeoutMs: 1500,
+            }),
+          }),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('CA-3: un turno INCOMPLETE_REPROMPT o CASUAL_DIALOGUE no espera la promesa en vuelo', async () => {
+      let isHangingResolved = false;
+      const hangingProbe = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          isHangingResolved = true;
+          resolve();
+        }, 5000);
+      });
+
+      inFlightSentinelProbes.set('sess-incomplete-fast:default', hangingProbe);
+
+      const useCaseWithJoin = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockItineraryRepo,
+      );
+
+      const incompleteResult = await useCaseWithJoin.execute({
+        sessionId: 'sess-incomplete-fast',
+        prompt: 'Somos 4 amigos',
+      });
+
+      expect(incompleteResult.status).toBe('INCOMPLETE_REPROMPT');
+      expect(isHangingResolved).toBe(false);
+
+      const casualResult = await useCaseWithJoin.execute({
+        sessionId: 'sess-incomplete-fast',
+        prompt: 'Uf, estoy agotado',
+      });
+
+      expect(casualResult.status).toBe('CASUAL_DIALOGUE');
+      expect(isHangingResolved).toBe(false);
+    });
+  });
 });

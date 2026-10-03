@@ -46,6 +46,9 @@ export {
   type MergePresenceWithHeuristicInput,
 } from './merge-presence-with-heuristic';
 
+export { inFlightSentinelProbes } from './sentinel-flight-map';
+export { DENSITY_SENTINEL_JOIN_TIMEOUT_MS } from './triage-input.use-case';
+
 export {
   BX_LANG_COOKIE,
   LanguageIntentSchema,
