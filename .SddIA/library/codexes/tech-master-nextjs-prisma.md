@@ -159,15 +159,15 @@ Ante conflicto prevalece el nivel superior. Este documento no redefine los axiom
 
 - **Sentencia:** Docker `--env-file` no quita comillas. Todo parser de entorno las recorta antes del `regex` de Zod.
 - **Excepción:** Ninguna.
-- **Cumplimiento:** revisión
-- **Anclaje:** `src/shared/config/...` (`parseAnchorString`), originado por `AUD-OPS-DEPLOY-002` (Fricción 1).
+- **Cumplimiento:** revisión y suite `fallback.test.ts`
+- **Anclaje:** `ia-gateway/src/endpoints/llm/fallback.config.ts` (`parseAnchorString`, `parseModelList`), `ia-gateway/src/endpoints/llm/fallback.test.ts`, originado por [`AUD-OPS-DEPLOY-002`](../../Documentacion/Auditorias/Auditoria%20-%20Fricciones%20de%20Despliegue%20en%20Produccion%20y%20Ausencia%20de%20Admin%20Context%20%28HU-18%29.md) (Fricción 1).
 
 ### TC-INFRA-003 — Plantillas Go en Ansible
 
-- **Sentencia:** Toda plantilla Go (`{{. ... }}`) dentro de un YAML de Ansible va dentro de `{% raw %}`.
+- **Sentencia:** Toda plantilla Go —acceso a campos (`{{.X}}`, `{{ .X }}`) o acciones/funciones (`{{json .X}}`, `{{range .X}}`, etc.)— dentro de un YAML de Ansible va obligatoriamente dentro de un bloque `{% raw %}...{% endraw %}`.
 - **Excepción:** Ninguna.
-- **Cumplimiento:** `scripts/check-ansible-go-templates.sh`
-- **Anclaje:** `ansible/hooks/after_symlink.yml`, originado por `AUD-OPS-DEPLOY-002` (Fricción 2).
+- **Cumplimiento:** `scripts/check-ansible-go-templates.sh`, `src/features/governance/ansible-go-templates.contract.test.ts`
+- **Anclaje:** `ansible/hooks/after_symlink.yml`, originado por [`AUD-OPS-DEPLOY-002`](../../Documentacion/Auditorias/Auditoria%20-%20Fricciones%20de%20Despliegue%20en%20Produccion%20y%20Ausencia%20de%20Admin%20Context%20%28HU-18%29.md) (Fricción 2).
 
 ### TC-INFRA-004 — Activos de Runtime del Standalone
 

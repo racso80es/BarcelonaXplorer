@@ -9,7 +9,7 @@
 **Marco Normativo:** Protocolo de Acero — Grado S+ · [`CONSTITUTION.md`](../../CONSTITUTION.md) · [Axiomas de Forja S+](../../.SddIA/library/norms/) · [Códice `tech-master-nextjs-prisma`](../../.SddIA/library/codexes/tech-master-nextjs-prisma.md)
 **Módulos Afectados:** `src/deploy.sh`, `ansible/hooks/after_symlink.yml`, `ansible/deploy.yml`, `src/Dockerfile`, `src/docker-runtime-assets.yml`, `src/features/context-sources/`, `src/features/governance/`, `src/vitest.config.mts`, `scripts/audit-anchor.sh`, `scripts/check-*.{sh,ts}`, `.SddIA/library/codexes/tech-master-nextjs-prisma.md`
 **Prioridad:** Alta (P1)
-**Estimación Global:** 10 Story Points (3+3+2+2) · Restantes: 3 (0+0+1+2)
+**Estimación Global:** 10 Story Points (3+3+2+2) · Restantes: 2 (0+0+0+2)
 
 ---
 
@@ -90,7 +90,7 @@ Estas correcciones están en `main` y no se reabren:
 | :---: | :--- | :--- | :---: | :---: | :---: | :--- |
 | **P1** | `PBI-OPS-025` | [Aduana de disco que purga BuildKit antes de abortar](../PBI/Realizado/PBI%20-%20Aduana%20de%20Disco%20que%20Purga%20BuildKit%20antes%20de%20Abortar%20%28P1%29.md) | 1 | 3 | 0 | Ninguno (Certificado S+ Grade) |
 | **P1** | `PBI-OPS-026` | [Rollback audible: causa, release restaurada y acta en shared](../PBI/Realizado/PBI%20-%20Rollback%20Audible%20Causa%20Release%20Restaurada%20y%20Acta%20en%20Shared%20%28P1%29.md) | 2 | 3 | 0 | Ninguno (Certificado S+ Grade) |
-| **P2** | `PBI-OPS-027` | [Oráculo de plantillas Go escapadas en Ansible](../PBI/Pendiente/PBI%20-%20Oraculo%20de%20Plantillas%20Go%20Escapadas%20en%20Ansible%20%28P2%29.md) | 3, 5 | 2 | 1 | CA-1 regla ampliada · CA-3 test de regresión · CA-5 ancla del Códice · CA-7 oráculos |
+| **P2** | `PBI-OPS-027` | [Oráculo de plantillas Go escapadas en Ansible](../PBI/Realizado/PBI%20-%20Oraculo%20de%20Plantillas%20Go%20Escapadas%20en%20Ansible%20%28P2%29.md) | 3, 5 | 2 | 0 | Ninguno (Certificado S+ Grade) |
 | **P2** | `PBI-OPS-028` | [Manifiesto y oráculo de activos de runtime del standalone](../PBI/Pendiente/PBI%20-%20Manifiesto%20y%20Oraculo%20de%20Activos%20de%20Runtime%20del%20Standalone%20%28P2%29.md) | 4, 5 | 2 | 2 | CA-4 a CA-10: oráculo rehecho con YAML + Zod, test y exclusión de `.next` |
 
 `PBI-OPS-025` y `PBI-OPS-026` pueden forjarse en paralelo. `PBI-OPS-027` y `PBI-OPS-028` también. El orden de cierre en `audit-anchor.sh` es indiferente: cada uno añade su paso.
