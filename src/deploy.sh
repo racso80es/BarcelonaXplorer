@@ -55,7 +55,13 @@ echo -e "${GREEN}[OK] Canal SSH validado.${NC}"
 
 # 3.1. Verificación preventiva de espacio libre en disco raíz del Nodo 11 (Axioma I y II)
 echo -e "${YELLOW}>>> Verificando capacidad de almacenamiento en partición raíz de ${TARGET_HOST}...${NC}"
-REMOTE_DISK_USE_PCT=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'")
+REMOTE_DISK_USE_PCT=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'" 2>/dev/null || true)
+
+if [[ ! "${REMOTE_DISK_USE_PCT}" =~ ^[0-9]{1,3}$ ]] || (( REMOTE_DISK_USE_PCT > 100 )); then
+    echo -e "${RED}[ERROR] Medición inválida de espacio en disco en ${TARGET_HOST}. Valor recibido: '${REMOTE_DISK_USE_PCT}'. Abortando despliegue.${NC}"
+    exit 1
+fi
+
 REMOTE_DISK_FREE_PCT=$((100 - REMOTE_DISK_USE_PCT))
 
 if (( REMOTE_DISK_FREE_PCT < 10 )); then
@@ -69,7 +75,13 @@ if (( REMOTE_DISK_FREE_PCT < 10 )); then
     RECLAIMED=$(echo "$PURGE_OUTPUT" | grep -i "Total reclaimed space" || echo "Total reclaimed space: desconocido")
     echo -e "${YELLOW}[INFO] ${RECLAIMED}${NC}"
     
-    REMOTE_DISK_USE_PCT_AFTER=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'")
+    REMOTE_DISK_USE_PCT_AFTER=$(ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "df / | awk 'NR==2 {print \$5}' | tr -d '%'" 2>/dev/null || true)
+    
+    if [[ ! "${REMOTE_DISK_USE_PCT_AFTER}" =~ ^[0-9]{1,3}$ ]] || (( REMOTE_DISK_USE_PCT_AFTER > 100 )); then
+        echo -e "${RED}[ERROR] Medición post-purga inválida de espacio en disco en ${TARGET_HOST}. Valor recibido: '${REMOTE_DISK_USE_PCT_AFTER}'. Abortando despliegue.${NC}"
+        exit 1
+    fi
+    
     REMOTE_DISK_FREE_PCT_AFTER=$((100 - REMOTE_DISK_USE_PCT_AFTER))
     
     if (( REMOTE_DISK_FREE_PCT_AFTER < 10 )); then
