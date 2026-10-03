@@ -214,6 +214,15 @@ echo -e "${GREEN}[OK] Aduana Empírica E2E superada.${NC}"
 # 6. Ignición — Ejecución del pipeline Ansistrano
 echo -e "${YELLOW}>>> Disparando Ansistrano hacia el Nodo 11...${NC}"
 export ANSIBLE_CONFIG="${ANSIBLE_CONFIG:-${ANSIBLE_DIR}/ansible.cfg}"
-ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@"
+if ansible-playbook -i "${INVENTORY}" "${PLAYBOOK}" "$@"; then
+    echo -e "${GREEN}>>> Despliegue finalizado con éxito en release activa symlink.${NC}"
+    EXIT_CODE=0
+else
+    echo -e "${RED}>>> Despliegue abortado o revertido por Ansible.${NC}"
+    EXIT_CODE=$?
+fi
 
-echo -e "${GREEN}>>> Despliegue finalizado con éxito en release activa symlink.${NC}"
+echo -e "${YELLOW}>>> Acta del despliegue (shared/last-deploy-outcome.yml):${NC}"
+ssh -o BatchMode=yes -o ConnectTimeout=5 "${SSH_USER}@${TARGET_HOST}" "cat /home/${SSH_USER}/Despliegues/BarcelonaXplorer/shared/last-deploy-outcome.yml" || echo -e "${YELLOW}[INFO] No se encontró el acta de despliegue.${NC}"
+
+exit $EXIT_CODE

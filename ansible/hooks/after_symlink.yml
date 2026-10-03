@@ -238,6 +238,17 @@
           IA Gateway contenedor: {{ ia_gateway_container_health.stdout }} | Sonda HTTP: {{ ia_gateway_probe.status }}.
           Stack Next.js + IA Gateway + MySQL 100% operativo en release activa.
 
+    - name: Registrar acta de despliegue exitoso
+      ansible.builtin.copy:
+        dest: "{{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml"
+        content: |
+          outcome: succeeded
+          release_path: "{{ ansistrano_release_path }}"
+          release_tag: "{{ ansistrano_release_path | basename }}"
+          failed_task: ""
+          finished_at: "{{ now(fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+          playbook: "deploy.yml"
+
   rescue:
     - name: Alerta crítica — El Oráculo de Salud detectó fallo persistente post-despliegue
       ansible.builtin.debug:
@@ -262,16 +273,43 @@
             docker compose --env-file "$ENV_FILE" -p barcelonaxplorer build web
           fi
           docker compose --env-file "$ENV_FILE" -p barcelonaxplorer up -d --remove-orphans
+          echo "BX_RESTORED_RELEASE=$PREV_RELEASE" > {{ ansistrano_deploy_to }}/shared/.bx_restored_info
+          echo "BX_RESTORED_TAG=$BX_RELEASE_TAG" >> {{ ansistrano_deploy_to }}/shared/.bx_restored_info
         else
           echo "ADVERTENCIA: No se localizó release previa para restaurar."
+          echo "BX_RESTORED_RELEASE=none" > {{ ansistrano_deploy_to }}/shared/.bx_restored_info
+          echo "BX_RESTORED_TAG=none" >> {{ ansistrano_deploy_to }}/shared/.bx_restored_info
         fi
       args:
         executable: /bin/bash
       changed_when: true
 
+    - name: Leer información de la release restaurada
+      ansible.builtin.shell: cat {{ ansistrano_deploy_to }}/shared/.bx_restored_info
+      register: restored_info_raw
+      changed_when: false
+
+    - name: Parsear release restaurada
+      ansible.builtin.set_fact:
+        restored_release: "{{ restored_info_raw.stdout | regex_search('BX_RESTORED_RELEASE=(.*)', '\\1') | first }}"
+        restored_tag: "{{ restored_info_raw.stdout | regex_search('BX_RESTORED_TAG=(.*)', '\\1') | first }}"
+
+    - name: Registrar acta de despliegue revertido
+      ansible.builtin.copy:
+        dest: "{{ ansistrano_deploy_to }}/shared/last-deploy-outcome.yml"
+        content: |
+          outcome: rolled_back
+          release_path: "{{ restored_release }}"
+          release_tag: "{{ restored_tag }}"
+          failed_task: "{{ ansible_failed_task.name | default('desconocida') }}"
+          finished_at: "{{ now(fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+          playbook: "deploy.yml"
+
     - name: Abortar despliegue por fallo del Oráculo de Salud
       ansible.builtin.fail:
         msg: >
-          El despliegue fue revertido a la versión previa debido a que el Oráculo de Salud
-          no recibió una respuesta válida en http://127.0.0.1:8080/api/telemetry/log tras 10 reintentos.
+          El despliegue fue revertido a la versión previa debido a que la tarea '{{ ansible_failed_task.name | default('desconocida') }}' falló.
+          Detalle: {{ ansible_failed_result.msg | default('N/A') }}.
+          Salud IA Gateway: {{ ia_gateway_container_health.stdout | default('N/A') }}.
+          Release restaurada: {{ restored_release }}, Tag: {{ restored_tag }}.
 
