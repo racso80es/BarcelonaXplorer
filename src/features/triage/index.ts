@@ -42,6 +42,11 @@ export {
 } from './density-presence-probe.schema';
 
 export {
+  mergePresenceWithHeuristic,
+  type MergePresenceWithHeuristicInput,
+} from './merge-presence-with-heuristic';
+
+export {
   BX_LANG_COOKIE,
   LanguageIntentSchema,
   ROUTE_LANGUAGE_DIRECTIVES,
