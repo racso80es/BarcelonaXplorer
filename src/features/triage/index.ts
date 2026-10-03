@@ -37,6 +37,11 @@ export {
 } from './ignition.schema';
 
 export {
+  DensityPresenceProbeSchema,
+  type DensityPresenceProbe,
+} from './density-presence-probe.schema';
+
+export {
   BX_LANG_COOKIE,
   LanguageIntentSchema,
   ROUTE_LANGUAGE_DIRECTIVES,
