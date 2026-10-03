@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TriageInputUseCase } from '@/features/triage/server';
+import {
+  TriageInputUseCase,
+  DensityPresenceSentinel,
+} from '@/features/triage/server';
 import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import {
   InMemoryDensityMatrixRepository,
@@ -113,6 +116,7 @@ export async function POST(req: NextRequest) {
     const telemetryRepo = new PrismaTelemetryRepository();
     const iaGatewayClient = new IaGatewayClient(undefined, telemetryRepo);
     const decisionEngine = iaGatewayClient;
+    const presenceSentinel = new DensityPresenceSentinel(decisionEngine);
     const conversationalSlm = new GroqConversationalSlmAdapter(
       undefined,
       telemetryRepo,
@@ -128,7 +132,7 @@ export async function POST(req: NextRequest) {
     const itineraryRepo = new PrismaItineraryRepository();
     const affiliateEnricher = new AffiliateEnricherService();
 
-    // Laudo 1 & 2 + PBI-COG-MEM-005 + PBI-ARCH-ORCH-001: Orquestador unificado
+    // Laudo 1 & 2 + PBI-COG-MEM-005 + PBI-ARCH-ORCH-001 + PBI-ARCH-JEV-005: Orquestador unificado
     const useCase = new TriageInputUseCase(
       decisionEngine,
       conversationalSlm,
@@ -141,6 +145,7 @@ export async function POST(req: NextRequest) {
       affiliateEnricher,
       itineraryRepo,
       semanticCache,
+      presenceSentinel,
     );
 
     const outcome = await useCase.execute({

@@ -44,6 +44,9 @@ import {
   looksLikeLanguageSwitch,
   resolveBaselineLanguage,
 } from './language-detector';
+import { DensityPresenceSentinel } from './density-presence-sentinel.use-case';
+import { mergePresenceWithHeuristic } from './merge-presence-with-heuristic';
+import { inFlightSentinelProbes } from './sentinel-flight-map';
 
 /**
  * Caso de Uso: Aduana Universal y Triaje Entrópico (HU-CORE-TRIAGE-002 / PBI-ARCH-ORCH-001).
@@ -65,6 +68,7 @@ import {
  */
 export class TriageInputUseCase implements ITriageInputUseCasePort {
   private readonly sessionMemoryIndexer: IndexSessionMemoryService;
+  private readonly sentinel?: DensityPresenceSentinel;
 
   constructor(
     private readonly decisionEngine: ITypedDecisionEngine,
@@ -78,12 +82,14 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     private readonly affiliateEnricher: IAffiliateEnricherService = new AffiliateEnricherService(),
     private readonly itineraryRepo?: ItineraryPersistencePort,
     private readonly semanticCache?: ISemanticCachePort,
+    presenceSentinel?: DensityPresenceSentinel,
   ) {
     this.sessionMemoryIndexer = new IndexSessionMemoryService(
       this.cognitiveMemory,
       this.embeddingPort,
       this.telemetryRepo,
     );
+    this.sentinel = presenceSentinel;
   }
 
   async execute(rawInput: TriageInputDto): Promise<TriageOutcome> {
@@ -531,18 +537,28 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         mergedPayload,
       );
 
-      const partialMatrix = DenseSemanticMatrix.create({
-        sessionId: input.sessionId,
-        matrixId,
-        payload: mergedPayload,
-        score: density.score,
-        survivalThreshold: density.survivalThreshold,
-      });
-      await this.sessionMemoryIndexer.index(
-        partialMatrix,
-        'INCOMPLETE_REPROMPT',
-        priorPayload,
-      );
+      if (this.sentinel) {
+        this.launchSentinelProbe({
+          prompt: trimmedPrompt,
+          sessionId: input.sessionId,
+          matrixId,
+          heuristicPayload: mergedPayload,
+          priorPayload,
+        });
+      } else {
+        const partialMatrix = DenseSemanticMatrix.create({
+          sessionId: input.sessionId,
+          matrixId,
+          payload: mergedPayload,
+          score: density.score,
+          survivalThreshold: density.survivalThreshold,
+        });
+        await this.sessionMemoryIndexer.index(
+          partialMatrix,
+          'INCOMPLETE_REPROMPT',
+          priorPayload,
+        );
+      }
 
       const missingVar = density.highestMissingVariable ?? 'time_window';
       const repromptMessage =
@@ -767,19 +783,6 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
 
       if (hasExplicitTime) {
         payload.time_window = prompt;
-      } else {
-        try {
-          const evalResult = await this.decisionEngine.evaluateNoul(
-            stateContext,
-            '¿El usuario indica expresamente una ventana de tiempo, número de horas, día o momento para realizar el plan?',
-            0.5,
-          );
-          if (evalResult.isAffirmative) {
-            payload.time_window = prompt;
-          }
-        } catch {
-          // Fail-soft en extracción heurística
-        }
       }
     }
 
@@ -1028,6 +1031,98 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         payload,
       })
       .catch(() => {});
+  }
+
+  private launchSentinelProbe(params: {
+    prompt: string;
+    sessionId: string;
+    matrixId: string;
+    heuristicPayload: DefaultDensityPayload;
+    priorPayload: Partial<DefaultDensityPayload>;
+  }): void {
+    const sentinel = this.sentinel;
+    if (!sentinel) {
+      return;
+    }
+
+    const flightKey = `${params.sessionId}:${params.matrixId}`;
+
+    const flightPromise = (async () => {
+      try {
+        const envelope = await sentinel.probe(params.prompt);
+        if (!envelope.success || !envelope.result) {
+          this.emitTelemetry({
+            level: 'WARN',
+            context: 'LLM_ENGINE',
+            message: '[Sentinel] Sonda fallida o sin resultado en segundo plano',
+            statusCode: 500,
+            durationMs: 0,
+            payload: {
+              eventType: 'DENSITY_PRESENCE_SENTINEL',
+              sessionId: params.sessionId,
+              matrixId: params.matrixId,
+              errors: envelope.errors,
+            },
+          });
+          return;
+        }
+
+        // 1. Lee el payload vigente con matrixRepo.getMatrixPayload
+        const currentPrior =
+          (await this.matrixRepo.getMatrixPayload(
+            params.sessionId,
+            params.matrixId,
+          )) ?? {};
+
+        // 2. Aplica mergePresenceWithHeuristic sobre prior, heurístico de este turno y la sonda
+        const fusedPayload = mergePresenceWithHeuristic({
+          prior: currentPrior,
+          heuristic: params.heuristicPayload,
+          probe: envelope.result,
+        });
+
+        // 3. Escribe con matrixRepo.saveMatrixPayload
+        await this.matrixRepo.saveMatrixPayload(
+          params.sessionId,
+          params.matrixId,
+          fusedPayload,
+        );
+
+        // 4. Indexa con sessionMemoryIndexer.index hacia cognitive_memories
+        const fusedDensity = calculateMatrixDensity(params.matrixId, fusedPayload);
+        const denseMatrix = DenseSemanticMatrix.create({
+          sessionId: params.sessionId,
+          matrixId: params.matrixId,
+          payload: fusedPayload,
+          score: fusedDensity.score,
+          survivalThreshold: fusedDensity.survivalThreshold,
+        });
+
+        await this.sessionMemoryIndexer.index(
+          denseMatrix,
+          'INCOMPLETE_REPROMPT',
+          currentPrior,
+        );
+      } catch (error: unknown) {
+        this.emitTelemetry({
+          level: 'WARN',
+          context: 'LLM_ENGINE',
+          message: `[Sentinel] Error en segundo plano: ${error instanceof Error ? error.message : String(error)}`,
+          statusCode: 500,
+          durationMs: 0,
+          payload: {
+            eventType: 'DENSITY_PRESENCE_SENTINEL',
+            sessionId: params.sessionId,
+            matrixId: params.matrixId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      } finally {
+        inFlightSentinelProbes.delete(flightKey);
+      }
+    })();
+
+    inFlightSentinelProbes.set(flightKey, flightPromise);
   }
 }
 

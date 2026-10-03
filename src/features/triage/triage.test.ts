@@ -12,6 +12,10 @@ import {
 } from '@/features/planner';
 import type { GenerateTacticalRouteUseCase } from '@/features/planner/server';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
+import { DensityPresenceSentinel } from './density-presence-sentinel.use-case';
+import { inFlightSentinelProbes } from './sentinel-flight-map';
+import { createSuccessEnvelope } from '@/shared/operation-envelope';
+import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
   it('debe validar la estructura de entrada de TriageInputSchema localmente', () => {
@@ -957,6 +961,260 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(mockRouteUseCase.execute).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: expect.stringContaining('[Idioma soberano: en]'),
+        }),
+      );
+    });
+  });
+
+  describe('PBI-ARCH-JEV-005: Bifurcación Fire-and-Forget del Triaje', () => {
+    let mockDecisionEngine: ITypedDecisionEngine;
+    let mockConversationalSlm: IConversationalSLMPort;
+    let mockMatrixRepo: DensityMatrixRepositoryPort;
+    let mockRouteUseCase: GenerateTacticalRouteUseCase;
+    let mockItineraryRepo: ItineraryPersistencePort;
+    let mockTelemetryRepo: TelemetryRepositoryPort;
+
+    beforeEach(() => {
+      mockDecisionEngine = {
+        evaluateHealth: vi.fn(),
+        evaluateNoul: vi.fn().mockResolvedValue({ probability: 0.1, isAffirmative: false }),
+        evaluateChoice: vi.fn(),
+      };
+
+      mockConversationalSlm = {
+        getActiveModelId: vi.fn().mockReturnValue('groq/llama-3.3-70b'),
+        generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
+        generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
+        generateEmpatheticDialogue: vi.fn().mockResolvedValue({
+          message: 'Barcelona puede agotar; tómate un café.',
+        }),
+        generateContextualGreeting: vi.fn().mockResolvedValue('¡Buenos días! Barcelona amanece en movimiento.'),
+        detectLanguageIntent: vi.fn().mockResolvedValue('es'),
+      };
+
+      mockMatrixRepo = {
+        getMatrixPayload: vi.fn().mockResolvedValue({}),
+        saveMatrixPayload: vi.fn().mockResolvedValue(undefined),
+        clearMatrixPayload: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockRoute = new TacticalRoute('r-1', 'Ruta Sagrada Familia', []);
+      mockRouteUseCase = {
+        execute: vi.fn().mockResolvedValue(mockRoute),
+      } as unknown as GenerateTacticalRouteUseCase;
+
+      mockItineraryRepo = {
+        saveItinerary: vi.fn().mockResolvedValue({
+          id: 'itin-1',
+          sessionId: 's-1',
+          summary: 'Ruta',
+          status: 'ACTIVE',
+          waypoints: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+        getItineraryBySessionId: vi.fn(),
+        updateNodeSelection: vi.fn(),
+        updateNodeTime: vi.fn(),
+      };
+
+      mockTelemetryRepo = {
+        log: vi.fn().mockResolvedValue(undefined),
+        getRecentLogs: vi.fn().mockResolvedValue([]),
+        prune: vi.fn().mockResolvedValue(0),
+      };
+    });
+
+    it('CA-1: con un doble de Jev que no resuelve hasta que el test lo libera, POST ya devolvió el TriageOutcome del SLM', async () => {
+      let resolveSentinelProbe!: (value: unknown) => void;
+      const hangingPromise = new Promise((resolve) => {
+        resolveSentinelProbe = resolve;
+      });
+
+      const mockSentinel = {
+        probe: vi.fn().mockReturnValue(hangingPromise),
+      } as unknown as DensityPresenceSentinel;
+
+      const useCaseWithSentinel = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockItineraryRepo,
+        undefined,
+        mockSentinel,
+      );
+
+      const result = await useCaseWithSentinel.execute({
+        sessionId: 'sess-fire-forget-ca1',
+        prompt: 'Somos 4 amigos',
+      });
+
+      expect(result.status).toBe('INCOMPLETE_REPROMPT');
+      expect(result.missingVariable).toBe('time_window');
+      expect(mockSentinel.probe).toHaveBeenCalledWith('Somos 4 amigos');
+
+      resolveSentinelProbe(
+        createSuccessEnvelope({
+          has_time_window: false,
+          has_group_size: true,
+          has_vibe: false,
+          has_constraints: false,
+        }),
+      );
+    });
+
+    it('CA-2: un turno que el clasificador marca como CASUAL_DIALOGUE no llama a probe', async () => {
+      const mockSentinel = {
+        probe: vi.fn().mockResolvedValue(
+          createSuccessEnvelope({
+            has_time_window: false,
+            has_group_size: false,
+            has_vibe: false,
+            has_constraints: false,
+          }),
+        ),
+      } as unknown as DensityPresenceSentinel;
+
+      const useCaseWithSentinel = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockItineraryRepo,
+        undefined,
+        mockSentinel,
+      );
+
+      const result = await useCaseWithSentinel.execute({
+        sessionId: 'sess-casual-sentinel',
+        prompt: 'Uf, estoy agotado',
+      });
+
+      expect(result.status).toBe('CASUAL_DIALOGUE');
+      expect(mockSentinel.probe).not.toHaveBeenCalled();
+    });
+
+    it('CA-3: al resolver la sonda, el repositorio contiene el payload fusionado y el indexador de sesión recibe una llamada', async () => {
+      let resolveProbe!: (value: unknown) => void;
+      const probePromise = new Promise((resolve) => {
+        resolveProbe = resolve;
+      });
+
+      const mockSentinel = {
+        probe: vi.fn().mockReturnValue(probePromise),
+      } as unknown as DensityPresenceSentinel;
+
+      const persistMemory = vi.fn().mockResolvedValue(undefined);
+      const mockCognitiveMemory = {
+        persistMemory,
+        getLatestSessionMemory: vi.fn().mockResolvedValue(null),
+        searchSimilarMemories: vi.fn().mockResolvedValue([]),
+        getRecentMemories: vi.fn().mockResolvedValue([]),
+        clearSessionMemory: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const mockEmbedding = {
+        generateEmbedding: vi.fn().mockResolvedValue({
+          vector: new Array(768).fill(0.01),
+          source: 'provider' as const,
+        }),
+        getDimensions: vi.fn().mockReturnValue(768),
+      };
+
+      const useCaseWithSentinel = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        mockCognitiveMemory,
+        mockEmbedding,
+        undefined,
+        mockItineraryRepo,
+        undefined,
+        mockSentinel,
+      );
+
+      const result = await useCaseWithSentinel.execute({
+        sessionId: 'sess-fused-bg',
+        prompt: 'Somos 4 amigos',
+      });
+
+      expect(result.status).toBe('INCOMPLETE_REPROMPT');
+
+      resolveProbe(
+        createSuccessEnvelope({
+          has_time_window: false,
+          has_group_size: true,
+          has_vibe: false,
+          has_constraints: false,
+        }),
+      );
+
+      const flightPromise = inFlightSentinelProbes.get('sess-fused-bg:default');
+      if (flightPromise) {
+        await flightPromise;
+      }
+
+      expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalledWith(
+        'sess-fused-bg',
+        'default',
+        expect.objectContaining({ group_size: 4 }),
+      );
+      expect(persistMemory).toHaveBeenCalled();
+    });
+
+    it('CA-4: si probe rechaza, el outcome HTTP permanece intacto y la telemetría registra DENSITY_PRESENCE_SENTINEL en WARN', async () => {
+      const mockSentinel = {
+        probe: vi.fn().mockRejectedValue(new Error('Gateway inference failed')),
+      } as unknown as DensityPresenceSentinel;
+
+      const useCaseWithSentinel = new TriageInputUseCase(
+        mockDecisionEngine,
+        mockConversationalSlm,
+        mockMatrixRepo,
+        mockRouteUseCase,
+        mockTelemetryRepo,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockItineraryRepo,
+        undefined,
+        mockSentinel,
+      );
+
+      const result = await useCaseWithSentinel.execute({
+        sessionId: 'sess-reject-bg',
+        prompt: 'Somos 4 amigos',
+      });
+
+      expect(result.status).toBe('INCOMPLETE_REPROMPT');
+
+      const flightPromise = inFlightSentinelProbes.get('sess-reject-bg:default');
+      if (flightPromise) {
+        await flightPromise;
+      }
+
+      expect(mockTelemetryRepo.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          level: 'WARN',
+          payload: expect.objectContaining({
+            eventType: 'DENSITY_PRESENCE_SENTINEL',
+            sessionId: 'sess-reject-bg',
+          }),
         }),
       );
     });
