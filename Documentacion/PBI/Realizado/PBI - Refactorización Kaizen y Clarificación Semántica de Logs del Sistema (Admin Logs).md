@@ -10,6 +10,9 @@
 - [`src/app/Admin/Logs/page.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/Logs/page.tsx)  
 - [`src/app/Admin/System/TelemetryRecentLogsCard.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/TelemetryRecentLogsCard.tsx)  
 - [`src/app/Admin/System/TelemetryTableClient.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/TelemetryTableClient.tsx)  
+- [`src/app/Admin/page.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/page.tsx)  
+- [`src/app/Admin/_components/AdminSidebarRight.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/_components/AdminSidebarRight.tsx)  
+- [`src/app/Admin/_components/__tests__/AdminSidebarRight.test.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/_components/__tests__/AdminSidebarRight.test.tsx)  
 - [`src/components/ui/data-table/data-table.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/components/ui/data-table/data-table.tsx)  
 - [`src/app/Admin/System/__tests__/TelemetryTableClient.test.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/app/Admin/System/__tests__/TelemetryTableClient.test.tsx)  
 **Entorno:** Next.js 16 (App Router), React 19, TypeScript 5.x, Prisma ORM (MySQL), Lucide React  

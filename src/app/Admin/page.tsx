@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   ShieldCheck,
   Activity,
-  Terminal,
+  ScrollText,
   ArrowRight,
   Gauge,
 } from 'lucide-react';
@@ -134,10 +134,10 @@ export default async function AdminDashboardPage() {
           <KpiMetricCard
             title="Incidentes Críticos"
             value={errorLogsCount}
-            description="Errores acumulados en la bitácora"
+            description="Errores acumulados en logs"
             icon={<ShieldCheck className="w-4 h-4" />}
             trend={errorLogsCount === 0 ? 'positive' : 'negative'}
-            trendLabel={errorLogsCount === 0 ? '0 Fallos (S+)' : 'Revisar Bitácora'}
+            trendLabel={errorLogsCount === 0 ? '0 Fallos (S+)' : 'Revisar Logs'}
           />
         </div>
 
@@ -172,24 +172,24 @@ export default async function AdminDashboardPage() {
           <Card className="bg-surface-container border-layout-divider shadow-sm hover:border-layout-divider-strong transition-colors">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex items-center gap-2.5">
-                <Terminal className="w-5 h-5 text-emerald-600" />
+                <ScrollText className="w-5 h-5 text-emerald-600" />
                 <CardTitle className="text-base font-bold text-content-primary">
-                  Bitácora Sensorial de Telemetría
+                  Logs del Sistema
                 </CardTitle>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-layout-divider">
-                Forense
+                Logs
               </span>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-xs text-content-meta">
-                Exploración detallada de eventos con tabla interactiva DataTable, filtros por severidad, paginación y modal forense para inspección de payloads JSON.
+                Exploración detallada de eventos con tabla interactiva, filtros por severidad, paginación y modal para inspección de payloads JSON.
               </p>
               <Link
                 href="/Admin/Logs"
                 className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
               >
-                <span>Abrir Bitácora de Logs</span>
+                <span>Ver Logs del Sistema</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </CardContent>

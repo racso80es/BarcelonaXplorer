@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Activity, Terminal, Brain, Layers, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Activity, ScrollText, Brain, Layers, ArrowUpRight, ShieldCheck } from 'lucide-react';
 
 interface NavItem {
   readonly label: string;
@@ -14,7 +14,7 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Dashboard', href: '/Admin', icon: LayoutDashboard },
   { label: 'Sensores', href: '/Admin/System', icon: Activity },
-  { label: 'Bitácora', href: '/Admin/Logs', icon: Terminal },
+  { label: 'Logs', href: '/Admin/Logs', icon: ScrollText },
   { label: 'Cognición RAG', href: '/Admin/Cognitive', icon: Brain },
   { label: 'Contexto', href: '/Admin/Context', icon: Layers },
 ];

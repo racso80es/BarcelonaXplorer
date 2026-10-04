@@ -17,7 +17,7 @@ export default function AdminLogsPage() {
         icon={<ScrollText className="text-zinc-700 w-7 h-7 sm:w-8 sm:h-8" />}
       />
 
-      {/* Contenedor de Bitácora y Tabla Interactiva DataTable */}
+      {/* Contenedor de Logs y Tabla Interactiva DataTable */}
       <Suspense fallback={<TelemetryRecentLogsCardSkeleton />}>
         <TelemetryRecentLogsCard />
       </Suspense>

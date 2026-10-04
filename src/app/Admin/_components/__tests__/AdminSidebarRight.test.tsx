@@ -20,7 +20,7 @@ describe('AdminSidebarRight - HUD Táctico de Navegación', () => {
 
     const dashboardLink = screen.getByText('Dashboard').closest('a');
     const sensorsLink = screen.getByText('Sensores').closest('a');
-    const logsLink = screen.getByText('Bitácora').closest('a');
+    const logsLink = screen.getByText('Logs').closest('a');
 
     expect(dashboardLink).not.toBeNull();
     expect(sensorsLink).not.toBeNull();
@@ -43,12 +43,12 @@ describe('AdminSidebarRight - HUD Táctico de Navegación', () => {
     expect(sensorsLink?.className).toContain('bg-emerald-50');
   });
 
-  it('debe marcar Bitácora como activo cuando la ruta es /Admin/Logs', () => {
+  it('debe marcar Logs como activo cuando la ruta es /Admin/Logs', () => {
     mockUsePathname.mockReturnValue('/Admin/Logs');
 
     render(<AdminSidebarRight />);
 
-    const logsLink = screen.getByText('Bitácora').closest('a');
+    const logsLink = screen.getByText('Logs').closest('a');
     expect(logsLink?.className).toContain('bg-emerald-50');
   });
 
