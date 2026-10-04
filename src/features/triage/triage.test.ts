@@ -14,7 +14,7 @@ import type { GenerateTacticalRouteUseCase } from '@/features/planner/server';
 import { DenseSemanticMatrix } from '@/features/cognitive-memory';
 import { DensityPresenceSentinel } from './density-presence-sentinel.use-case';
 import { inFlightSentinelProbes } from './sentinel-flight-map';
-import { createSuccessEnvelope } from '@/shared/operation-envelope';
+import { createSuccessEnvelope, createErrorEnvelope } from '@/shared/operation-envelope';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
 describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
@@ -279,10 +279,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.01),
-          source: 'fallback' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createErrorEnvelope<number[]>(['Fallback mode rejected'], 503),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -319,10 +318,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.01),
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope(new Array(768).fill(0.01)),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -371,10 +369,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.01),
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope(new Array(768).fill(0.01)),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -433,10 +430,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
         };
 
         const mockEmbedding = {
-          generateEmbedding: vi.fn().mockResolvedValue({
-            vector: new Array(768).fill(0.05),
-            source: 'provider' as const,
-          }),
+          generateEmbedding: vi.fn().mockResolvedValue(
+            createSuccessEnvelope(new Array(768).fill(0.05)),
+          ),
           getDimensions: vi.fn().mockReturnValue(768),
         };
 
@@ -490,10 +486,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
 
       it('CA-4: debe calcular el embedding del prompt una sola vez por turno reutilizándolo para memoria y caché semántica', async () => {
         const mockEmbedding = {
-          generateEmbedding: vi.fn().mockResolvedValue({
-            vector: new Array(768).fill(0.01),
-            source: 'provider' as const,
-          }),
+          generateEmbedding: vi.fn().mockResolvedValue(
+            createSuccessEnvelope(new Array(768).fill(0.01)),
+          ),
           getDimensions: vi.fn().mockReturnValue(768),
         };
 
@@ -545,10 +540,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
 
       it('CA-6: fail-soft si el embedding es de fallback o LanceDB colapsa', async () => {
         const mockEmbedding = {
-          generateEmbedding: vi.fn().mockResolvedValue({
-            vector: new Array(768).fill(0),
-            source: 'fallback' as const,
-          }),
+          generateEmbedding: vi.fn().mockResolvedValue(
+            createErrorEnvelope<number[]>(['Fallback mode rejected'], 503),
+          ),
           getDimensions: vi.fn().mockReturnValue(768),
         };
 
@@ -653,10 +647,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.1),
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope(new Array(768).fill(0.1)),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -710,10 +703,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.1),
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope(new Array(768).fill(0.1)),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -755,10 +747,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.2),
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope(new Array(768).fill(0.2)),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -1125,10 +1116,9 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       };
 
       const mockEmbedding = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: new Array(768).fill(0.01),
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope(new Array(768).fill(0.01)),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 

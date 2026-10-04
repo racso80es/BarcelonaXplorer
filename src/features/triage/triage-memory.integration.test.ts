@@ -12,7 +12,6 @@ import {
   ITypedDecisionEngine,
   IConversationalSLMPort,
   IEmbeddingPort,
-  EmbeddingGenerationResult,
 } from '@/features/ai-engine';
 import {
   TacticalRoute,
@@ -24,16 +23,25 @@ import {
   GenerateTacticalRouteUseCase,
 } from '@/features/planner/server';
 import { TelemetryRepositoryPort, TelemetryEntry } from '@/features/telemetry';
+import {
+  OperationEnvelope,
+  createSuccessEnvelope,
+  createErrorEnvelope,
+} from '@/shared/operation-envelope';
 
 /**
  * Stub determinista de EmbeddingPort sin dependencias de red ni claves remotas.
- * Permite alternar la fuente ('provider' vs 'fallback') y generar vectores
+ * Permite simular éxito o fallo determinista y generar vectores
  * normalizados L2 predecibles para evaluar la búsqueda K-NN sobre LanceDB real.
  */
 class DeterministicEmbeddingStub implements IEmbeddingPort {
-  constructor(public source: 'provider' | 'fallback' = 'provider') {}
+  constructor(public shouldFail: boolean = false) {}
 
-  async generateEmbedding(text: string): Promise<EmbeddingGenerationResult> {
+  async generateEmbedding(text: string): Promise<OperationEnvelope<number[]>> {
+    if (this.shouldFail) {
+      return createErrorEnvelope<number[]>(['Fallback mode rejected'], 503);
+    }
+
     const isFoodOrGastro = /tapas|cenar|comer|gastronom/i.test(text);
     // Base 0.05 para contexto gastronómico, 0.01 para otros contextos
     const baseVal = isFoodOrGastro ? 0.05 : 0.01;
@@ -44,10 +52,7 @@ class DeterministicEmbeddingStub implements IEmbeddingPort {
     const norm = Math.sqrt(sumSq) || 1;
     const normalized = vector.map((val) => val / norm);
 
-    return {
-      vector: normalized,
-      source: this.source,
-    };
+    return createSuccessEnvelope<number[]>(normalized);
   }
 
   getDimensions(): number {
@@ -76,7 +81,7 @@ describe('TriageMemoryIntegrationTest (PBI-MEM-005 · LanceDB Real)', () => {
     vectorStore = new LanceDbVectorAdapter(tempDir);
     cognitiveMemory = new LanceDbCognitiveMemoryAdapter(vectorStore, tempDir);
     matrixRepo = new InMemoryDensityMatrixRepository();
-    embeddingStub = new DeterministicEmbeddingStub('provider');
+    embeddingStub = new DeterministicEmbeddingStub(false);
 
     loggedEntries = [];
     telemetryRepo = {
@@ -165,8 +170,8 @@ describe('TriageMemoryIntegrationTest (PBI-MEM-005 · LanceDB Real)', () => {
     expect(indexLog?.payload?.outcome).toBe('INDEXED');
   });
 
-  it('CA-2 (Escenario 3): turno consolidado con embedding fallback aborta indexación (0 filas) con WARN', async () => {
-    embeddingStub.source = 'fallback';
+  it('CA-2 (Escenario 3): turno consolidado con embedding fallido aborta indexación (0 filas) con WARN', async () => {
+    embeddingStub.shouldFail = true;
     const useCase = createUseCase();
     const sessionId = 'sess-ca2-fallback';
 

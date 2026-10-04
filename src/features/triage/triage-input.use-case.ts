@@ -104,13 +104,13 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     let priorPayload =
       (await this.matrixRepo.getMatrixPayload(input.sessionId, matrixId)) ?? {};
 
-    // Pre-cálculo único de embedding del prompt por turno (PBI-MEM-003 CA-4)
+    // Pre-cálculo único de embedding del prompt por turno (PBI-MEM-003 CA-4, PBI-MEM-006)
     let promptVector: number[] | undefined;
     if (this.embeddingPort) {
       try {
         const embeddingResult = await this.embeddingPort.generateEmbedding(trimmedPrompt);
-        if (embeddingResult.source !== 'fallback') {
-          promptVector = embeddingResult.vector;
+        if (embeddingResult.success && embeddingResult.result) {
+          promptVector = embeddingResult.result;
         }
       } catch {
         promptVector = undefined;
