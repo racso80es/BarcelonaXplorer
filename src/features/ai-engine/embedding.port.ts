@@ -1,20 +1,15 @@
+import { OperationEnvelope } from '@/shared/operation-envelope';
+
 /**
  * Puerto de Salida Hexagonal para la generación de vectores de embedding.
  * Desacopla la lógica de RAG y vectorización de cualquier proveedor concreto (Google Gemini, Local, etc.).
  */
-
-export type EmbeddingVectorSource = 'provider' | 'fallback';
-
-export interface EmbeddingGenerationResult {
-  vector: number[];
-  source: EmbeddingVectorSource;
-}
-
 export interface IEmbeddingPort {
   /**
-   * Genera el vector matemático normalizado para el texto proporcionado y su origen.
+   * Genera el vector matemático normalizado para el texto proporcionado envuelto en un sobre determinista.
+   * Si el proveedor falla o no está disponible, retorna success: false sin resultado vectorial.
    */
-  generateEmbedding(text: string): Promise<EmbeddingGenerationResult>;
+  generateEmbedding(text: string): Promise<OperationEnvelope<number[]>>;
 
   /**
    * Dimensión del espacio vectorial generado (ej. 768).

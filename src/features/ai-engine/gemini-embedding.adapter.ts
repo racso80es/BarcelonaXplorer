@@ -1,15 +1,32 @@
+import { z } from 'zod';
 import { GoogleGenAI } from '@google/genai';
-import { IEmbeddingPort, EmbeddingGenerationResult } from '@/features/ai-engine/embedding.port';
-import { TelemetryRepositoryPort } from '@/features/telemetry';
-import { TelemetryEntry } from '@/features/telemetry';
+import { IEmbeddingPort } from '@/features/ai-engine/embedding.port';
+import { TelemetryRepositoryPort, TelemetryEntry } from '@/features/telemetry';
+import { EMBEDDING_DIMENSIONS } from '@/features/ai-engine/deterministic-embedding-fallback';
 import {
-  buildDeterministicFallbackVector,
-  EMBEDDING_DIMENSIONS,
-} from '@/features/ai-engine/deterministic-embedding-fallback';
+  OperationEnvelope,
+  createSuccessEnvelope,
+  createErrorEnvelope,
+} from '@/shared/operation-envelope';
 
 const DEFAULT_EMBEDDING_MODEL = 'gemini-embedding-001';
 
 type EmbeddingFailureKind = 'permanent' | 'transient';
+
+const GeminiEmbeddingResponseSchema = z.object({
+  embedding: z
+    .object({
+      values: z.array(z.number()),
+    })
+    .optional(),
+  embeddings: z
+    .array(
+      z.object({
+        values: z.array(z.number()),
+      }),
+    )
+    .optional(),
+});
 
 function resolveEmbeddingModelName(override?: string): string {
   const fromEnv = process.env.GEMINI_EMBEDDING_MODEL?.trim();
@@ -52,6 +69,7 @@ function classifyEmbeddingError(err: unknown): {
 
 /**
  * Adaptador de Infraestructura para generación de embeddings sobre Google GenAI.
+ * Implementa contrato fail-closed con OperationEnvelope (PBI-MEM-006).
  */
 export class GeminiEmbeddingAdapter implements IEmbeddingPort {
   private readonly ai?: GoogleGenAI;
@@ -87,37 +105,47 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
     return this.dimensions;
   }
 
-  async generateEmbedding(text: string): Promise<EmbeddingGenerationResult> {
+  async generateEmbedding(text: string): Promise<OperationEnvelope<number[]>> {
     const trimmed = text.trim();
     if (trimmed.length === 0) {
-      return this.fallbackResult('empty');
+      return createErrorEnvelope<number[]>(
+        ['Texto vacío proporcionado para vectorización'],
+        400,
+        'El texto debe contener caracteres no vacíos.',
+      );
     }
 
-    if (this.ai) {
-      try {
-        const response = await this.ai.models.embedContent({
-          model: this.modelName,
-          contents: trimmed,
-          config: {
-            outputDimensionality: this.dimensions,
-          },
-        });
+    if (!this.ai) {
+      return createErrorEnvelope<number[]>(
+        ['Proveedor Gemini no inicializado (sin API key)'],
+        503,
+        'Servicio de embeddings no disponible',
+      );
+    }
 
-        const res = response as {
-          embedding?: { values?: number[] };
-          embeddings?: Array<{ values?: number[] }>;
-        };
+    try {
+      const rawResponse = await this.ai.models.embedContent({
+        model: this.modelName,
+        contents: trimmed,
+        config: {
+          outputDimensionality: this.dimensions,
+        },
+      });
+
+      const parsedResponse = GeminiEmbeddingResponseSchema.safeParse(rawResponse);
+      if (parsedResponse.success) {
         const values =
-          res.embedding?.values ??
-          (res.embeddings && res.embeddings.length > 0
-            ? res.embeddings[0]?.values
-            : undefined);
+          parsedResponse.data.embedding?.values ??
+          parsedResponse.data.embeddings?.[0]?.values;
 
-        if (values && Array.isArray(values) && values.length === this.dimensions) {
-          return { vector: values, source: 'provider' };
-        }
+        if (values) {
+          const VectorSchema = z.array(z.number().finite()).length(this.dimensions);
+          const parsedVector = VectorSchema.safeParse(values);
 
-        if (values && Array.isArray(values) && values.length > 0) {
+          if (parsedVector.success) {
+            return createSuccessEnvelope<number[]>(parsedVector.data);
+          }
+
           this.emitTelemetry(
             'ERROR',
             `[GeminiEmbeddingAdapter] Dimensión inesperada del proveedor (${values.length} ≠ ${this.dimensions}). Vector descartado.`,
@@ -127,38 +155,48 @@ export class GeminiEmbeddingAdapter implements IEmbeddingPort {
               receivedLength: values.length,
             },
           );
+
+          return createErrorEnvelope<number[]>(
+            [`Dimensión inesperada del proveedor (${values.length} ≠ ${this.dimensions})`],
+            502,
+            'El proveedor devolvió una dimensión de vector inválida',
+          );
         }
-      } catch (err: unknown) {
-        const classified = classifyEmbeddingError(err);
-        const level = classified.kind === 'permanent' ? 'ERROR' : 'WARN';
-        const prefix =
-          classified.kind === 'permanent'
-            ? '[GeminiEmbeddingAdapter] Error permanente del proveedor'
-            : '[GeminiEmbeddingAdapter Fail-Soft] Error transitorio';
-
-        this.emitTelemetry(level, `${prefix} (${this.modelName}): ${classified.message}`, {
-          textSnippet: trimmed.slice(0, 100),
-          error: classified.message,
-          provider: 'google_genai',
-          model: this.modelName,
-          httpCode: classified.httpCode,
-        });
       }
+
+      this.emitTelemetry(
+        'ERROR',
+        `[GeminiEmbeddingAdapter] Respuesta del proveedor con esquema inválido. Vector descartado.`,
+        {
+          model: this.modelName,
+          provider: 'google_genai',
+        },
+      );
+
+      return createErrorEnvelope<number[]>(
+        ['Respuesta del proveedor con formato no reconocible'],
+        502,
+        'Esquema de respuesta no conforme',
+      );
+    } catch (err: unknown) {
+      const classified = classifyEmbeddingError(err);
+      const level = classified.kind === 'permanent' ? 'ERROR' : 'WARN';
+      const prefix =
+        classified.kind === 'permanent'
+          ? '[GeminiEmbeddingAdapter] Error permanente del proveedor'
+          : '[GeminiEmbeddingAdapter Fail-Soft] Error transitorio';
+
+      this.emitTelemetry(level, `${prefix} (${this.modelName}): ${classified.message}`, {
+        textSnippet: trimmed.slice(0, 100),
+        error: classified.message,
+        provider: 'google_genai',
+        model: this.modelName,
+        httpCode: classified.httpCode,
+      });
+
+      const exitCode = classified.httpCode ?? (classified.kind === 'permanent' ? 500 : 503);
+      return createErrorEnvelope<number[]>([classified.message], exitCode, prefix);
     }
-
-    return this.fallbackResult(trimmed);
-  }
-
-  /** Expuesto para purga LanceDB y tests (PBI-STEEL-002). */
-  public generateDeterministicFallback(seedText: string): number[] {
-    return buildDeterministicFallbackVector(seedText, this.dimensions);
-  }
-
-  private fallbackResult(seedText: string): EmbeddingGenerationResult {
-    return {
-      vector: buildDeterministicFallbackVector(seedText, this.dimensions),
-      source: 'fallback',
-    };
   }
 
   private emitTelemetry(

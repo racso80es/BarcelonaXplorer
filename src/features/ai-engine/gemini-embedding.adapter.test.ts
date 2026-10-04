@@ -3,25 +3,32 @@ import { GeminiEmbeddingAdapter } from './gemini-embedding.adapter';
 import { GoogleGenAI } from '@google/genai';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 
-describe('GeminiEmbeddingAdapter', () => {
+describe('GeminiEmbeddingAdapter (PBI-MEM-006 Fail-Closed Contract)', () => {
   it('debe reportar 768 dimensiones estándar', () => {
     const adapter = new GeminiEmbeddingAdapter();
     expect(adapter.getDimensions()).toBe(768);
   });
 
-  it('debe generar un vector determinista con norma L2 unitaria en fallback', () => {
+  it('no debe exponer generateDeterministicFallback (erradicación en origen)', () => {
     const adapter = new GeminiEmbeddingAdapter();
-    const vector1 = adapter.generateDeterministicFallback('Visita a Gràcia');
-    const vector2 = adapter.generateDeterministicFallback('Visita a Gràcia');
-
-    expect(vector1.length).toBe(768);
-    expect(vector1).toEqual(vector2);
-
-    const norm = Math.sqrt(vector1.reduce((sum, v) => sum + v * v, 0));
-    expect(norm).toBeCloseTo(1, 4);
+    expect('generateDeterministicFallback' in adapter).toBe(false);
   });
 
-  it('debe utilizar GoogleGenAI si está disponible y marcar origen provider', async () => {
+  it('debe fallar con exitCode 400 si el texto está vacío sin llamar a la API', async () => {
+    const mockGenAi = {
+      models: { embedContent: vi.fn() },
+    } as unknown as GoogleGenAI;
+    const adapter = new GeminiEmbeddingAdapter(mockGenAi);
+
+    const result = await adapter.generateEmbedding('   ');
+
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(400);
+    expect(result.result).toBeUndefined();
+    expect(mockGenAi.models.embedContent).not.toHaveBeenCalled();
+  });
+
+  it('debe utilizar GoogleGenAI si está disponible y retornar envelope success con vector validado', async () => {
     const mockEmbedContent = vi.fn().mockResolvedValue({
       embedding: { values: new Array(768).fill(0.123) },
     });
@@ -39,9 +46,11 @@ describe('GeminiEmbeddingAdapter', () => {
       contents: 'Ruta gótica',
       config: { outputDimensionality: 768 },
     });
-    expect(result.source).toBe('provider');
-    expect(result.vector.length).toBe(768);
-    expect(result.vector[0]).toBe(0.123);
+    expect(result.success).toBe(true);
+    expect(result.exitCode).toBe(0);
+    expect(result.result).toBeDefined();
+    expect(result.result?.length).toBe(768);
+    expect(result.result?.[0]).toBe(0.123);
   });
 
   it('debe usar gemini-embedding-001 por defecto y extraer vector desde res.embeddings[0].values', async () => {
@@ -62,12 +71,13 @@ describe('GeminiEmbeddingAdapter', () => {
       contents: 'Parc de la Ciutadella',
       config: { outputDimensionality: 768 },
     });
-    expect(result.source).toBe('provider');
-    expect(result.vector.length).toBe(768);
-    expect(result.vector[0]).toBe(0.456);
+    expect(result.success).toBe(true);
+    expect(result.exitCode).toBe(0);
+    expect(result.result?.length).toBe(768);
+    expect(result.result?.[0]).toBe(0.456);
   });
 
-  it('debe rechazar respuesta con dimensión distinta de 768 y usar fallback', async () => {
+  it('debe rechazar respuesta con dimensión distinta de 768 y fallar closed sin entregar vector', async () => {
     const mockEmbedContent = vi.fn().mockResolvedValue({
       embedding: { values: [0.1, 0.2, 0.3] },
     });
@@ -84,13 +94,15 @@ describe('GeminiEmbeddingAdapter', () => {
     const adapter = new GeminiEmbeddingAdapter(mockGenAi, mockTelemetry);
     const result = await adapter.generateEmbedding('Plan corto');
 
-    expect(result.source).toBe('fallback');
+    expect(result.success).toBe(false);
+    expect(result.result).toBeUndefined();
+    expect(result.exitCode).toBe(502);
     expect(mockTelemetry.log).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'ERROR', context: 'LLM_ENGINE' }),
     );
   });
 
-  it('debe activar Fail-Soft ante error transitorio y registrar telemetría WARN', async () => {
+  it('debe fallar closed ante error transitorio y registrar telemetría WARN', async () => {
     const mockEmbedContent = vi.fn().mockRejectedValue(new Error('Quota exceeded 429'));
     const mockGenAi = {
       models: { embedContent: mockEmbedContent },
@@ -105,14 +117,15 @@ describe('GeminiEmbeddingAdapter', () => {
     const adapter = new GeminiEmbeddingAdapter(mockGenAi, mockTelemetry);
     const result = await adapter.generateEmbedding('Plan nocturno');
 
-    expect(result.source).toBe('fallback');
-    expect(result.vector.length).toBe(768);
+    expect(result.success).toBe(false);
+    expect(result.result).toBeUndefined();
+    expect(result.exitCode).toBe(429);
     expect(mockTelemetry.log).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'WARN', context: 'LLM_ENGINE' }),
     );
   });
 
-  it('debe registrar ERROR ante 404 permanente del proveedor', async () => {
+  it('debe registrar ERROR ante 404 permanente del proveedor y fallar closed', async () => {
     const mockEmbedContent = vi.fn().mockRejectedValue(
       new Error('models/text-embedding-004 is not found for API version v1beta, status 404'),
     );
@@ -129,7 +142,9 @@ describe('GeminiEmbeddingAdapter', () => {
     const adapter = new GeminiEmbeddingAdapter(mockGenAi, mockTelemetry);
     const result = await adapter.generateEmbedding('Ruta');
 
-    expect(result.source).toBe('fallback');
+    expect(result.success).toBe(false);
+    expect(result.result).toBeUndefined();
+    expect(result.exitCode).toBe(404);
     expect(mockTelemetry.log).toHaveBeenCalledWith(
       expect.objectContaining({
         level: 'ERROR',
