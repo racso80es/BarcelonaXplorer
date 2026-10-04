@@ -5,6 +5,19 @@
 # ═══════════════════════════════════════════════════════════════════
 set -e
 
+# Compatibilidad con sandboxes (GitHub Desktop Flatpak / entornos aislados)
+# Si se ejecuta dentro de un contenedor Flatpak, re-ejecutar en el host donde reside Node/npx
+if [ -f /.flatpak-info ] && command -v flatpak-spawn >/dev/null 2>&1; then
+  exec flatpak-spawn --host bash "$0" "$@"
+fi
+
+# Asegurar PATH común para clientes Git GUI (Flatpak host spawn, VS Code, etc.)
+export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+if [ -d "$HOME/.nvm" ]; then
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use 2>/dev/null || true
+fi
+
 echo "⚔️ [Aduana Local Pre-Commit S+] Iniciando verificación del Oráculo..."
 
 # Obtener directorio raíz del repositorio git
