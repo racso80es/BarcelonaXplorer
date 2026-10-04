@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useId } from 'react';
-import { DataTableProps, SortState } from './types';
+import { DataTableProps, SortState, ComparableValue } from './types';
 import { extractCellValue, compareValues, useDebounce, normalizeString } from './utils';
 import { DataTableToolbar } from './data-table-toolbar';
 import { DataTableHeader } from './data-table-header';
@@ -166,6 +166,17 @@ export function DataTable<T>({
         sorted = [...filtered].sort((a, b) => {
           const valA = extractCellValue(a, activeCol);
           const valB = extractCellValue(b, activeCol);
+          return compareValues(valA, valB, sortState.direction as 'asc' | 'desc');
+        });
+      } else if (
+        data.length > 0 &&
+        typeof sortState.column === 'string' &&
+        sortState.column in (data[0] as Record<string, unknown>)
+      ) {
+        const colKey = sortState.column;
+        sorted = [...filtered].sort((a, b) => {
+          const valA = (a as Record<string, unknown>)[colKey] as ComparableValue;
+          const valB = (b as Record<string, unknown>)[colKey] as ComparableValue;
           return compareValues(valA, valB, sortState.direction as 'asc' | 'desc');
         });
       }

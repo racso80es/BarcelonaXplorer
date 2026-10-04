@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from 'react';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
 import {
-  Clock,
   Eye,
   X,
   Copy,
@@ -129,7 +128,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
     },
     {
       key: 'statusCode',
-      header: 'HTTP',
+      header: 'Estado HTTP',
       sortable: true,
       cell: (log) =>
         log.statusCode ? (
@@ -139,47 +138,28 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
         ) : (
           <span className="text-zinc-400">—</span>
         ),
-      className: 'w-20 text-center',
+      className: 'w-24 text-center',
       headerClassName: 'text-center',
     },
     {
-      key: 'durationMs',
-      header: 'Latencia',
-      sortable: true,
-      cell: (log) =>
-        log.durationMs !== null ? (
-          <span
-            className={`font-mono text-xs ${
-              log.durationMs > 1000 ? 'text-amber-700 font-bold' : 'text-zinc-600'
-            }`}
-          >
-            {log.durationMs}ms
-          </span>
-        ) : (
-          <span className="text-zinc-400">—</span>
-        ),
-      className: 'w-24 text-right',
-      headerClassName: 'text-right',
-    },
-    {
       key: 'createdAt',
-      header: 'Hora',
+      header: 'Registro Temporal',
       sortable: true,
-      accessorFn: (log) => new Date(log.createdAt),
+      accessorFn: (log) => new Date(log.createdAt).getTime(),
       cell: (log) => {
         const d = new Date(log.createdAt);
+        if (isNaN(d.getTime())) {
+          return <span className="font-mono text-xs text-zinc-600">{String(log.createdAt)}</span>;
+        }
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const formatted = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
         return (
-          <span className="inline-flex items-center gap-1 text-zinc-600 text-xs font-mono">
-            <Clock className="w-3 h-3 text-zinc-400 shrink-0" />
-            {d.toLocaleTimeString('es-ES', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            })}
+          <span className="font-mono text-xs text-zinc-600">
+            {formatted}
           </span>
         );
       },
-      className: 'w-28 text-right',
+      className: 'w-44 text-right',
       headerClassName: 'text-right',
     },
     {
@@ -327,10 +307,10 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
         onRowClick={(log) => setSelectedLog(log)}
         searchPlaceholder="Buscar por mensaje, código o contexto..."
         searchableKeys={['message', 'context', 'level', 'statusCode']}
-        initialSort={{ column: 'createdAt', direction: 'desc' }}
-        pageSize={10}
-        pageSizeOptions={[10, 25, 50]}
-        emptyMessage="Bóveda sensorial despejada. No se detectan anomalías para los criterios indicados."
+        initialSort={{ column: 'id', direction: 'desc' }}
+        pageSize={25}
+        pageSizeOptions={[10, 25, 50, 100]}
+        emptyMessage="No se encontraron registros de logs para los criterios seleccionados."
       />
 
       {/* Modal de Auditoría Forense: Solicitud y Datos Devueltos */}

@@ -1,6 +1,6 @@
 import { prisma } from '@/shared/persistence/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldAlert, Terminal, Trash2, Cpu } from 'lucide-react';
+import { ShieldAlert, ScrollText, Trash2, Cpu } from 'lucide-react';
 import { TelemetryTableClient, TelemetryLogItem } from './TelemetryTableClient';
 
 export async function TelemetryRecentLogsCard() {
@@ -13,7 +13,7 @@ export async function TelemetryRecentLogsCard() {
     const [fetchedLogs, total, errors] = await Promise.all([
       prisma.telemetryLog.findMany({
         take: 100,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { id: 'desc' },
         select: {
           id: true,
           createdAt: true,
@@ -37,17 +37,19 @@ export async function TelemetryRecentLogsCard() {
   }
 
   const isLlmTelemetryActive = process.env.TELEMETRY_LLM_ENABLED === 'true';
+  const rawEnv = process.env.APP_ENV || process.env.NODE_ENV || 'production';
+  const environmentName = rawEnv.charAt(0).toUpperCase() + rawEnv.slice(1);
 
   return (
     <Card className="bg-surface-container border-layout-divider text-content-primary shadow-sm">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-layout-divider gap-4">
         <div className="space-y-1">
           <CardTitle className="text-lg font-bold flex items-center gap-2 text-content-primary">
-            <Terminal className="w-5 h-5 text-emerald-600" />
-            <span>Órgano Sensorial: Bitácora de Telemetría (MySQL)</span>
+            <ScrollText className="w-5 h-5 text-zinc-700" />
+            <span>Logs generados en entorno {environmentName}</span>
           </CardTitle>
           <p className="text-xs text-content-meta">
-            Trazabilidad polimórfica en tiempo real desde el Nodo 11
+            Logs recientes
           </p>
         </div>
 
@@ -85,7 +87,7 @@ export function TelemetryRecentLogsCardSkeleton() {
       <CardHeader className="h-16 border-b border-layout-divider" />
       <CardContent className="h-48 pt-4 flex items-center justify-center">
         <span className="text-xs text-zinc-400 font-mono">
-          Escaneando bóveda sensorial de MySQL...
+          Cargando logs del sistema...
         </span>
       </CardContent>
     </Card>

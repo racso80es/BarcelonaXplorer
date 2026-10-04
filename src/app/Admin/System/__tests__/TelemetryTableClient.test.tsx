@@ -34,7 +34,7 @@ describe('TelemetryTableClient - Modal Forense y Detalle de Logs', () => {
       },
     },
     {
-      id: 'log-simple-002',
+      id: 'log-audit-002',
       createdAt: '2026-09-24T16:00:00.000Z',
       level: 'INFO',
       context: 'SYSTEM',
@@ -115,5 +115,25 @@ describe('TelemetryTableClient - Modal Forense y Detalle de Logs', () => {
     fireEvent.click(verButtons[1]); // Segundo log sin payload
 
     expect(screen.queryByText('Traza Técnica (Stack Trace)')).toBeNull();
+  });
+
+  it('debe renderizar la cabecera "Registro Temporal" con fecha y hora y omitir la columna "Latencia"', () => {
+    render(<TelemetryTableClient logs={mockLogs} />);
+
+    // La cabecera "Registro Temporal" debe existir
+    expect(screen.getByText('Registro Temporal')).toBeDefined();
+
+    // La cabecera "Latencia" NO debe existir en la tabla
+    expect(screen.queryByText('Latencia')).toBeNull();
+
+    // La celda debe incluir fecha en formato DD/MM/YYYY
+    expect(screen.getAllByText(/24\/09\/2026/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('debe configurar 25 filas por página por defecto en el selector de paginación', () => {
+    render(<TelemetryTableClient logs={mockLogs} />);
+
+    const select = screen.getByRole('combobox', { name: /filas por página/i });
+    expect((select as HTMLSelectElement).value).toBe('25');
   });
 });
