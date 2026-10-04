@@ -72,10 +72,9 @@ describe('IngestContextUseCase', () => {
     };
 
     mockEmbeddingPort = {
-      generateEmbedding: vi.fn().mockResolvedValue({
-        vector: new Array(768).fill(0.1),
-        source: 'provider',
-      }),
+      generateEmbedding: vi.fn().mockResolvedValue(
+        createSuccessEnvelope(new Array(768).fill(0.1)),
+      ),
       getDimensions: vi.fn().mockReturnValue(768),
     };
 
@@ -208,11 +207,10 @@ describe('IngestContextUseCase', () => {
     expect(mockVectorStore.upsert).not.toHaveBeenCalled();
   });
 
-  it('CA-6 / Escenario 5: vectorización con source fallback se descarta y emite WARN en LLM_ENGINE', async () => {
-    vi.mocked(mockEmbeddingPort.generateEmbedding).mockResolvedValue({
-      vector: new Array(768).fill(0.99),
-      source: 'fallback',
-    });
+  it('CA-6 / Escenario 5: vectorización fallida se descarta fail-closed y emite WARN en LLM_ENGINE', async () => {
+    vi.mocked(mockEmbeddingPort.generateEmbedding).mockResolvedValue(
+      createErrorEnvelope<number[]>(['Fallo transitorio de vectorización'], 422),
+    );
 
     const useCase = new IngestContextUseCase(
       mockSourceRepo,
@@ -233,7 +231,7 @@ describe('IngestContextUseCase', () => {
       expect.objectContaining({
         level: 'WARN',
         context: 'LLM_ENGINE',
-        message: expect.stringContaining('Vector descartado por origen fallback'),
+        message: expect.stringContaining('Vector no disponible o descartado'),
       })
     );
   });

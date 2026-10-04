@@ -129,19 +129,19 @@ export class IngestContextUseCase {
         const MAX_NEW_ENTRIES_PER_SOURCE = 20;
         const entriesToProcess = entriesToEmbed.slice(0, MAX_NEW_ENTRIES_PER_SOURCE);
 
-        // Vectorización verificada fail-closed (CA-6)
+        // Vectorización verificada fail-closed (CA-6, PBI-MEM-006)
         const docsToPersist: VectorDocument[] = [];
         for (const entry of entriesToProcess) {
           try {
             const emb = await this.embeddingPort.generateEmbedding(entry.summary);
-            if (emb.source === 'fallback') {
+            if (!emb.success || !emb.result) {
               totalDiscardedFallback += 1;
               if (this.telemetryRepo) {
                 await this.telemetryRepo.log(
                   new TelemetryEntry(
                     'WARN',
                     'LLM_ENGINE',
-                    `[Context Ingestion] Vector descartado por origen fallback para entrada ${entry.id}`,
+                    `[Context Ingestion] Vector no disponible o descartado para entrada ${entry.id}`,
                     {
                       eventType: 'CONTEXT_FALLBACK_VECTOR_DISCARDED',
                       entryId: entry.id,
@@ -156,7 +156,7 @@ export class IngestContextUseCase {
 
             docsToPersist.push({
               id: entry.id,
-              vector: emb.vector,
+              vector: emb.result,
               text: entry.summary,
               metadata: entry,
             });
