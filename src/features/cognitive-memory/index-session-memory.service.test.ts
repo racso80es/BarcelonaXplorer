@@ -8,6 +8,7 @@ import { IEmbeddingPort } from '@/features/ai-engine';
 import { TelemetryRepositoryPort, TelemetryEntry } from '@/features/telemetry';
 import { DenseSemanticMatrix } from './dense-semantic-matrix.vo';
 import { TriageStatus } from '@/features/triage/triage.schema';
+import { createSuccessEnvelope, createErrorEnvelope } from '@/shared/operation-envelope';
 
 describe('PBI-MEM-001: IndexSessionMemoryService (Aduana de Fricción)', () => {
   let mockCognitiveMemory: ICognitiveMemoryPort;
@@ -26,10 +27,9 @@ describe('PBI-MEM-001: IndexSessionMemoryService (Aduana de Fricción)', () => {
     };
 
     mockEmbeddingPort = {
-      generateEmbedding: vi.fn().mockResolvedValue({
-        vector: new Array(768).fill(0.05),
-        source: 'provider',
-      }),
+      generateEmbedding: vi.fn().mockResolvedValue(
+        createSuccessEnvelope(new Array(768).fill(0.05)),
+      ),
       getDimensions: vi.fn().mockReturnValue(768),
     };
 
@@ -98,11 +98,10 @@ describe('PBI-MEM-001: IndexSessionMemoryService (Aduana de Fricción)', () => {
       expect(infoLog?.payload?.sessionId).toBe('sess-1');
     });
 
-    it('2. DISCARDED_FALLBACK: fail-closed de persistencia con WARN ante source=fallback', async () => {
-      mockEmbeddingPort.generateEmbedding = vi.fn().mockResolvedValue({
-        vector: new Array(768).fill(0.1),
-        source: 'fallback',
-      });
+    it('2. DISCARDED_FALLBACK: fail-closed de persistencia con WARN ante error de vectorización', async () => {
+      mockEmbeddingPort.generateEmbedding = vi.fn().mockResolvedValue(
+        createErrorEnvelope<number[]>(['Fallo del proveedor de embeddings'], 503),
+      );
 
       const service = new IndexSessionMemoryService(
         mockCognitiveMemory,

@@ -103,9 +103,9 @@ export class IndexSessionMemoryService {
     }
 
     // 4. Vectorización del contenido denso
-    let embedding;
+    let embeddingEnvelope;
     try {
-      embedding = await this.embeddingPort.generateEmbedding(denseString);
+      embeddingEnvelope = await this.embeddingPort.generateEmbedding(denseString);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       await this.emitTelemetry(
@@ -137,12 +137,12 @@ export class IndexSessionMemoryService {
       };
     }
 
-    // 5. Fail-closed de persistencia ante embedding degradado / fallback (CA-4)
-    if (embedding.source === 'fallback') {
+    // 5. Fail-closed de persistencia ante embedding no disponible / fallo del sobre (CA-4)
+    if (!embeddingEnvelope.success || !embeddingEnvelope.result) {
       await this.emitTelemetry(
         'WARN',
         'LLM_ENGINE',
-        `[Cognitive Memory] Embedding de fallback descartado de persistencia para sesión ${sessionId}`,
+        `[Cognitive Memory] Embedding no disponible; descartado de persistencia para sesión ${sessionId}`,
         {
           eventType: 'COGNITIVE_MEMORY_INDEXING',
           outcome: 'DISCARDED_FALLBACK',
@@ -162,7 +162,7 @@ export class IndexSessionMemoryService {
 
     // 6. Persistencia en LanceDB con Fail-Soft (CA-6)
     try {
-      await this.cognitiveMemory.persistMemory(matrix, embedding.vector);
+      await this.cognitiveMemory.persistMemory(matrix, embeddingEnvelope.result);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       await this.emitTelemetry(
@@ -213,7 +213,7 @@ export class IndexSessionMemoryService {
       outcome: 'INDEXED',
       sessionId,
       matrixId,
-      vector: embedding.vector,
+      vector: embeddingEnvelope.result,
     });
   }
 
