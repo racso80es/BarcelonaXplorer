@@ -2,8 +2,9 @@
 # [ARQUITECTURA] Documento Destilado: PBI - Contrato Fail-Closed del Puerto de Embeddings y Erradicación del Vector Sintético en Origen
 
 **Identificador:** PBI-MEM-006  
-**Estatus:** Pendiente  
+**Estatus:** Completado (S+ Grade)  
 **Fecha de Creación:** 2026-10-04  
+**Fecha de Certificación:** 2026-10-04  
 **Historia de Usuario Relacionada:** [[ARQUITECTURA] HU 17: Reconexión de la Memoria Cognitiva a Largo Plazo y Pipeline de Indexación Vectorial (S+ Grade)](../../HistoriasDeUsuario_Historico/%5BARQUITECTURA%5D%20HU%2017%3A%20Reconexi%C3%B3n%20de%20la%20Memoria%20Cognitiva%20a%20Largo%20Plazo%20y%20Pipeline%20de%20Indexaci%C3%B3n%20Vectorial%20%28S%2B%20Grade%29.md)  
 **Origen:** Auditoría de la propuesta «[ARQUITECTURA] Propuesta de Refactorización: Resiliencia del Almacén Vectorial» (2026-10-04) · alerta de telemetría local `cmutd9lgp0004fr2p24aakmzi`  
 **Módulo:** `src/features/ai-engine/` (`embedding.port.ts`, `gemini-embedding.adapter.ts`, `deterministic-embedding-fallback.ts`) y sus consumidores en `cognitive-memory/`, `context-sources/`, `planner/`, `triage/`  
@@ -47,14 +48,14 @@
 
 ## 2. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **CA-1 (Contrato fail-closed):** `IEmbeddingPort.generateEmbedding(text)` retorna `Promise<OperationEnvelope<number[]>>`. En fallo (texto vacío, error transitorio/permanente, dimensión inesperada, sin API key) devuelve `success: false`, sin `result`, con `errors` y `exitCode` que distingan `transient` / `permanent` / `invalid_input`. Se eliminan `EmbeddingGenerationResult` y `EmbeddingVectorSource`.
-- [ ] **CA-2 (Validación en frontera):** El vector del proveedor se valida con un esquema Zod (array de `number` finitos, longitud `= getDimensions()`) antes de envolverse en `success: true`. Sin `any`, `as any` ni `!`.
-- [ ] **CA-3 (Erradicación en origen):** `GeminiEmbeddingAdapter` deja de importar `buildDeterministicFallbackVector` y se elimina `generateDeterministicFallback()`. El constructor determinista queda importado **solo** por `purge-fallback-vectors.ts`, `audit-lancedb-health` y sus tests (verificable con `grep`).
-- [ ] **CA-4 (Migración de consumidores):** Los cuatro consumidores ramifican sobre `envelope.success` y conservan su comportamiento y telemetría actuales (422 `FALLBACK_EMBEDDING_REJECTED` en planner, descarte en ingesta, sin K-NN ni caché en triaje, sin persistencia en memoria de sesión). Cambiar el texto de la telemetría de «fallback» a «embedding no disponible» es opcional y debe quedar documentado.
-- [ ] **CA-5 (Telemetría del adaptador intacta):** Se mantienen los `WARN` / `ERROR` en `LLM_ENGINE` del adaptador ya existentes (clasificación transitorio/permanente, dimensión inesperada).
-- [ ] **CA-6 (Tests colocados):** Se actualizan `gemini-embedding.adapter.test.ts`, `index-session-memory.service.test.ts`, `ingest-context.use-case.test.ts` y `triage-memory.integration.test.ts`. Se añade un caso por consumidor que verifique que con `success: false` **no se invoca ningún `upsert` sobre LanceDB**.
-- [ ] **CA-7 (Saneamiento local):** Se ejecuta `NODE_PATH=src/node_modules node scripts/purge-lancedb-fallback-vectors.cjs --uri ./src/data/lancedb --apply` (previo backup del directorio). Un *dry-run* posterior reporta 0 coincidencias, y la tarjeta `Salud LanceDB` deja de emitir el `WARN` en `SYSTEM`.
-- [ ] **CA-8 (Oráculos):** `tsc --noEmit`, `eslint --max-warnings 0`, `vitest run` y `npm run build` en verde.
+- [x] **CA-1 (Contrato fail-closed):** `IEmbeddingPort.generateEmbedding(text)` retorna `Promise<OperationEnvelope<number[]>>`. En fallo (texto vacío, error transitorio/permanente, dimensión inesperada, sin API key) devuelve `success: false`, sin `result`, con `errors` y `exitCode` que distingan `transient` / `permanent` / `invalid_input`. Se eliminan `EmbeddingGenerationResult` y `EmbeddingVectorSource`.
+- [x] **CA-2 (Validación en frontera):** El vector del proveedor se valida con un esquema Zod (array de `number` finitos, longitud `= getDimensions()`) antes de envolverse en `success: true`. Sin `any`, `as any` ni `!`.
+- [x] **CA-3 (Erradicación en origen):** `GeminiEmbeddingAdapter` deja de importar `buildDeterministicFallbackVector` y se elimina `generateDeterministicFallback()`. El constructor determinista queda importado **solo** por `purge-fallback-vectors.ts`, `audit-lancedb-health` y sus tests (verificable con `grep`).
+- [x] **CA-4 (Migración de consumidores):** Los cuatro consumidores ramifican sobre `envelope.success` y conservan su comportamiento y telemetría actuales (422 `FALLBACK_EMBEDDING_REJECTED` en planner, descarte en ingesta, sin K-NN ni caché en triaje, sin persistencia en memoria de sesión). Cambiar el texto de la telemetría de «fallback» a «embedding no disponible» es opcional y debe quedar documentado.
+- [x] **CA-5 (Telemetría del adaptador intacta):** Se mantienen los `WARN` / `ERROR` en `LLM_ENGINE` del adaptador ya existentes (clasificación transitorio/permanente, dimensión inesperada).
+- [x] **CA-6 (Tests colocados):** Se actualizan `gemini-embedding.adapter.test.ts`, `index-session-memory.service.test.ts`, `ingest-context.use-case.test.ts` y `triage-memory.integration.test.ts`. Se añade un caso por consumidor que verifique que con `success: false` **no se invoca ningún `upsert` sobre LanceDB**.
+- [x] **CA-7 (Saneamiento local):** Se ejecuta `NODE_PATH=src/node_modules node scripts/purge-lancedb-fallback-vectors.cjs --uri ./src/data/lancedb --apply` (previo backup del directorio). Un *dry-run* posterior reporta 0 coincidencias, y la tarjeta `Salud LanceDB` deja de emitir el `WARN` en `SYSTEM`.
+- [x] **CA-8 (Oráculos):** `tsc --noEmit`, `eslint --max-warnings 0`, `vitest run` y `npm run build` en verde.
 
 ---
 
