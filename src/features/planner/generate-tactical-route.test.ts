@@ -10,6 +10,7 @@ import {
   LlmWarningTelemetryPayload,
   LlmTelemetryEvent,
 } from '@/features/telemetry';
+import { createSuccessEnvelope, createErrorEnvelope } from '@/shared/operation-envelope';
 
 interface MockAiPort extends AiGeneratorPort {
   generateTacticalRoute: Mock<(prompt: string) => Promise<TacticalRoute>>;
@@ -376,10 +377,9 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
       mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
 
       const mockEmbeddingPort = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: [0.1, 0.2],
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope<number[]>([0.1, 0.2]),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -421,14 +421,13 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
       );
     });
 
-    it('CA-3: Omite la búsqueda vectorial si el embedding es de tipo fallback y emite WARN', async () => {
+    it('CA-3: Omite la búsqueda vectorial si el embedding no está disponible y emite WARN', async () => {
       mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
 
       const mockEmbeddingPort = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: [0.0, 0.0],
-          source: 'fallback' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createErrorEnvelope<number[]>(['Embedding no disponible'], 422),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 
@@ -461,10 +460,9 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
       mockAiPort.generateTacticalRoute.mockResolvedValue(mockRoute);
 
       const mockEmbeddingPort = {
-        generateEmbedding: vi.fn().mockResolvedValue({
-          vector: [0.1, 0.2],
-          source: 'provider' as const,
-        }),
+        generateEmbedding: vi.fn().mockResolvedValue(
+          createSuccessEnvelope<number[]>([0.1, 0.2]),
+        ),
         getDimensions: vi.fn().mockReturnValue(768),
       };
 

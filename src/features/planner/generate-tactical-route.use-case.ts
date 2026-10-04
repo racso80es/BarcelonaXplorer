@@ -40,13 +40,13 @@ export class GenerateTacticalRouteUseCase {
       localTime: new Date().toISOString(),
     };
 
-    // 0. Recuperación RAG de Contexto Hiperlocal Vigente (PBI-CTX-011)
+    // 0. Recuperación RAG de Contexto Hiperlocal Vigente (PBI-CTX-011, PBI-MEM-006)
     if (this.contextRetrievalPort && this.embeddingPort) {
       try {
         const embRes = await this.embeddingPort.generateEmbedding(prompt);
 
-        if (embRes.source === 'fallback') {
-          // CA-3: No buscar con embedding de fallback para evitar falsos vecinos sintéticos
+        if (!embRes.success || !embRes.result) {
+          // CA-3: No buscar si el embedding no está disponible para evitar falsos vecinos sintéticos
           this.emitTelemetry({
             level: 'WARN',
             context: 'LLM_ENGINE',
@@ -74,7 +74,7 @@ export class GenerateTacticalRouteUseCase {
         } else {
           // CA-1 & CA-4: Búsqueda acotada con fail-soft
           try {
-            const searchEnv = await this.contextRetrievalPort.search(embRes.vector, {
+            const searchEnv = await this.contextRetrievalPort.search(embRes.result, {
               limit: 5,
               notExpired: true,
             });
