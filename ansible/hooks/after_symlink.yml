@@ -172,6 +172,7 @@
         `lastError` VARCHAR(512) NULL,
         `proposedBy` VARCHAR(32) NOT NULL DEFAULT 'SEED',
         `supersedesSourceTag` VARCHAR(64) NULL,
+        `extractionConfig` JSON NULL,
         `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
         `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
 
@@ -179,6 +180,22 @@
         INDEX `context_sources_status_idx`(`status`),
         PRIMARY KEY (`id`)
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    SET @extraction_col_exists = (
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'context_sources'
+          AND COLUMN_NAME = 'extractionConfig'
+    );
+    SET @sql_add_extraction_col = IF(
+        @extraction_col_exists = 0,
+        'ALTER TABLE `context_sources` ADD COLUMN `extractionConfig` JSON NULL AFTER `supersedesSourceTag`',
+        'SELECT 1'
+    );
+    PREPARE stmt_extraction FROM @sql_add_extraction_col;
+    EXECUTE stmt_extraction;
+    DEALLOCATE PREPARE stmt_extraction;
     EOF
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"

@@ -5,6 +5,7 @@ import {
   ContextSourceSnapshot,
   ContextSourceSnapshotSchema,
   ContextSourceStatus,
+  ExtractionConfigSchema,
 } from './context-source.types';
 import {
   IContextSourceRepository,
@@ -61,6 +62,7 @@ export class PrismaContextSourceRepository implements IContextSourceRepository {
           lastError: source.lastError,
           proposedBy: source.proposedBy,
           supersedesSourceTag: source.supersedesSourceTag,
+          extractionConfig: source.extractionConfig ? JSON.parse(JSON.stringify(source.extractionConfig)) : null,
         },
       });
 
@@ -93,6 +95,7 @@ export class PrismaContextSourceRepository implements IContextSourceRepository {
           lastError: source.lastError,
           proposedBy: source.proposedBy,
           supersedesSourceTag: source.supersedesSourceTag,
+          extractionConfig: source.extractionConfig ? JSON.parse(JSON.stringify(source.extractionConfig)) : null,
         },
       });
 
@@ -136,16 +139,24 @@ export class PrismaContextSourceRepository implements IContextSourceRepository {
               failedAttempts: 0,
               proposedBy: entry.proposedBy ?? 'SEED',
               supersedesSourceTag: entry.supersedesSourceTag,
+              extractionConfig: entry.extraction ? JSON.parse(JSON.stringify(entry.extraction)) : null,
             },
           });
           created++;
         } else {
           // Idempotente: solo actualiza metadatos si han cambiado, sin pisar status operativo
+          const existingExtraction = existing.extractionConfig
+            ? (ExtractionConfigSchema.safeParse(existing.extractionConfig).data ?? null)
+            : null;
+          const newExtraction = entry.extraction ?? null;
+          const extractionChanged = JSON.stringify(existingExtraction) !== JSON.stringify(newExtraction);
+
           const hasMetadataChanges =
             existing.displayName !== entry.displayName ||
             existing.endpoint !== entry.endpoint ||
             existing.type !== entry.type ||
-            existing.category !== entry.category;
+            existing.category !== entry.category ||
+            extractionChanged;
 
           if (hasMetadataChanges) {
             await this.db.contextSource.update({
@@ -155,6 +166,7 @@ export class PrismaContextSourceRepository implements IContextSourceRepository {
                 endpoint: entry.endpoint,
                 type: entry.type,
                 category: entry.category,
+                extractionConfig: newExtraction ? JSON.parse(JSON.stringify(newExtraction)) : null,
               },
             });
             updated++;

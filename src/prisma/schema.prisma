@@ -262,6 +262,7 @@ model ContextSource {
   lastError           String?             @db.VarChar(512)
   proposedBy          String              @default("SEED") @db.VarChar(32) // 'SEED' | 'HUMAN' | 'ARGOS'
   supersedesSourceTag String?             @db.VarChar(64)
+  extractionConfig    Json?               @db.Json
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 
