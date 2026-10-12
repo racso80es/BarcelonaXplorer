@@ -43,16 +43,22 @@ export class IngestContextUseCase {
     let totalDiscardedFallback = 0;
 
     try {
-      // 1. Obtener todas las fuentes actualmente en estado ACTIVE
-      let activeSources = await this.sourceRepository.findByStatus('ACTIVE');
-      if (activeSources.length === 0) {
-        const allSources = await this.sourceRepository.findAll();
-        if (allSources.length === 0) {
-          const seedService = new ContextSourceSeedService(this.sourceRepository);
-          await seedService.loadSeed();
-          activeSources = await this.sourceRepository.findByStatus('ACTIVE');
+      // 1. Sincronizar semilla declarativa incondicionalmente (PBI-CTX-017)
+      try {
+        const seedService = new ContextSourceSeedService(this.sourceRepository);
+        const seedEnvelope = await seedService.loadSeed();
+        if (!seedEnvelope.success) {
+          console.warn(
+            '[IngestContextUseCase] Advertencia en carga de semilla:',
+            seedEnvelope.feedback ?? seedEnvelope.errors
+          );
         }
+      } catch (seedErr) {
+        console.warn('[IngestContextUseCase] Error no capturado al sincronizar semilla:', seedErr);
       }
+
+      // 2. Obtener todas las fuentes actualmente en estado ACTIVE
+      const activeSources = await this.sourceRepository.findByStatus('ACTIVE');
 
       for (const source of activeSources) {
         sourcesProcessed += 1;

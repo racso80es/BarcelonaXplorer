@@ -29,14 +29,19 @@ export async function ContextSourcesCard({
   let dbError: string | null = null;
 
   try {
-    sources = await service.listSources();
-    if (sources.length === 0) {
-      const { PrismaContextSourceRepository } = await import('@/features/context-sources/prisma-context-source.repository');
-      const { ContextSourceSeedService } = await import('@/features/context-sources/context-source-seed.service');
+    try {
+      const { PrismaContextSourceRepository } = await import(
+        '@/features/context-sources/prisma-context-source.repository'
+      );
+      const { ContextSourceSeedService } = await import(
+        '@/features/context-sources/context-source-seed.service'
+      );
       const seedService = new ContextSourceSeedService(new PrismaContextSourceRepository());
       await seedService.loadSeed();
-      sources = await service.listSources();
+    } catch (seedErr) {
+      console.warn('[ContextSourcesCard] Error sincronizando semilla:', seedErr);
     }
+    sources = await service.listSources();
   } catch (error) {
     console.warn('[ContextSourcesCard] Error listando fuentes de contexto:', error);
     dbError = diagnoseDbError(error).message;

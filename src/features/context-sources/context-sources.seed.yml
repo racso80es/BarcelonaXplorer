@@ -65,3 +65,36 @@ sources:
     category: "EVENT"
     status: "INACTIVE"
     proposedBy: "SEED"
+
+  # Fuente B1: Agenda Cultural Ajuntament de Barcelona (CKAN Datastore Minado)
+  - sourceTag: "bcn-agenda-cultural"
+    displayName: "Ajuntament de Barcelona - Agenda Cultural CKAN"
+    endpoint: "https://opendata-ajuntament.barcelona.cat/data/api/3/action"
+    type: "CKAN_DATASTORE"
+    category: "EVENT"
+    status: "PENDING_APPROVAL"
+    proposedBy: "HUMAN"
+    extraction:
+      strategy: "CKAN_DATASTORE"
+      dataset: "cultura-agenda-cultural"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      pageSize: 50
+      maxRecords: 100
+      timeoutMs: 5000
+      groupBy: "register_id"
+      fieldMap:
+        externalId: "register_id"
+        title: "name"
+        summary:
+          - "institution_name"
+          - "addresses_road_name"
+        startsAt: "start_date"
+        endsAt: "end_date"
+        locationName: "institution_name"
+        lat: "geo_epgs_4326_lat"
+        lng: "geo_epgs_4326_lon"
+        tags:
+          - "interest_name"
+

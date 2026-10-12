@@ -34,8 +34,16 @@ describe('ContextSourceSeedService', () => {
     expect(repo.upsertFromSeed).toHaveBeenCalledTimes(1);
 
     const calledWith = vi.mocked(repo.upsertFromSeed).mock.calls[0][0];
-    expect(calledWith.length).toBeGreaterThanOrEqual(6);
+    expect(calledWith.length).toBeGreaterThanOrEqual(7);
     expect(calledWith.map((s) => s.sourceTag)).toContain('gencat-agenda-cultural');
+    expect(calledWith.map((s) => s.sourceTag)).toContain('bcn-agenda-cultural');
+
+    const agendaSource = calledWith.find((s) => s.sourceTag === 'bcn-agenda-cultural');
+    expect(agendaSource?.type).toBe('CKAN_DATASTORE');
+    expect(agendaSource?.status).toBe('PENDING_APPROVAL');
+    expect(agendaSource?.proposedBy).toBe('HUMAN');
+    expect(agendaSource?.extraction).toBeDefined();
+    expect(agendaSource?.extraction?.strategy).toBe('CKAN_DATASTORE');
   });
 
   it('debe rechazar YAML con esquema inválido retornando 422 en el sobre determinista', async () => {

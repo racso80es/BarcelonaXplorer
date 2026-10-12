@@ -59,7 +59,9 @@ describe('IngestContextUseCase', () => {
       findAll: vi.fn(),
       save: vi.fn().mockResolvedValue(createSuccessEnvelope(sampleSource1)),
       create: vi.fn(),
-      upsertFromSeed: vi.fn(),
+      upsertFromSeed: vi
+        .fn()
+        .mockResolvedValue(createSuccessEnvelope({ created: 0, updated: 0, untouched: 0 })),
     };
 
     mockVectorStore = {
@@ -279,5 +281,41 @@ describe('IngestContextUseCase', () => {
         }),
       })
     );
+  });
+
+  it('PBI-CTX-017 / CA-1: sincroniza la semilla incondicionalmente al inicio incluso con fuentes ya existentes', async () => {
+    const useCase = new IngestContextUseCase(
+      mockSourceRepo,
+      { SOCRATA: mockAdapter },
+      mockVectorStore,
+      mockEmbeddingPort,
+      mockTelemetryRepo
+    );
+
+    const result = await useCase.execute();
+
+    expect(result.success).toBe(true);
+    expect(mockSourceRepo.upsertFromSeed).toHaveBeenCalledTimes(1);
+    expect(mockSourceRepo.findByStatus).toHaveBeenCalledWith('ACTIVE');
+  });
+
+  it('PBI-CTX-017 / CA-1: si la semilla retorna sobre con error, el ciclo continúa con las fuentes existentes sin lanzar', async () => {
+    vi.mocked(mockSourceRepo.upsertFromSeed).mockResolvedValue(
+      createErrorEnvelope(['Error de acceso al fichero seed'], 500)
+    );
+
+    const useCase = new IngestContextUseCase(
+      mockSourceRepo,
+      { SOCRATA: mockAdapter },
+      mockVectorStore,
+      mockEmbeddingPort,
+      mockTelemetryRepo
+    );
+
+    const result = await useCase.execute();
+
+    expect(result.success).toBe(true);
+    expect(result.result?.sourcesProcessed).toBe(1);
+    expect(result.result?.persisted).toBe(1);
   });
 });
