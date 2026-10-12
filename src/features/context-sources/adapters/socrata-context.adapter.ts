@@ -18,7 +18,27 @@ export class SocrataContextAdapter implements IContextSourceAdapter {
         headers['X-App-Token'] = process.env.SOCRATA_APP_TOKEN;
       }
 
-      const response = await this.fetchFn(source.endpoint, {
+      let targetUrl = source.endpoint;
+      if (targetUrl.includes('rhpv-yr4f')) {
+        const nowIso = new Date().toISOString();
+        if (targetUrl.includes('{hoy}')) {
+          targetUrl = targetUrl.replace(/\{hoy\}/g, `'${nowIso}'`);
+        }
+
+        const separator = targetUrl.includes('?') ? '&' : '?';
+        const params: string[] = [];
+        if (!targetUrl.includes('$order=')) {
+          params.push('$order=data_inici ASC');
+        }
+        if (!targetUrl.includes('$where=')) {
+          params.push(`$where=data_fi >= '${nowIso}'`);
+        }
+        if (params.length > 0) {
+          targetUrl = `${targetUrl}${separator}${params.join('&')}`;
+        }
+      }
+
+      const response = await this.fetchFn(targetUrl, {
         headers,
         signal: AbortSignal.timeout(10000),
       });

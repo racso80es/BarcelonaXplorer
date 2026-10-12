@@ -64,6 +64,7 @@ describe('SocrataContextAdapter', () => {
     const equipSource: ContextSourceSnapshot = {
       ...baseSource,
       sourceTag: 'gencat-equipaments-culturals',
+      endpoint: 'https://analisi.transparenciacatalunya.cat/resource/48s6-82h2.json?municipi=Barcelona&$limit=25',
       category: 'VENUE',
     };
 
@@ -77,6 +78,55 @@ describe('SocrataContextAdapter', () => {
     const first = result.result![0];
     expect(first.category).toBe('VENUE');
     expect(first.id).toMatch(/^gencat-equip:/);
+
+    // CA-2: Si el endpoint contiene 48s6-82h2, la URL sale exactamente igual que la fuente
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://analisi.transparenciacatalunya.cat/resource/48s6-82h2.json?municipi=Barcelona&$limit=25',
+      expect.anything()
+    );
+  });
+
+  it('PBI-CTX-021 / CA-1: añade ventana temporal data_fi y orden data_inici ASC si el endpoint contiene rhpv-yr4f', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => JSON.parse(rawAgenda),
+    });
+
+    const agendaSource: ContextSourceSnapshot = {
+      ...baseSource,
+      endpoint: 'https://analisi.transparenciacatalunya.cat/resource/rhpv-yr4f.json?municipi=Barcelona&$limit=25',
+    };
+
+    const adapter = new SocrataContextAdapter(mockFetch as unknown as typeof fetch);
+    await adapter.fetch(agendaSource);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const requestedUrl = mockFetch.mock.calls[0][0] as string;
+
+    expect(requestedUrl).toContain('rhpv-yr4f.json');
+    expect(requestedUrl).toContain('$order=data_inici ASC');
+    expect(requestedUrl).toMatch(/\$where=data_fi >= '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+  });
+
+  it('PBI-CTX-021 / CA-1: resuelve el placeholder {hoy} sin conservar el texto literal', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => JSON.parse(rawAgenda),
+    });
+
+    const placeholderSource: ContextSourceSnapshot = {
+      ...baseSource,
+      endpoint: 'https://analisi.transparenciacatalunya.cat/resource/rhpv-yr4f.json?$where=data_fi >= {hoy}',
+    };
+
+    const adapter = new SocrataContextAdapter(mockFetch as unknown as typeof fetch);
+    await adapter.fetch(placeholderSource);
+
+    const requestedUrl = mockFetch.mock.calls[0][0] as string;
+    expect(requestedUrl).not.toContain('{hoy}');
+    expect(requestedUrl).toMatch(/data_fi >= '\d{4}-\d{2}-\d{2}T/);
   });
 
   it('debe retornar sobre con error si el servidor Socrata responde HTTP 500', async () => {
