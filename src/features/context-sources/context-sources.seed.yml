@@ -130,3 +130,35 @@ sources:
         tags:
           - "addresses_district_name"
 
+  # Fuente B3: Agenda Deportiva Ajuntament de Barcelona (CKAN Datastore Minado)
+  - sourceTag: "bcn-agenda-esportiva"
+    displayName: "Ajuntament de Barcelona - Agenda Esportiva CKAN"
+    endpoint: "https://opendata-ajuntament.barcelona.cat/data/api/3/action"
+    type: "CKAN_DATASTORE"
+    category: "EVENT"
+    status: "PENDING_APPROVAL"
+    proposedBy: "HUMAN"
+    extraction:
+      strategy: "CKAN_DATASTORE"
+      dataset: "agenda-activitats-esportives"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      pageSize: 50
+      maxRecords: 100
+      timeoutMs: 5000
+      groupBy: "register_id"
+      fieldMap:
+        externalId: "register_id"
+        title: "name"
+        summary:
+          - "addresses_road_name"
+          - "addresses_neighborhood_name"
+        startsAt: "start_date"
+        endsAt: "end_date"
+        locationName: "addresses_road_name"
+        lat: "geo_epgs_4326_lat"
+        lng: "geo_epgs_4326_lon"
+        tags:
+          - "addresses_district_name"
+

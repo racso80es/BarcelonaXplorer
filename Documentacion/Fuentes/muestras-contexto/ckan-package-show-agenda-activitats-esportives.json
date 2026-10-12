@@ -1,0 +1,199 @@
+{
+  "help": "https://opendata-ajuntament.barcelona.cat/data/api/3/action/help_show?name=package_show",
+  "success": true,
+  "result": {
+    "notes_translated": {
+      "ca": "Agenda de competicions, actes populars i altres esdeveniments esportius.",
+      "en": "Agenda of contests, popular events and other sport events. ",
+      "es": "Agenda de competiciones, actos populares y otros acontecimientos deportivos. "
+    },
+    "geolocation": "Yes_with_map_view",
+    "code": "AGENDA_ACTIVITATS_ESPORTIVES",
+    "url_tornada": {
+      "ca": "http://esports.bcn.cat/ca/",
+      "en": "http://esports.bcn.cat/en/",
+      "es": "http://esports.bcn.cat/es/"
+    },
+    "dataset_fields_description": "__Important:__ A partir del __24/03/2021__  i en relació a canvis en el sistema origen de les dades, es deixa de publicar el recurs en format .xml quedant substituït per el de format .json.",
+    "fuente": "Ajuntament de Barcelona",
+    "private": false,
+    "num_tags": 2,
+    "api": "Yes",
+    "frequency": "DIARIA",
+    "id": "286de6ac-00db-47ae-9a8e-18c579cbfc2f",
+    "title_translated": {
+      "ca": "Agenda d'activitats esportives de la ciutat de Barcelona",
+      "en": "Agenda of  sport activities of the city of Barcelona",
+      "es": "Agenda de activitades deportivas de la ciudad de Barcelona"
+    },
+    "metadata_modified": "2023-10-11T11:37:51.741637",
+    "author": "Gerència d'Àrea Agenda 2030, Transició Digital i Esports",
+    "author_email": "",
+    "isopen": true,
+    "long_format": "No",
+    "state": "active",
+    "version": "",
+    "relationships_as_object": [],
+    "department": "Direcció de Serveis d'Informació i Atenció Ciutadana",
+    "creator_user_id": "50d6b44b-a141-4dc6-b663-5deb4ab0dd63",
+    "type": "dataset",
+    "resources": [
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "286de6ac-00db-47ae-9a8e-18c579cbfc2f",
+        "datastore_active": true,
+        "id": "ab2d47b7-8493-4ed5-9f63-49ed116135f9",
+        "size": "449528",
+        "state": "active",
+        "api_access_number": 3131,
+        "api_access_number_absolute": 4046,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "CSV",
+        "downloads": 1415,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "hide_url": "Yes",
+        "file_volum": "middle",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_agenda-esportiva-csv.csv",
+        "created": "2021-06-10T08:47:37.142811",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/286de6ac-00db-47ae-9a8e-18c579cbfc2f/resource/ab2d47b7-8493-4ed5-9f63-49ed116135f9/download",
+        "downloads_absolute": 1702,
+        "map_visualization_res": "data_explorer_map",
+        "qa": {
+          "updated": "2026-10-12T04:23:27.202038",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "CSV",
+          "created": "2021-06-11T02:04:31.702814",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3."
+        },
+        "last_modified": "2021-06-11T06:01:41",
+        "position": 0,
+        "revision_id": "d25d8808-1b8a-4c68-a59f-9a842eda77f2",
+        "resource_type": null
+      },
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "286de6ac-00db-47ae-9a8e-18c579cbfc2f",
+        "datastore_active": false,
+        "id": "ca2ca99a-23da-4123-8a9b-6896d32c2c71",
+        "size": "6704837",
+        "state": "active",
+        "api_access_number": 49,
+        "api_access_number_absolute": 327,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "JSON",
+        "downloads": 1567,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "hide_url": "Yes",
+        "file_volum": "middle",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_agenda-esportiva.json",
+        "created": "2021-03-24T14:31:37.072526",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/286de6ac-00db-47ae-9a8e-18c579cbfc2f/resource/ca2ca99a-23da-4123-8a9b-6896d32c2c71/download",
+        "downloads_absolute": 4278,
+        "map_visualization_res": "none",
+        "qa": {
+          "updated": "2026-10-12T04:23:27.212293",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "JSON",
+          "created": "2021-03-25T02:04:21.586660",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"json\" relates to format \"JSON\" and receives score: 3."
+        },
+        "last_modified": "2021-06-11T07:44:42",
+        "position": 1,
+        "revision_id": "d25d8808-1b8a-4c68-a59f-9a842eda77f2",
+        "resource_type": null
+      }
+    ],
+    "token_required": "No",
+    "decalatgeNum": "N/A",
+    "tags": [
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Agenda esportiva",
+        "id": "03a8431f-5ccb-44e1-850a-56e371333c5c",
+        "name": "Agenda esportiva"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Esports",
+        "id": "eb56cff8-b527-4aa8-b367-47e075c03628",
+        "name": "Esports"
+      }
+    ],
+    "ODS_Principal_agenda_2030": "ODS 3: Salut i benestar",
+    "fecha_publicacion": "2014-10-01",
+    "ODS_Colateral2_agenda_2030": "N/A",
+    "ODS_Colateral1_agenda_2030": "N/A",
+    "license_id": "CC-BY-4.0",
+    "hide_url": "Yes",
+    "relationships_as_subject": [],
+    "license_title": "Creative Commons Attribution 4.0",
+    "groups": [],
+    "num_resources": 2,
+    "organization": {
+      "description": "",
+      "created": "2017-01-24T16:55:08.312797",
+      "title": "Esport",
+      "name": "esport",
+      "is_organization": true,
+      "state": "active",
+      "image_url": "bcn-icon-esports",
+      "revision_id": "61778813-beef-431f-81db-6de33ce1a37f",
+      "type": "organization",
+      "id": "96dd6b2f-5dea-4243-b8f2-c128f9ed35f2",
+      "approval_status": "approved"
+    },
+    "name": "agenda-activitats-esportives",
+    "url": "http://esports.bcn.cat/ca/",
+    "notes": "Agenda of contests, popular events and other sport events. ",
+    "owner_org": "96dd6b2f-5dea-4243-b8f2-c128f9ed35f2",
+    "load_type": "link_extern",
+    "qa": {
+      "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3.",
+      "updated": "2026-10-12T04:23:27.212293",
+      "openness_score": 3
+    },
+    "tag": "Agenda esportiva,Esports",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "historical": "No",
+    "title": "Agenda of  sport activities of the city of Barcelona",
+    "revision_id": "e2676333-b94f-4af8-afb3-38a98f3cb3be",
+    "extras": [
+      {
+        "key": "*00.",
+        "value": "__ESTRUCTURA RECURS FORMAT .CSV__"
+      },
+      {
+        "key": "*01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[ Miradors a la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/np-nasia-miradors)__"
+      },
+      {
+        "key": "00.",
+        "value": "__ESTRUCTURA RECURS EN FORMAT .JSON__"
+      },
+      {
+        "key": "01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[LLista d'esdeveniments diaris de la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/agenda-diaria)__  "
+      }
+    ]
+  }
+}

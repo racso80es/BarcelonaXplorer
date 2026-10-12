@@ -394,5 +394,92 @@ describe('CkanDatastoreContextAdapter', () => {
       expect(new Date(entry.startsAt!).getTime()).not.toBeNaN();
     }
   });
+
+  it('debe ejecutar flujo bifásico exitoso con fixtures reales de Agenda Deportiva (PBI-CTX-024)', async () => {
+    const showPath = path.resolve(
+      __dirname,
+      '../../../../Documentacion/Fuentes/muestras-contexto/ckan-package-show-agenda-activitats-esportives.json'
+    );
+    const dataPath = path.resolve(
+      __dirname,
+      '../../../../Documentacion/Fuentes/muestras-contexto/ckan-datastore-agenda-activitats-esportives.json'
+    );
+    const rawShow = fs.readFileSync(showPath, 'utf8');
+    const rawData = fs.readFileSync(dataPath, 'utf8');
+
+    const agendaEsportivaSnapshot: ContextSourceSnapshot = {
+      id: 'src-ckan-agenda-esportiva-1',
+      sourceTag: 'bcn-agenda-esportiva',
+      displayName: 'Ajuntament de Barcelona - Agenda Esportiva CKAN',
+      endpoint: 'https://opendata-ajuntament.barcelona.cat/data/api/3/action',
+      type: 'CKAN_DATASTORE',
+      category: 'EVENT',
+      status: 'PENDING_APPROVAL',
+      failedAttempts: 0,
+      lastSuccessAt: null,
+      proposedBy: 'HUMAN',
+      supersedesSourceTag: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      extractionConfig: {
+        strategy: 'CKAN_DATASTORE',
+        dataset: 'agenda-activitats-esportives',
+        resourceSelector: {
+          format: 'CSV',
+          datastoreActive: true,
+        },
+        pageSize: 50,
+        maxRecords: 100,
+        timeoutMs: 5000,
+        groupBy: 'register_id',
+        fieldMap: {
+          externalId: 'register_id',
+          title: 'name',
+          summary: ['addresses_road_name', 'addresses_neighborhood_name'],
+          startsAt: 'start_date',
+          endsAt: 'end_date',
+          locationName: 'addresses_road_name',
+          lat: 'geo_epgs_4326_lat',
+          lng: 'geo_epgs_4326_lon',
+          tags: ['addresses_district_name'],
+        },
+      },
+    };
+
+    const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('package_show?id=agenda-activitats-esportives')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => JSON.parse(rawShow),
+        };
+      }
+      if (url.includes('datastore_search?resource_id=ab2d47b7-8493-4ed5-9f63-49ed116135f9')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => JSON.parse(rawData),
+        };
+      }
+      throw new Error(`URL no esperada: ${url}`);
+    });
+
+    const adapter = new CkanDatastoreContextAdapter(mockFetch as unknown as typeof fetch);
+    const envelope = await adapter.fetch(agendaEsportivaSnapshot);
+
+    expect(envelope.success).toBe(true);
+    expect(envelope.result).toBeDefined();
+    const entries = envelope.result!;
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const entry of entries) {
+      expect(entry.sourceTag).toBe('bcn-agenda-esportiva');
+      expect(entry.category).toBe('EVENT');
+      expect(entry.id).toMatch(/^bcn-agenda-esportiva:[^﻿\s]+/);
+      expect(entry.startsAt).toBeDefined();
+      expect(new Date(entry.startsAt!).getTime()).not.toBeNaN();
+    }
+  });
 });
+
 
