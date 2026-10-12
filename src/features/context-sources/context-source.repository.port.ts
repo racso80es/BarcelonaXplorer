@@ -3,6 +3,7 @@ import {
   ContextSourceSnapshot,
   ContextSourceStatus,
   ContextSourceType,
+  ExtractionConfig,
 } from './context-source.types';
 
 export interface SeedSourceInput {
@@ -14,6 +15,7 @@ export interface SeedSourceInput {
   status: ContextSourceStatus;
   proposedBy?: string;
   supersedesSourceTag?: string | null;
+  extraction?: ExtractionConfig | null;
 }
 
 export interface SeedUpsertResult {

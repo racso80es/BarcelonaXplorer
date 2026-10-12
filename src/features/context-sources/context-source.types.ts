@@ -59,3 +59,49 @@ export interface TransitionMetadata {
   error?: string;
   supersedesSourceTag?: string;
 }
+
+export const CkanResourceSelectorSchema = z
+  .object({
+    format: z.string().min(1),
+    datastoreActive: z.boolean(),
+  })
+  .strict();
+export type CkanResourceSelector = z.infer<typeof CkanResourceSelectorSchema>;
+
+export const CkanFieldMapSchema = z
+  .object({
+    externalId: z.string().min(1),
+    title: z.string().min(1),
+    summary: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]),
+    startsAt: z.string().min(1).optional(),
+    endsAt: z.string().min(1).optional(),
+    locationName: z.string().min(1).optional(),
+    lat: z.string().min(1).optional(),
+    lng: z.string().min(1).optional(),
+    tags: z.union([z.string().min(1), z.array(z.string().min(1))]).optional(),
+    price: z.string().min(1).optional(),
+    url: z.string().min(1).optional(),
+    htmlFields: z.array(z.string().min(1)).optional(),
+  })
+  .strict();
+export type CkanFieldMap = z.infer<typeof CkanFieldMapSchema>;
+
+export const CkanDatastoreExtractionConfigSchema = z
+  .object({
+    strategy: z.literal('CKAN_DATASTORE'),
+    dataset: z.string().min(1),
+    resourceSelector: CkanResourceSelectorSchema,
+    fieldMap: CkanFieldMapSchema,
+    pageSize: z.number().int().positive(),
+    maxRecords: z.number().int().positive(),
+    timeoutMs: z.number().int().positive(),
+    groupBy: z.string().min(1).optional(),
+  })
+  .strict();
+export type CkanDatastoreExtractionConfig = z.infer<typeof CkanDatastoreExtractionConfigSchema>;
+
+export const ExtractionConfigSchema = z.discriminatedUnion('strategy', [
+  CkanDatastoreExtractionConfigSchema,
+]);
+export type ExtractionConfig = z.infer<typeof ExtractionConfigSchema>;
+

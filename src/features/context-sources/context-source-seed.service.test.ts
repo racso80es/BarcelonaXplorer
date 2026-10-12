@@ -87,4 +87,158 @@ sources:
     const parseResult = SeedFileYamlSchema.safeParse(invalidData);
     expect(parseResult.success).toBe(false);
   });
+
+  it('CA-2 & CA-3: acepta bloque extraction CKAN_DATASTORE válido conforme al contrato canónico', async () => {
+    const repo = createMockRepo();
+    const service = new ContextSourceSeedService(repo);
+
+    const validCkanYaml = `
+version: "1.0.0"
+sources:
+  - sourceTag: "bcn-agenda-cultural"
+    displayName: "Agenda Cultural de Barcelona (CKAN Datastore)"
+    endpoint: "https://opendata-ajuntament.barcelona.cat/data/api/3/action/package_show?id=agenda-cultural"
+    type: "API_REST"
+    category: "EVENT"
+    status: "PENDING_APPROVAL"
+    extraction:
+      strategy: "CKAN_DATASTORE"
+      dataset: "agenda-cultural"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      fieldMap:
+        externalId: "register_id"
+        title: "name"
+        summary: ["name", "institution_name"]
+        startsAt: "start_date"
+        endsAt: "end_date"
+      pageSize: 100
+      maxRecords: 500
+      timeoutMs: 30000
+      groupBy: "register_id"
+`;
+
+    const result = await service.loadSeed(validCkanYaml);
+
+    expect(result.success).toBe(true);
+    expect(repo.upsertFromSeed).toHaveBeenCalledTimes(1);
+    const calledEntries = vi.mocked(repo.upsertFromSeed).mock.calls[0][0];
+    expect(calledEntries).toHaveLength(1);
+    expect(calledEntries[0].extraction).toEqual(
+      expect.objectContaining({
+        strategy: 'CKAN_DATASTORE',
+        dataset: 'agenda-cultural',
+        pageSize: 100,
+        maxRecords: 500,
+        timeoutMs: 30000,
+        groupBy: 'register_id',
+      })
+    );
+  });
+
+  it('CA-2 & CA-4: rechaza estrategias no permitidas (RSS_ENRICHED, SPARQL_CUSTOM, SOCRATA_WINDOW) con 422', async () => {
+    const repo = createMockRepo();
+    const service = new ContextSourceSeedService(repo);
+
+    const invalidStrategyYaml = `
+version: "1.0.0"
+sources:
+  - sourceTag: "bcn-invalid-strat"
+    displayName: "Invalid Strategy"
+    endpoint: "https://example.com/api"
+    type: "API_REST"
+    category: "EVENT"
+    status: "ACTIVE"
+    extraction:
+      strategy: "RSS_ENRICHED"
+      dataset: "test"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      fieldMap:
+        externalId: "id"
+        title: "title"
+        summary: "desc"
+      pageSize: 50
+      maxRecords: 100
+      timeoutMs: 10000
+`;
+
+    const result = await service.loadSeed(invalidStrategyYaml);
+
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(422);
+    expect(repo.upsertFromSeed).not.toHaveBeenCalled();
+  });
+
+  it('CA-3 & CA-4: rechaza bloque extraction con fieldMap incompleto (falta externalId) con 422', async () => {
+    const repo = createMockRepo();
+    const service = new ContextSourceSeedService(repo);
+
+    const incompleteMapYaml = `
+version: "1.0.0"
+sources:
+  - sourceTag: "bcn-incomplete"
+    displayName: "Incomplete Map"
+    endpoint: "https://example.com/api"
+    type: "API_REST"
+    category: "EVENT"
+    status: "ACTIVE"
+    extraction:
+      strategy: "CKAN_DATASTORE"
+      dataset: "test"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      fieldMap:
+        title: "title"
+        summary: "desc"
+      pageSize: 50
+      maxRecords: 100
+      timeoutMs: 10000
+`;
+
+    const result = await service.loadSeed(incompleteMapYaml);
+
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(422);
+    expect(repo.upsertFromSeed).not.toHaveBeenCalled();
+  });
+
+  it('CA-3 & CA-4: rechaza bloque extraction si incluye resource_id con 422', async () => {
+    const repo = createMockRepo();
+    const service = new ContextSourceSeedService(repo);
+
+    const withResourceIdYaml = `
+version: "1.0.0"
+sources:
+  - sourceTag: "bcn-resource-id"
+    displayName: "With Resource ID"
+    endpoint: "https://example.com/api"
+    type: "API_REST"
+    category: "EVENT"
+    status: "ACTIVE"
+    extraction:
+      strategy: "CKAN_DATASTORE"
+      dataset: "test"
+      resource_id: "res-1234"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      fieldMap:
+        externalId: "id"
+        title: "title"
+        summary: "desc"
+      pageSize: 50
+      maxRecords: 100
+      timeoutMs: 10000
+`;
+
+    const result = await service.loadSeed(withResourceIdYaml);
+
+    expect(result.success).toBe(false);
+    expect(result.exitCode).toBe(422);
+    expect(repo.upsertFromSeed).not.toHaveBeenCalled();
+  });
 });

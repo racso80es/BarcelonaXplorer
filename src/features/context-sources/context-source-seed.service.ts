@@ -7,6 +7,7 @@ import {
   ContextSourceCategorySchema,
   ContextSourceStatusSchema,
   ContextSourceTypeSchema,
+  ExtractionConfigSchema,
 } from './context-source.types';
 import {
   IContextSourceRepository,
@@ -23,6 +24,7 @@ export const SeedSourceYamlSchema = z.object({
   status: ContextSourceStatusSchema,
   proposedBy: z.enum(['SEED', 'HUMAN', 'ARGOS']).default('SEED'),
   supersedesSourceTag: z.string().optional(),
+  extraction: ExtractionConfigSchema.optional(),
 });
 
 export const SeedFileYamlSchema = z.object({
@@ -101,6 +103,7 @@ export class ContextSourceSeedService {
         status: s.status,
         proposedBy: s.proposedBy,
         supersedesSourceTag: s.supersedesSourceTag ?? null,
+        extraction: s.extraction ?? null,
       }));
 
       return await this.repository.upsertFromSeed(seedSources);
