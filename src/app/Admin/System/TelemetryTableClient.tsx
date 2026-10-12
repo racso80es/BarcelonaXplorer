@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { DataTable, ColumnDef } from '@/components/ui/data-table';
+import { DataTable, ColumnDef, dataTableTypography, dataTableLayout } from '@/components/ui/data-table';
 import {
   Eye,
   X,
@@ -78,12 +78,12 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                 : 'text-emerald-700 bg-emerald-50 border-emerald-200';
 
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${levelColor}`}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded ${dataTableTypography.badgeText} font-semibold border ${levelColor}`}>
             {log.level}
           </span>
         );
       },
-      className: 'w-24',
+      className: `w-24 ${dataTableLayout.nowrap}`,
     },
     {
       key: 'context',
@@ -109,22 +109,26 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                 : 'text-zinc-800 bg-zinc-100 border-layout-divider';
 
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${contextColor}`}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded ${dataTableTypography.badgeText} uppercase tracking-wider border ${contextColor}`}>
             {log.context}
           </span>
         );
       },
-      className: 'w-36',
+      className: `w-36 ${dataTableLayout.nowrap}`,
     },
     {
       key: 'message',
       header: 'Mensaje de Diagnóstico',
       sortable: false,
       cell: (log) => (
-        <span className="text-content-primary truncate max-w-sm sm:max-w-md block font-mono text-xs sm:text-sm" title={log.message}>
+        <span
+          className={`text-content-primary block font-mono text-xs sm:text-sm ${dataTableLayout.semanticContent}`}
+          title={log.message}
+        >
           {log.message}
         </span>
       ),
+      className: dataTableLayout.semanticColumn,
     },
     {
       key: 'statusCode',
@@ -132,13 +136,13 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
       sortable: true,
       cell: (log) =>
         log.statusCode ? (
-          <span className="inline-block px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-800 border border-layout-divider text-[11px] font-mono">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-800 border border-layout-divider text-xs font-mono">
             {log.statusCode}
           </span>
         ) : (
           <span className="text-zinc-400">—</span>
         ),
-      className: 'w-24 text-center',
+      className: `w-24 text-center ${dataTableLayout.nowrap}`,
       headerClassName: 'text-center',
     },
     {
@@ -159,7 +163,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
           </span>
         );
       },
-      className: 'w-44 text-right',
+      className: `w-44 text-right ${dataTableLayout.nowrap}`,
       headerClassName: 'text-right',
     },
     {
@@ -179,7 +183,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
           <span>Ver</span>
         </button>
       ),
-      className: 'w-20 text-center',
+      className: `w-20 text-center ${dataTableLayout.nowrap}`,
       headerClassName: 'text-center',
     },
   ], []);
@@ -341,7 +345,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                 >
                   {selectedLog.level}
                 </span>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider bg-zinc-100 text-sky-800 border border-layout-divider">
+                <span className="px-2 py-0.5 rounded text-xs font-mono uppercase tracking-wider bg-zinc-100 text-sky-800 border border-layout-divider">
                   {selectedLog.context}
                 </span>
                 {selectedLog.durationMs !== null && (
@@ -373,7 +377,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                 <span className="text-zinc-800 select-all font-mono font-medium">{selectedLog.id}</span>
                 <button
                   onClick={() => handleCopyText(selectedLog.id, 'id')}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-zinc-200/70 text-zinc-600 hover:text-zinc-900 transition-colors border border-layout-divider text-[10px] ml-1"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-zinc-200/70 text-zinc-600 hover:text-zinc-900 transition-colors border border-layout-divider text-xs ml-1"
                   title="Copiar ID"
                 >
                   {copiedId ? (
@@ -419,7 +423,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                     </h4>
                     <button
                       onClick={() => handleCopyText(stackTrace, 'stack')}
-                      className="inline-flex items-center gap-1 text-[11px] text-red-800 hover:text-red-950 px-2 py-0.5 rounded bg-white hover:bg-red-100/70 border border-red-200 transition-colors shadow-xs"
+                      className="inline-flex items-center gap-1 text-xs text-red-800 hover:text-red-950 px-2 py-0.5 rounded bg-white hover:bg-red-100/70 border border-red-200 transition-colors shadow-xs"
                     >
                       {copiedStack ? (
                         <>
@@ -434,7 +438,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                       )}
                     </button>
                   </div>
-                  <pre className="p-3 rounded-lg bg-zinc-900 text-red-300 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap max-h-56 border border-zinc-800 leading-relaxed">
+                  <pre className="p-3 rounded-lg bg-zinc-900 text-red-300 font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-56 border border-zinc-800 leading-relaxed">
                     {stackTrace}
                   </pre>
                 </div>
@@ -449,7 +453,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                       Solicitud Inyectada (Prompt & Contexto)
                     </h4>
                     {typeof requestInfo?.promptLength === 'number' && (
-                      <span className="text-[11px] font-mono text-content-meta">
+                      <span className="text-xs font-mono text-content-meta">
                         {requestInfo.promptLength} caracteres
                       </span>
                     )}
@@ -457,7 +461,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
 
                   {requestInfo?.prompt ? (
                     <div>
-                      <label className="text-[11px] text-content-meta block mb-1">Prompt del Usuario:</label>
+                      <label className="text-xs text-content-meta block mb-1">Prompt del Usuario:</label>
                       <div className="p-2.5 rounded bg-white border border-layout-divider text-zinc-800 font-mono text-xs whitespace-pre-wrap">
                         {String(requestInfo.prompt)}
                       </div>
@@ -472,7 +476,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                       typeof requestInfo.environmentVariables === 'object'
                   ) && (
                     <div>
-                      <label className="text-[11px] text-content-meta block mb-1">
+                      <label className="text-xs text-content-meta block mb-1">
                         Variables de Entorno y Logística:
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
@@ -483,7 +487,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                             key={k}
                             className="p-2 rounded bg-white border border-layout-divider flex flex-col gap-0.5"
                           >
-                            <span className="text-zinc-500 text-[10px] uppercase font-semibold">{k}</span>
+                            <span className="text-zinc-500 text-xs uppercase font-semibold">{k}</span>
                             <span className="text-zinc-800 truncate">
                               {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                             </span>
@@ -527,7 +531,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                       <span className="font-mono text-content-meta">
                         ID: <span className="text-zinc-800 font-semibold">{String(responseInfo.id)}</span>
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-[11px] font-medium">
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-xs font-medium">
                         {Array.isArray(responseInfo.waypoints) ? responseInfo.waypoints.length : 0} Waypoints
                       </span>
                     </div>
@@ -541,7 +545,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
 
                     {Array.isArray(responseInfo.waypoints) && (
                       <div className="space-y-2">
-                        <span className="text-[11px] font-semibold text-zinc-600 block">Waypoints Generados:</span>
+                        <span className="text-xs font-semibold text-zinc-600 block">Waypoints Generados:</span>
                         <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
                           {(responseInfo.waypoints as Array<Record<string, unknown>>).map((wp, idx) => (
                             <div
@@ -553,14 +557,14 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                                   {idx + 1}. {String(wp.title)}
                                 </span>
                                 {Boolean(wp.coordinates && typeof wp.coordinates === 'object') && (
-                                  <span className="text-[10px] font-mono text-zinc-500 flex items-center gap-1">
+                                  <span className="text-xs font-mono text-zinc-500 flex items-center gap-1">
                                     <MapPin className="w-2.5 h-2.5 text-zinc-400" />
                                     {(wp.coordinates as { lat: number; lng: number }).lat?.toFixed(3)},{' '}
                                     {(wp.coordinates as { lat: number; lng: number }).lng?.toFixed(3)}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-zinc-600 text-[11px]">{String(wp.description)}</p>
+                              <p className="text-zinc-600 text-xs">{String(wp.description)}</p>
                             </div>
                           ))}
                         </div>
@@ -573,7 +577,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                     <p className="font-semibold text-amber-900">Fricción Cognitiva Detectada</p>
                     <p className="text-zinc-800">{String(responseInfo.message)}</p>
                     {Boolean(responseInfo.rawOutput) && (
-                      <p className="font-mono text-[11px] text-zinc-600 pt-1">
+                      <p className="font-mono text-xs text-zinc-600 pt-1">
                         Salida cruda: {String(responseInfo.rawOutput)}
                       </p>
                     )}
@@ -586,7 +590,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                         key={idx}
                         className="p-2.5 rounded bg-white border border-layout-divider flex flex-col gap-1 shadow-2xs"
                       >
-                        <span className="text-zinc-500 text-[10px] uppercase font-semibold tracking-wider">
+                        <span className="text-zinc-500 text-xs uppercase font-semibold tracking-wider">
                           {item.label}
                         </span>
                         <span className="text-zinc-800 break-words font-medium">{item.value}</span>
@@ -611,7 +615,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                   </h4>
                   <button
                     onClick={() => handleCopyText(JSON.stringify(selectedLog.payload, null, 2), 'json')}
-                    className="inline-flex items-center gap-1 text-[11px] text-zinc-700 hover:text-zinc-900 px-2 py-0.5 rounded bg-white hover:bg-zinc-100 border border-layout-divider transition-colors shadow-xs"
+                    className="inline-flex items-center gap-1 text-xs text-zinc-700 hover:text-zinc-900 px-2 py-0.5 rounded bg-white hover:bg-zinc-100 border border-layout-divider transition-colors shadow-xs"
                   >
                     {copied ? (
                       <>
@@ -626,7 +630,7 @@ export function TelemetryTableClient({ logs }: TelemetryTableClientProps) {
                     )}
                   </button>
                 </div>
-                <pre className="p-3 rounded-lg bg-zinc-50 border border-layout-divider text-[11px] font-mono text-zinc-800 overflow-x-auto max-h-48 leading-relaxed">
+                <pre className="p-3 rounded-lg bg-zinc-50 border border-layout-divider text-xs font-mono text-zinc-800 overflow-x-auto max-h-48 leading-relaxed">
                   {JSON.stringify(selectedLog.payload, null, 2) ?? '// Sin payload'}
                 </pre>
               </div>

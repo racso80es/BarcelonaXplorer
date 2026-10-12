@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { DataTable, ColumnDef } from '@/components/ui/data-table';
+import { DataTable, ColumnDef, dataTableTypography, dataTableLayout } from '@/components/ui/data-table';
 import {
   Brain,
   Eye,
@@ -69,7 +69,7 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
             </div>
           );
         },
-        className: 'w-44',
+        className: `w-44 ${dataTableLayout.nowrap}`,
       },
       {
         key: 'timestamp',
@@ -95,7 +95,7 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
             </div>
           );
         },
-        className: 'w-44',
+        className: `w-44 ${dataTableLayout.nowrap}`,
       },
       {
         key: 'score',
@@ -133,11 +133,11 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
             <div className="space-y-1.5 min-w-[130px]">
               <div className="flex items-center justify-between gap-1 text-xs">
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeClass}`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded ${dataTableTypography.badgeText} font-semibold border ${badgeClass}`}
                 >
                   {label}
                 </span>
-                <span className="font-mono font-bold text-[11px] text-content-primary">
+                <span className="font-mono font-bold text-xs text-content-primary">
                   {item.score}%
                 </span>
               </div>
@@ -156,7 +156,7 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
             </div>
           );
         },
-        className: 'w-48',
+        className: `w-48 ${dataTableLayout.nowrap}`,
       },
       {
         key: 'denseText',
@@ -164,12 +164,13 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
         sortable: false,
         cell: (item) => (
           <span
-            className="text-content-primary truncate max-w-xs sm:max-w-md block font-mono text-xs"
+            className={`text-content-primary block font-mono text-xs ${dataTableLayout.semanticContent}`}
             title={item.denseText}
           >
             {item.denseText || '—'}
           </span>
         ),
+        className: dataTableLayout.semanticColumn,
       },
       {
         key: 'actions',
@@ -189,7 +190,7 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
             <span>Ver</span>
           </button>
         ),
-        className: 'w-20 text-center',
+        className: `w-20 text-center ${dataTableLayout.nowrap}`,
         headerClassName: 'text-center',
       },
     ],
@@ -261,7 +262,7 @@ export function CognitiveTableClient({ sessions }: CognitiveTableClientProps) {
                 </span>
                 <button
                   onClick={() => handleCopyText(selectedSession.sessionId, 'id')}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-zinc-200/70 text-zinc-600 hover:text-zinc-900 transition-colors border border-layout-divider text-[10px]"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-zinc-200/70 text-zinc-600 hover:text-zinc-900 transition-colors border border-layout-divider text-xs"
                   title="Copiar UUID de sesión"
                 >
                   {copiedId ? (
