@@ -97,8 +97,7 @@ export class IcalContextAdapter implements IContextSourceAdapter {
         const endsAt = parseIcalDate(dtendRaw) ?? startsAt;
 
         const location = { name: 'Barcelona' };
-        const price = 'Gratis';
-        const tags = ['festiu', 'oficial', 'barcelona'];
+        const tags = description && description.trim().length > 0 ? [description.trim()] : [];
 
         const expiresDate = endsAt ? new Date(endsAt) : new Date();
         expiresDate.setDate(expiresDate.getDate() + 1);
@@ -110,7 +109,6 @@ export class IcalContextAdapter implements IContextSourceAdapter {
           startsAt,
           endsAt,
           location,
-          price,
         });
 
         const candidate = {
@@ -122,7 +120,6 @@ export class IcalContextAdapter implements IContextSourceAdapter {
           startsAt,
           endsAt,
           location,
-          price,
           tags,
           expiresAt,
           contentHash,

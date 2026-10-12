@@ -44,7 +44,12 @@ describe('IcalContextAdapter', () => {
     const first = result.result![0];
     expect(first.category).toBe('EVENT');
     expect(first.id).toMatch(/^bcn-festes:/);
-    expect(first.price).toBe('Gratis');
+    // PBI-CTX-022: Sin precio impuesto y tag tomado de DESCRIPTION
+    expect(first.price).toBeUndefined();
+    expect(first.tags).toEqual(['Festes estatals']);
+    expect(first.tags).not.toContain('festiu');
+    expect(first.tags).not.toContain('oficial');
+    expect(first.tags).not.toContain('barcelona');
     expect(first.startsAt).toBeDefined();
     expect(first.endsAt).toBeDefined();
     expect(first.title).toBe("Cap d'Any");
