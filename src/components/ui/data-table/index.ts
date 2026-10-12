@@ -13,6 +13,11 @@ export {
   normalizeString,
 } from './utils';
 
+export {
+  dataTableTypography,
+  dataTableLayout,
+} from './typography';
+
 export type {
   ComparableValue,
   SortDirection,

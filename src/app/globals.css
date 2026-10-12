@@ -72,6 +72,8 @@
   --color-layout-divider: #e4e4e7;
   --color-layout-divider-strong: #d4d4d8;
   --color-focus-tactical: rgba(16, 185, 129, 0.3);
+  --text-data: 0.9375rem;
+  --text-data--line-height: calc(1.25 / 0.9375);
   --animate-fade-in-up: fade-in-up 0.4s ease-out forwards;
   @keyframes fade-in-up {
     0% { opacity: 0; transform: translateY(10px); }
