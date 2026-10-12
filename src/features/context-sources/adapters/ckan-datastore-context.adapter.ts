@@ -228,7 +228,13 @@ export class CkanDatastoreContextAdapter implements IContextSourceAdapter {
         }
 
         if (summaryText.length < 10) {
-          summaryText = `${title} - Activitat a Barcelona.`;
+          const fallbackSuffix =
+            category === 'VENUE'
+              ? 'Mercat o equipament a Barcelona.'
+              : category === 'POI'
+                ? "Espai d'interès a Barcelona."
+                : 'Activitat a Barcelona.';
+          summaryText = `${title} - ${fallbackSuffix}`;
         }
         const summary = summaryText.slice(0, 1200);
 
@@ -238,7 +244,7 @@ export class CkanDatastoreContextAdapter implements IContextSourceAdapter {
         const startsAt = normalizeIsoDateTime(rawStart);
         let endsAt = normalizeIsoDateTime(rawEnd);
 
-        if (!startsAt && !endsAt) {
+        if (category === 'EVENT' && !startsAt && !endsAt) {
           continue;
         }
 
@@ -246,9 +252,16 @@ export class CkanDatastoreContextAdapter implements IContextSourceAdapter {
           endsAt = startsAt;
         }
 
-        const baseExpiry = endsAt ? new Date(endsAt) : startsAt ? new Date(startsAt) : new Date();
-        const expiresDate = new Date(baseExpiry.getTime() + 86400000);
-        const expiresAt = expiresDate.toISOString();
+        let expiresAt: string;
+        if (endsAt || startsAt) {
+          const baseExpiry = endsAt ? new Date(endsAt) : new Date(startsAt!);
+          const expiresDate = new Date(baseExpiry.getTime() + 86400000);
+          expiresAt = expiresDate.toISOString();
+        } else {
+          // TTL por categoría (VENUE/POI: 90 días según ContextEntrySchema)
+          const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+          expiresAt = new Date(Date.now() + ninetyDaysMs).toISOString();
+        }
 
         let locationName = fieldMap.locationName ? String(record[fieldMap.locationName] ?? '').trim() : undefined;
         if (locationName && locationName.length === 0) locationName = undefined;

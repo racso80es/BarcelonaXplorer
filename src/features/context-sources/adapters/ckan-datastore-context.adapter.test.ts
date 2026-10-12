@@ -480,6 +480,94 @@ describe('CkanDatastoreContextAdapter', () => {
       expect(new Date(entry.startsAt!).getTime()).not.toBeNaN();
     }
   });
+
+  it('debe ejecutar flujo bifásico exitoso con fixtures reales de Mercats Municipals (PBI-CTX-025)', async () => {
+    const showPath = path.resolve(
+      __dirname,
+      '../../../../Documentacion/Fuentes/muestras-contexto/ckan-package-show-mercats-municipals.json'
+    );
+    const dataPath = path.resolve(
+      __dirname,
+      '../../../../Documentacion/Fuentes/muestras-contexto/ckan-datastore-mercats-municipals.json'
+    );
+    const rawShow = fs.readFileSync(showPath, 'utf8');
+    const rawData = fs.readFileSync(dataPath, 'utf8');
+
+    const mercatsSnapshot: ContextSourceSnapshot = {
+      id: 'src-ckan-mercats-1',
+      sourceTag: 'bcn-mercats-municipals',
+      displayName: 'Ajuntament de Barcelona - Mercats Municipals CKAN',
+      endpoint: 'https://opendata-ajuntament.barcelona.cat/data/api/3/action',
+      type: 'CKAN_DATASTORE',
+      category: 'VENUE',
+      status: 'PENDING_APPROVAL',
+      failedAttempts: 0,
+      lastSuccessAt: null,
+      proposedBy: 'HUMAN',
+      supersedesSourceTag: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      extractionConfig: {
+        strategy: 'CKAN_DATASTORE',
+        dataset: 'mercats-municipals',
+        resourceSelector: {
+          format: 'CSV',
+          datastoreActive: true,
+        },
+        pageSize: 50,
+        maxRecords: 100,
+        timeoutMs: 5000,
+        groupBy: 'register_id',
+        fieldMap: {
+          externalId: 'register_id',
+          title: 'name',
+          summary: ['addresses_road_name', 'addresses_neighborhood_name'],
+          locationName: 'name',
+          lat: 'geo_epgs_4326_lat',
+          lng: 'geo_epgs_4326_lon',
+          tags: ['addresses_district_name'],
+        },
+      },
+    };
+
+    const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('package_show?id=mercats-municipals')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => JSON.parse(rawShow),
+        };
+      }
+      if (url.includes('datastore_search?resource_id=9caf3470-f325-4079-9884-8bc819104884')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => JSON.parse(rawData),
+        };
+      }
+      throw new Error(`URL no esperada: ${url}`);
+    });
+
+    const adapter = new CkanDatastoreContextAdapter(mockFetch as unknown as typeof fetch);
+    const envelope = await adapter.fetch(mercatsSnapshot);
+
+    expect(envelope.success).toBe(true);
+    expect(envelope.result).toBeDefined();
+    const entries = envelope.result!;
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const entry of entries) {
+      expect(entry.sourceTag).toBe('bcn-mercats-municipals');
+      expect(entry.category).toBe('VENUE');
+      expect(entry.id).toMatch(/^bcn-mercats-municipals:[^﻿\s]+/);
+      expect(entry.title.length).toBeGreaterThanOrEqual(3);
+      expect(entry.summary.length).toBeGreaterThanOrEqual(10);
+      expect(entry.location).toBeDefined();
+      expect(entry.expiresAt).toBeDefined();
+      expect(new Date(entry.expiresAt).getTime()).not.toBeNaN();
+    }
+  });
 });
+
 
 

@@ -1,0 +1,213 @@
+{
+  "help": "https://opendata-ajuntament.barcelona.cat/data/api/3/action/help_show?name=package_show",
+  "success": true,
+  "result": {
+    "notes_translated": {
+      "ca": "Llista i ubicació dels mercats municipals de la ciutat de Barcelona",
+      "en": "List and location of the municipal markets of the city of Barcelona",
+      "es": "Lista y ubicación de los mercados municipales de la ciudad de Barcelona"
+    },
+    "geolocation": "Yes_with_map_view",
+    "code": "MERCATS_MUNICIPALS",
+    "url_tornada": {
+      "ca": "http://www.barcelona.cat/comerc",
+      "en": "http://ajuntament.barcelona.cat/comerc/en/",
+      "es": "http://ajuntament.barcelona.cat/comerc/es/"
+    },
+    "dataset_fields_description": "",
+    "fuente": "Ajuntament de Barcelona",
+    "private": false,
+    "num_tags": 4,
+    "api": "Yes",
+    "frequency": "SETMANAL",
+    "id": "706e7507-7f84-480e-940d-23265bf5d853",
+    "title_translated": {
+      "ca": "Mercats municipals de la ciutat de Barcelona",
+      "en": "Municipal markets in the city of Barcelona",
+      "es": "Mercados municipales de la ciudad de Barcelona"
+    },
+    "metadata_modified": "2023-10-31T08:31:39.329666",
+    "author": "Gerència d'Àrea Agenda 2030, Transició Digital i Esports",
+    "author_email": "",
+    "isopen": true,
+    "long_format": "No",
+    "state": "active",
+    "version": "",
+    "mar_od": "No",
+    "relationships_as_object": [],
+    "department": "Direcció de Serveis d'Informació i Atenció Ciutadana",
+    "creator_user_id": "50d6b44b-a141-4dc6-b663-5deb4ab0dd63",
+    "type": "dataset",
+    "resources": [
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "706e7507-7f84-480e-940d-23265bf5d853",
+        "datastore_active": true,
+        "id": "9caf3470-f325-4079-9884-8bc819104884",
+        "size": "142852",
+        "state": "active",
+        "api_access_number": 526,
+        "api_access_number_absolute": 810,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "CSV",
+        "downloads": 2238,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "column_types": "",
+        "hide_url": "Yes",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_mercats-centrescomercials_mercats-municipals.csv",
+        "created": "2021-04-21T08:42:29.226772",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/706e7507-7f84-480e-940d-23265bf5d853/resource/9caf3470-f325-4079-9884-8bc819104884/download",
+        "downloads_absolute": 3573,
+        "map_visualization_res": "data_explorer_map",
+        "qa": {
+          "updated": "2026-10-12T04:43:12.390767",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "CSV",
+          "created": "2021-04-22T02:09:11.098570",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3."
+        },
+        "last_modified": "2023-10-31T09:31:23.616538",
+        "position": 0,
+        "revision_id": "86d0b29c-4c7e-4efe-abdb-52436d64d462",
+        "resource_type": null
+      },
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "706e7507-7f84-480e-940d-23265bf5d853",
+        "datastore_active": false,
+        "id": "b204171d-79e3-49d1-9a0a-0bdbb9d46bd2",
+        "size": "4115274",
+        "state": "active",
+        "api_access_number": 3,
+        "api_access_number_absolute": 4,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "JSON",
+        "downloads": 1215,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "hide_url": "Yes",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_mercats-centrescomercials_mercats-municipals-js.json",
+        "created": "2021-04-21T08:45:33.439790",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/706e7507-7f84-480e-940d-23265bf5d853/resource/b204171d-79e3-49d1-9a0a-0bdbb9d46bd2/download",
+        "downloads_absolute": 1538,
+        "map_visualization_res": "none",
+        "qa": {
+          "updated": "2026-10-12T04:43:12.402390",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "JSON",
+          "created": "2021-04-22T02:09:11.136494",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"json\" relates to format \"JSON\" and receives score: 3."
+        },
+        "last_modified": "2023-10-31T09:31:39.297122",
+        "position": 1,
+        "revision_id": "86d0b29c-4c7e-4efe-abdb-52436d64d462",
+        "resource_type": null
+      }
+    ],
+    "token_required": "No",
+    "decalatgeNum": "N/A",
+    "tags": [
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Mercats",
+        "id": "355c9bac-cd91-45b3-9cff-01267980dd8a",
+        "name": "Mercats"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Mercats i centres comercials",
+        "id": "1aa101de-9ea2-4ed9-8f50-8abe252fead3",
+        "name": "Mercats i centres comercials"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Mercats municipals",
+        "id": "0756334c-460d-4e18-9581-355b55edd1fc",
+        "name": "Mercats municipals"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Plànol BCN",
+        "id": "f5a5a7bb-56eb-4380-9e36-18c473662f33",
+        "name": "Plànol BCN"
+      }
+    ],
+    "ODS_Principal_agenda_2030": "ODS 12: Consum i producció responsable",
+    "fecha_publicacion": "2016-06-10",
+    "ODS_Colateral2_agenda_2030": "N/A",
+    "ODS_Colateral1_agenda_2030": "ODS 2: Fam zero",
+    "license_id": "CC-BY-4.0",
+    "hide_url": "Yes",
+    "relationships_as_subject": [],
+    "license_title": "Creative Commons Attribution 4.0",
+    "groups": [],
+    "num_resources": 2,
+    "organization": {
+      "description": "",
+      "created": "2017-01-24T16:55:06.551827",
+      "title": "Comerç",
+      "name": "comerc",
+      "is_organization": true,
+      "state": "active",
+      "image_url": "bcn-icon-comer",
+      "revision_id": "48d3401c-5a90-4b96-8fab-034167a29b67",
+      "type": "organization",
+      "id": "e26a5a6c-3f34-4078-84ad-ad9141c2d23a",
+      "approval_status": "approved"
+    },
+    "name": "mercats-municipals",
+    "url": "http://www.barcelona.cat/comerc",
+    "notes": "List and location of the municipal markets of the city of Barcelona",
+    "owner_org": "e26a5a6c-3f34-4078-84ad-ad9141c2d23a",
+    "load_type": "link_extern",
+    "qa": {
+      "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3.",
+      "updated": "2026-10-12T04:43:12.402390",
+      "openness_score": 3
+    },
+    "tag": "Mercats,Mercats municipals,Mercats i centres comercials,Plànol BCN",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "historical": "No",
+    "title": "Municipal markets in the city of Barcelona",
+    "revision_id": "34ebc961-2ec4-47ca-bfe8-98cef4dfb71d",
+    "extras": [
+      {
+        "key": "*00.",
+        "value": "__ESTRUCTURA RECURS FORMAT .CSV__"
+      },
+      {
+        "key": "*01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[ Miradors a la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/np-nasia-miradors)__"
+      },
+      {
+        "key": "00.",
+        "value": "__ESTRUCTURA RECURS EN FORMAT .JSON__"
+      },
+      {
+        "key": "01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[LLista d'esdeveniments diaris de la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/agenda-diaria)__  "
+      }
+    ]
+  }
+}
