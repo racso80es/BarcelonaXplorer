@@ -28,6 +28,7 @@ export type {
   VectorStorePingResult,
   VectorDeleteFilter,
   VectorSearchOptions,
+  VectorListOptions,
 } from './vector-store.port';
 
 export type {

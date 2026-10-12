@@ -83,6 +83,7 @@ describe('LanceDbContextRetrievalAdapter', () => {
         },
       ] as VectorSearchResult[]),
       getByIds: vi.fn(),
+      list: vi.fn().mockResolvedValue([]),
       delete: vi.fn(),
     };
   });

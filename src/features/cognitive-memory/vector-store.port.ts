@@ -31,6 +31,11 @@ export interface VectorSearchOptions {
   readonly where?: string;
 }
 
+export interface VectorListOptions {
+  readonly limit?: number;
+  readonly offset?: number;
+}
+
 export interface IVectorStorePort {
   /**
    * Inserta o actualiza un lote de documentos vectoriales en la tabla indicada.
@@ -51,6 +56,11 @@ export interface IVectorStorePort {
    * Recupera documentos existentes por su identificador primario para deduplicación térmica.
    */
   getByIds(tableName: string, ids: string[]): Promise<VectorDocument[]>;
+
+  /**
+   * Listado paginado secuencial de documentos vectoriales sin cálculo de similitud.
+   */
+  list(tableName: string, options?: VectorListOptions): Promise<VectorDocument[]>;
 
   /**
    * Poda y eliminación higiénica de vectores según predicado SQL o lista de identificadores.

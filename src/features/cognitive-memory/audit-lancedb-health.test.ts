@@ -20,6 +20,7 @@ describe('AuditLanceDbHealthUseCase', () => {
       upsert: vi.fn(),
       search: vi.fn(),
       getByIds: vi.fn(),
+      list: vi.fn().mockResolvedValue([]),
       delete: vi.fn(),
       tableExists: vi.fn(),
       ping: vi.fn().mockResolvedValue({

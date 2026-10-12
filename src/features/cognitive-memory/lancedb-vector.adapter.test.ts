@@ -222,5 +222,26 @@ describe('LanceDbVectorAdapter', () => {
     expect(remaining).toHaveLength(1);
     expect(remaining[0].id).toBe('exp-future');
   });
+
+  it('debe listar documentos de forma paginada con list (sin búsqueda vectorial)', async () => {
+    const listDocs = [
+      { id: 'page-1', vector: [0.1, 0.2, 0.3], text: 'Página 1', metadata: { page: 1 } },
+      { id: 'page-2', vector: [0.2, 0.3, 0.4], text: 'Página 2', metadata: { page: 2 } },
+      { id: 'page-3', vector: [0.3, 0.4, 0.5], text: 'Página 3', metadata: { page: 3 } },
+    ];
+    await adapter.upsert('paginated_list_test', listDocs);
+
+    // Listar primera página (limit: 2, offset: 0)
+    const page1 = await adapter.list('paginated_list_test', { limit: 2, offset: 0 });
+    expect(page1).toHaveLength(2);
+
+    // Listar segunda página (limit: 2, offset: 2)
+    const page2 = await adapter.list('paginated_list_test', { limit: 2, offset: 2 });
+    expect(page2).toHaveLength(1);
+
+    // Tabla inexistente retorna array vacío
+    const empty = await adapter.list('non_existent_table', { limit: 10 });
+    expect(empty).toEqual([]);
+  });
 });
 

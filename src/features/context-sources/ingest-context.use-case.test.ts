@@ -66,6 +66,7 @@ describe('IngestContextUseCase', () => {
       upsert: vi.fn().mockResolvedValue(undefined),
       search: vi.fn().mockResolvedValue([]),
       getByIds: vi.fn().mockResolvedValue([]),
+      list: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(undefined),
       tableExists: vi.fn().mockResolvedValue(true),
       ping: vi.fn().mockResolvedValue({ ok: true, latencyMs: 1, path: '/tmp', tableCount: 1 }),

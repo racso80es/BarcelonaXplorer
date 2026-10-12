@@ -6,6 +6,7 @@ import type {
   VectorStorePingResult,
   VectorDeleteFilter,
   VectorSearchOptions,
+  VectorListOptions,
 } from './vector-store.port';
 import { getLanceDbConnection, resolveLanceDbUri } from './lancedb-client';
 import * as lancedb from '@lancedb/lancedb';
@@ -135,6 +136,40 @@ export class LanceDbVectorAdapter implements IVectorStorePort {
     const table = await db.openTable(tableName);
     const escaped = ids.map((id) => `'${id.replace(/'/g, "''")}'`).join(', ');
     const rows = await table.query().where(`id IN (${escaped})`).toArray();
+
+    return rows.map((row) => {
+      let parsedMetadata: Record<string, unknown> = {};
+      try {
+        if (typeof row.metadata === 'string') {
+          parsedMetadata = JSON.parse(row.metadata);
+        } else if (typeof row.metadata === 'object' && row.metadata !== null) {
+          parsedMetadata = row.metadata as Record<string, unknown>;
+        }
+      } catch {
+        parsedMetadata = {};
+      }
+
+      return {
+        id: String(row.id),
+        vector: Array.from(row.vector as ArrayLike<number>),
+        text: String(row.text ?? ''),
+        metadata: parsedMetadata,
+      };
+    });
+  }
+
+  async list(tableName: string, options?: VectorListOptions): Promise<VectorDocument[]> {
+    const exists = await this.tableExists(tableName);
+    if (!exists) {
+      return [];
+    }
+
+    const limit = options?.limit ?? 500;
+    const offset = options?.offset ?? 0;
+
+    const db = await this.getDb();
+    const table = await db.openTable(tableName);
+    const rows = await table.query().limit(limit).offset(offset).toArray();
 
     return rows.map((row) => {
       let parsedMetadata: Record<string, unknown> = {};
