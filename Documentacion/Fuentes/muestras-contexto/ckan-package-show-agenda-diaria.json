@@ -1,0 +1,363 @@
+{
+  "help": "https://opendata-ajuntament.barcelona.cat/data/api/3/action/help_show?name=package_show",
+  "success": true,
+  "result": {
+    "notes_translated": {
+      "ca": "Agenda d'actes i activitats de la ciutat de Barcelona",
+      "en": "Agenda of events and activities of the city of Barcelona ",
+      "es": "Agenda de actos y actividades de la ciudad de Barcelona"
+    },
+    "geolocation": "Yes_with_map_view",
+    "code": "AGENDA_DIARIA",
+    "url_tornada": {
+      "ca": "http://guia.barcelona.cat/agenda",
+      "en": "http://guia.barcelona.cat/en/agenda/",
+      "es": "http://guia.barcelona.cat/es/agenda/"
+    },
+    "dataset_fields_description": "El recurs en format __.csv__ conté informació bàsica. El recurs en format __.json __conté informació ampliada.",
+    "fuente": "Ajuntament de Barcelona",
+    "private": false,
+    "num_tags": 3,
+    "api": "Yes",
+    "frequency": "DIARIA",
+    "id": "a25e60cd-3083-4252-9fce-81f733871cb1",
+    "title_translated": {
+      "ca": "Agenda d'actes i activitats de la ciutat de Barcelona",
+      "en": "Agenda of events and activities of the city of Barcelona ",
+      "es": "Agenda de actos y actividades de la ciudad de Barcelona"
+    },
+    "metadata_modified": "2024-06-27T06:24:44.733727",
+    "author": "Gerència d'Àrea Agenda 2030, Transició Digital i Esports",
+    "author_email": "",
+    "isopen": true,
+    "long_format": "No",
+    "state": "active",
+    "version": "",
+    "mar_od": "No",
+    "relationships_as_object": [],
+    "department": "Direcció de Serveis d'Informació i Atenció Ciutadana",
+    "creator_user_id": "50d6b44b-a141-4dc6-b663-5deb4ab0dd63",
+    "type": "dataset",
+    "resources": [
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "a25e60cd-3083-4252-9fce-81f733871cb1",
+        "datastore_active": true,
+        "id": "877ccf66-9106-4ae2-be51-95a9f6469e4c",
+        "size": "11930910",
+        "state": "active",
+        "api_access_number": 43879,
+        "api_access_number_absolute": 181431,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "CSV",
+        "downloads": 1722,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "hide_url": "Yes",
+        "file_volum": "middle",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_agenda-csv.csv",
+        "created": "2021-06-10T08:52:56.336421",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/a25e60cd-3083-4252-9fce-81f733871cb1/resource/877ccf66-9106-4ae2-be51-95a9f6469e4c/download",
+        "downloads_absolute": 8246,
+        "map_visualization_res": "data_explorer_map",
+        "qa": {
+          "updated": "2026-10-12T04:23:28.108303",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "CSV",
+          "created": "2021-06-11T02:04:32.452333",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3."
+        },
+        "last_modified": "2021-06-11T06:01:41",
+        "position": 0,
+        "revision_id": "dadb60a1-408b-46ff-8059-c8783dec9864",
+        "resource_type": null
+      },
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "a25e60cd-3083-4252-9fce-81f733871cb1",
+        "datastore_active": false,
+        "id": "da9e71de-0f8e-417d-928a-56380bfd0231",
+        "size": "207868228",
+        "state": "active",
+        "api_access_number": 611,
+        "api_access_number_absolute": 4200,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "JSON",
+        "downloads": 3928,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "hide_url": "Yes",
+        "file_volum": "big",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_agenda.json",
+        "created": "2021-03-24T13:50:03.052719",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/a25e60cd-3083-4252-9fce-81f733871cb1/resource/da9e71de-0f8e-417d-928a-56380bfd0231/download",
+        "downloads_absolute": 9213,
+        "map_visualization_res": "none",
+        "qa": {
+          "updated": "2026-10-12T04:23:28.118180",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "JSON",
+          "created": "2021-03-25T02:04:22.290803",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"json\" relates to format \"JSON\" and receives score: 3."
+        },
+        "last_modified": "2021-06-10T06:01:58",
+        "position": 1,
+        "revision_id": "dadb60a1-408b-46ff-8059-c8783dec9864",
+        "resource_type": null
+      }
+    ],
+    "token_required": "No",
+    "decalatgeNum": "N/A",
+    "tags": [
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Actes",
+        "id": "093181cb-6dcb-4006-9642-e6124dcf3b8c",
+        "name": "Actes"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Activitats",
+        "id": "f5450c90-cd45-41ac-b18d-d7e5d27357dd",
+        "name": "Activitats"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Agenda",
+        "id": "9a592892-f5f2-4f59-85c8-f82f39211bcc",
+        "name": "Agenda"
+      }
+    ],
+    "ODS_Principal_agenda_2030": "ODS 11: Ciutats i comunitats sostenibles",
+    "fecha_publicacion": "2012-12-03",
+    "ODS_Colateral2_agenda_2030": "N/A",
+    "ODS_Colateral1_agenda_2030": "N/A",
+    "license_id": "CC-BY-4.0",
+    "hide_url": "Yes",
+    "relationships_as_subject": [],
+    "license_title": "Creative Commons Attribution 4.0",
+    "groups": [],
+    "num_resources": 2,
+    "organization": {
+      "description": "",
+      "created": "2017-01-24T16:55:06.041910",
+      "title": "Cultura i oci",
+      "name": "cultura-i-oci",
+      "is_organization": true,
+      "state": "active",
+      "image_url": "bcn-icon-cultura",
+      "revision_id": "37761928-3e00-4708-9638-ba2d35f9ab9b",
+      "type": "organization",
+      "id": "b66c0300-8771-48ff-8618-cd5452ddb48a",
+      "approval_status": "approved"
+    },
+    "name": "agenda-diaria",
+    "url": "http://www.bcn.cat",
+    "notes": "Agenda of events and activities of the city of Barcelona ",
+    "owner_org": "b66c0300-8771-48ff-8618-cd5452ddb48a",
+    "load_type": "link_extern",
+    "qa": {
+      "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3.",
+      "updated": "2026-10-12T04:23:28.118180",
+      "openness_score": 3
+    },
+    "tag": "Agenda,Activitats,Actes",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "historical": "No",
+    "title": "Agenda of events and activities of the city of Barcelona ",
+    "revision_id": "0da96930-ec3b-4fcf-9522-703da12aaf87",
+    "extras": [
+      {
+        "key": "*00.",
+        "value": " __ESTRUCTURA RECURS FORMAT .CSV__"
+      },
+      {
+        "key": "*01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[ Miradors a la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/np-nasia-miradors)__"
+      },
+      {
+        "key": "00.",
+        "value": "__ESTRUCTURA RECURS EN FORMAT .JSON__"
+      },
+      {
+        "key": "01.register_id",
+        "value": "Codi identificador"
+      },
+      {
+        "key": "02.prefix",
+        "value": "Marc primari"
+      },
+      {
+        "key": "03.suffix",
+        "value": "Marc secundari"
+      },
+      {
+        "key": "04.name",
+        "value": "Nom"
+      },
+      {
+        "key": "05.created",
+        "value": "Data creació"
+      },
+      {
+        "key": "06.modified",
+        "value": "Data modificació"
+      },
+      {
+        "key": "07.status",
+        "value": "Identificador d'estat"
+      },
+      {
+        "key": "08.status_name",
+        "value": "Descripció d'estat"
+      },
+      {
+        "key": "09.core_type",
+        "value": "Identificador de tipus"
+      },
+      {
+        "key": "10.core_type_name",
+        "value": "Descripció del tipus"
+      },
+      {
+        "key": "11.body",
+        "value": "Descripció"
+      },
+      {
+        "key": "12.tickets_data",
+        "value": "Tipus d'entrada"
+      },
+      {
+        "key": "13.adresses",
+        "value": "adreces"
+      },
+      {
+        "key": "14.entity_types_data",
+        "value": "Tipus d'entitat"
+      },
+      {
+        "key": "15.attribute_categories",
+        "value": "Categoria d'atributs"
+      },
+      {
+        "key": "16.values",
+        "value": "atributs"
+      },
+      {
+        "key": "17.from_relationships",
+        "value": "Relacions (desde)"
+      },
+      {
+        "key": "18.to_relationships",
+        "value": "Relacions(cap)"
+      },
+      {
+        "key": "19.classifications_data",
+        "value": "Classificacions"
+      },
+      {
+        "key": "20.secondary_filters_data",
+        "value": "Arbres d'equivalència"
+      },
+      {
+        "key": "21.timetable",
+        "value": "Horaris"
+      },
+      {
+        "key": "22.image_data",
+        "value": "Imatge"
+      },
+      {
+        "key": "23.gallery_data",
+        "value": "Galeria d'imatges"
+      },
+      {
+        "key": "24.warnings",
+        "value": "Avisos"
+      },
+      {
+        "key": "25.geo_epgs_25831",
+        "value": "Geolocalització EGPS:25831"
+      },
+      {
+        "key": "26.geo_epgs_23031",
+        "value": "Geolocalització EGPS:23031"
+      },
+      {
+        "key": "27.geo_epgs_4326_latlon",
+        "value": "Geolocalització EGPS:4326"
+      },
+      {
+        "key": "28.is_section_of_data",
+        "value": "Institució"
+      },
+      {
+        "key": "29.sections_data",
+        "value": "Seccions"
+      },
+      {
+        "key": "30.start_date",
+        "value": "Data d'inici"
+      },
+      {
+        "key": "31.end_date",
+        "value": "Data de finalització"
+      },
+      {
+        "key": "32.estimated_dates",
+        "value": "Dates estimades"
+      },
+      {
+        "key": "33.languages_data",
+        "value": "Idiomes"
+      },
+      {
+        "key": "34.type",
+        "value": "identificador de tipus"
+      },
+      {
+        "key": "35.type_name",
+        "value": "Descripció de tipus"
+      },
+      {
+        "key": "36.period",
+        "value": "identificador de període"
+      },
+      {
+        "key": "37.periode_name",
+        "value": "Descripció de període"
+      },
+      {
+        "key": "38.event_status_name",
+        "value": "Situació"
+      },
+      {
+        "key": "39.event_status",
+        "value": "Descripció de la situació"
+      },
+      {
+        "key": "40.ical",
+        "value": "Ical"
+      }
+    ]
+  }
+}
