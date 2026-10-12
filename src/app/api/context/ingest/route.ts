@@ -13,6 +13,7 @@ import { RssContextAdapter } from '@/features/context-sources/adapters/rss-conte
 import { IcalContextAdapter } from '@/features/context-sources/adapters/ical-context.adapter';
 import { ApiRestContextAdapter } from '@/features/context-sources/adapters/api-rest-context.adapter';
 import { JsonLdContextAdapter } from '@/features/context-sources/adapters/json-ld.adapter';
+import { CkanDatastoreContextAdapter } from '@/features/context-sources/adapters/ckan-datastore-context.adapter';
 
 export const runtime = 'nodejs';
 
@@ -23,6 +24,7 @@ export const defaultContextAdapters: ContextAdapterRegistry = {
   ICAL: new IcalContextAdapter(),
   API_REST: new ApiRestContextAdapter(),
   JSON_LD: new JsonLdContextAdapter(),
+  CKAN_DATASTORE: new CkanDatastoreContextAdapter(),
 };
 
 export function createIngestUseCase(
