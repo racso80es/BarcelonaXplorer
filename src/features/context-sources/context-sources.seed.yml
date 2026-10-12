@@ -192,3 +192,33 @@ sources:
         tags:
           - "addresses_district_name"
 
+  # Fuente B5: Espais Verds, Parcs i Jardins de Barcelona (CKAN Datastore Minado)
+  - sourceTag: "bcn-espais-verds"
+    displayName: "Ajuntament de Barcelona - Espais Verds, Parcs i Jardins CKAN"
+    endpoint: "https://opendata-ajuntament.barcelona.cat/data/api/3/action"
+    type: "CKAN_DATASTORE"
+    category: "POI"
+    status: "PENDING_APPROVAL"
+    proposedBy: "HUMAN"
+    extraction:
+      strategy: "CKAN_DATASTORE"
+      dataset: "culturailleure-parcsjardins"
+      resourceSelector:
+        format: "CSV"
+        datastoreActive: true
+      pageSize: 50
+      maxRecords: 100
+      timeoutMs: 5000
+      groupBy: "register_id"
+      fieldMap:
+        externalId: "register_id"
+        title: "name"
+        summary:
+          - "addresses_road_name"
+          - "addresses_neighborhood_name"
+        locationName: "name"
+        lat: "geo_epgs_4326_lat"
+        lng: "geo_epgs_4326_lon"
+        tags:
+          - "addresses_district_name"
+

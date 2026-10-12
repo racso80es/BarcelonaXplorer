@@ -1,0 +1,213 @@
+{
+  "help": "https://opendata-ajuntament.barcelona.cat/data/api/3/action/help_show?name=package_show",
+  "success": true,
+  "result": {
+    "notes_translated": {
+      "ca": "Llistat dels parcs, jardins i interiors d'illa de la ciutat de Barcelona.",
+      "en": "List of the parks, gardens and island interiors of the city of Barcelona.",
+      "es": "Listado de los parques, jardines e interiores de manzana de la ciudad de Barcelona.\r\n\r\n"
+    },
+    "geolocation": "Yes_with_map_view",
+    "code": "culturailleure-parcsjardins",
+    "url_tornada": {
+      "ca": "https://w33.bcn.cat/planolBCN/ca",
+      "en": "https://w33.bcn.cat/planolBCN/en",
+      "es": "https://w33.bcn.cat/planolBCN/es"
+    },
+    "dataset_fields_description": "",
+    "fuente": "Ajuntament de Barcelona",
+    "private": false,
+    "num_tags": 4,
+    "api": "Yes",
+    "frequency": "SETMANAL",
+    "id": "5d43ed16-f93a-442f-8853-4bf2191b2d39",
+    "title_translated": {
+      "ca": "Parcs i jardins de la ciutat de Barcelona",
+      "en": "Parks and gardens in the city of Barcelona",
+      "es": "Parques y jardines de la ciudad de Barcelona"
+    },
+    "metadata_modified": "2023-10-31T08:04:04.371426",
+    "author": "Gerència d'Àrea Agenda 2030, Transició Digital i Esports",
+    "author_email": null,
+    "isopen": true,
+    "long_format": "No",
+    "state": "active",
+    "version": "",
+    "mar_od": "No",
+    "relationships_as_object": [],
+    "department": "Direcció de Serveis d'Informació i Atenció Ciutadana",
+    "creator_user_id": "f4b16b79-1c06-43ee-a5e9-b3df1316fcad",
+    "type": "dataset",
+    "resources": [
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "5d43ed16-f93a-442f-8853-4bf2191b2d39",
+        "datastore_active": true,
+        "id": "b64d32a8-aea5-47a8-9826-479b211f5d46",
+        "size": "979296",
+        "state": "active",
+        "api_access_number": 1308,
+        "api_access_number_absolute": 2208,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "CSV",
+        "downloads": 2116,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "column_types": "",
+        "hide_url": "Yes",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_cultura_parcs-i-jardins.csv",
+        "created": "2021-03-25T17:42:05.692611",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/5d43ed16-f93a-442f-8853-4bf2191b2d39/resource/b64d32a8-aea5-47a8-9826-479b211f5d46/download",
+        "downloads_absolute": 6021,
+        "map_visualization_res": "data_explorer_map",
+        "qa": {
+          "updated": "2026-10-12T04:25:04.295869",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "CSV",
+          "created": "2021-03-26T02:05:40.493021",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3."
+        },
+        "last_modified": "2023-10-31T09:03:44.911611",
+        "position": 0,
+        "revision_id": "446be234-e757-4494-87bb-dec6f3ead933",
+        "resource_type": null
+      },
+      {
+        "cache_last_updated": null,
+        "token_type": "",
+        "package_id": "5d43ed16-f93a-442f-8853-4bf2191b2d39",
+        "datastore_active": false,
+        "id": "b42797a8-3be7-4504-ad7c-12174de222de",
+        "size": "13513414",
+        "state": "active",
+        "api_access_number": 5,
+        "api_access_number_absolute": 11,
+        "token_required": "No",
+        "hash": "",
+        "description": "",
+        "format": "JSON",
+        "downloads": 1689,
+        "mimetype_inner": null,
+        "url_type": null,
+        "token_provider": "",
+        "hide_url": "Yes",
+        "mimetype": null,
+        "cache_url": null,
+        "name": "opendatabcn_cultura_parcs-i-jardins-js.json",
+        "created": "2021-06-03T14:00:57.362525",
+        "url": "https://opendata-ajuntament.barcelona.cat/data/dataset/5d43ed16-f93a-442f-8853-4bf2191b2d39/resource/b42797a8-3be7-4504-ad7c-12174de222de/download",
+        "downloads_absolute": 2334,
+        "map_visualization_res": "none",
+        "qa": {
+          "updated": "2026-10-12T04:25:05.421706",
+          "openness_score": 3,
+          "archival_timestamp": null,
+          "format": "JSON",
+          "created": "2021-06-04T02:05:45.753031",
+          "resource_timestamp": null,
+          "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"json\" relates to format \"JSON\" and receives score: 3."
+        },
+        "last_modified": "2023-10-31T09:04:04.335406",
+        "position": 1,
+        "revision_id": "446be234-e757-4494-87bb-dec6f3ead933",
+        "resource_type": null
+      }
+    ],
+    "token_required": "No",
+    "decalatgeNum": "N/A",
+    "tags": [
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Jardins",
+        "id": "aeb2b2b2-6ce0-41ed-a67a-9931f568459a",
+        "name": "Jardins"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Lleure",
+        "id": "589740ce-7a48-4ec5-8bcf-db19305c8fa3",
+        "name": "Lleure"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Parcs",
+        "id": "37620763-84ad-4c99-b377-3a4662890eba",
+        "name": "Parcs"
+      },
+      {
+        "vocabulary_id": null,
+        "state": "active",
+        "display_name": "Plànol BCN",
+        "id": "f5a5a7bb-56eb-4380-9e36-18c473662f33",
+        "name": "Plànol BCN"
+      }
+    ],
+    "ODS_Principal_agenda_2030": "ODS 11: Ciutats i comunitats sostenibles",
+    "fecha_publicacion": "2020-02-17",
+    "ODS_Colateral2_agenda_2030": "N/A",
+    "ODS_Colateral1_agenda_2030": "N/A",
+    "license_id": "CC-BY-4.0",
+    "hide_url": "Yes",
+    "relationships_as_subject": [],
+    "license_title": "Creative Commons Attribution 4.0",
+    "groups": [],
+    "num_resources": 2,
+    "organization": {
+      "description": "",
+      "created": "2017-01-24T16:55:06.174823",
+      "title": "Medi ambient",
+      "name": "medi-ambient",
+      "is_organization": true,
+      "state": "active",
+      "image_url": "bcn-icon-medi-ambient",
+      "revision_id": "1a603339-4fe4-44b9-ac60-13395cfc79a0",
+      "type": "organization",
+      "id": "c711e03a-e97d-4572-917e-7ca747ae541d",
+      "approval_status": "approved"
+    },
+    "name": "culturailleure-parcsjardins",
+    "url": null,
+    "notes": "List of the parks, gardens and island interiors of the city of Barcelona.",
+    "owner_org": "c711e03a-e97d-4572-917e-7ca747ae541d",
+    "load_type": "link_extern",
+    "qa": {
+      "openness_score_reason": "This file had not been downloaded at the time of scoring it. URL extension \"csv\" relates to format \"CSV\" and receives score: 3.",
+      "updated": "2026-10-12T04:25:05.421706",
+      "openness_score": 3
+    },
+    "tag": "Plànol BCN,Parcs,Jardins,Lleure",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "historical": "No",
+    "title": "Parks and gardens in the city of Barcelona",
+    "revision_id": "eebea891-b2a7-4539-86ca-1f5f8868e136",
+    "extras": [
+      {
+        "key": "*00.",
+        "value": "__ESTRUCTURA RECURS FORMAT .CSV__"
+      },
+      {
+        "key": "*01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[ Miradors a la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/np-nasia-miradors)__"
+      },
+      {
+        "key": "00.",
+        "value": "__ESTRUCTURA RECURS EN FORMAT .JSON__"
+      },
+      {
+        "key": "01.",
+        "value": "Consultar __'Definició de camps'__ al dataset __[LLista d'esdeveniments diaris de la ciutat de Barcelona](https://opendata-ajuntament.barcelona.cat/data/ca/dataset/agenda-diaria)__  "
+      }
+    ]
+  }
+}
