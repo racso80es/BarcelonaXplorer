@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { DataTable, ColumnDef } from '@/components/ui/data-table';
+import { DataTable, ColumnDef, dataTableTypography, dataTableLayout } from '@/components/ui/data-table';
 import {
   ContextSourceSnapshot,
   ContextSourceStatus,
@@ -74,21 +74,21 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
     switch (status) {
       case 'ACTIVE':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+          <span className={`inline-flex items-center gap-1 ${dataTableTypography.badgeText} font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
             ACTIVA
           </span>
         );
       case 'DEGRADED':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-300">
+          <span className={`inline-flex items-center gap-1 ${dataTableTypography.badgeText} font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-300`}>
             <AlertTriangle className="w-3 h-3 text-rose-600" />
             DEGRADADA
           </span>
         );
       case 'PENDING_APPROVAL':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+          <span className={`inline-flex items-center gap-1 ${dataTableTypography.badgeText} font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300`}>
             <ShieldAlert className="w-3 h-3 text-amber-600" />
             PENDIENTE
           </span>
@@ -96,7 +96,7 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
       case 'INACTIVE':
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-300">
+          <span className={`inline-flex items-center gap-1 ${dataTableTypography.badgeText} font-semibold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-300`}>
             INACTIVA
           </span>
         );
@@ -114,14 +114,14 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
             <p className="text-xs font-semibold text-content-primary flex items-center gap-1.5">
               <span>{item.displayName}</span>
               {item.proposedBy === 'ARGOS' && (
-                <span className="text-[10px] font-mono px-1 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                <span className="text-xs font-mono px-1 rounded bg-purple-100 text-purple-800 border border-purple-200">
                   ARGOS
                 </span>
               )}
             </p>
-            <p className="text-[11px] font-mono text-content-secondary mt-0.5">{item.sourceTag}</p>
+            <p className="text-xs font-mono text-content-secondary mt-0.5">{item.sourceTag}</p>
             {item.supersedesSourceTag && (
-              <p className="text-[10px] font-mono text-zinc-500 mt-0.5">
+              <p className="text-xs font-mono text-zinc-500 mt-0.5">
                 Sustituye a: <span className="font-semibold">{item.supersedesSourceTag}</span>
               </p>
             )}
@@ -149,12 +149,12 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
         header: 'Endpoint / URI',
         sortable: true,
         cell: (item) => (
-          <div className="max-w-xs flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <a
               href={item.endpoint}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-mono text-emerald-700 hover:text-emerald-900 truncate underline"
+              className={`text-xs font-mono text-emerald-700 hover:text-emerald-900 underline ${dataTableLayout.semanticContent}`}
               title={item.endpoint}
             >
               {item.endpoint}
@@ -162,6 +162,7 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
             <ExternalLink className="w-3 h-3 text-zinc-400 shrink-0" />
           </div>
         ),
+        className: dataTableLayout.semanticColumn,
       },
       {
         key: 'failedAttempts',
@@ -184,7 +185,7 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
         cell: (item) => {
           if (item.lastError) {
             return (
-              <p className="text-[11px] text-rose-700 font-mono line-clamp-2 max-w-xs" title={item.lastError}>
+              <p className={`text-xs text-rose-700 font-mono ${dataTableLayout.semanticContent}`} title={item.lastError}>
                 {item.lastError}
               </p>
             );
@@ -192,13 +193,14 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
           if (item.lastSuccessAt) {
             const d = new Date(item.lastSuccessAt);
             return (
-              <p className="text-[11px] text-zinc-500 font-mono">
+              <p className="text-xs text-zinc-500 font-mono">
                 Éxito: {d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </p>
             );
           }
           return <span className="text-xs text-content-meta font-mono">Sin historial</span>;
         },
+        className: dataTableLayout.semanticColumn,
       },
       {
         key: 'actions',
@@ -326,7 +328,7 @@ export function ContextSourcesTableClient({ sources }: ContextSourcesTableClient
               Actualiza la URI de conexión de la fuente ({editingSource.sourceTag}). Si la fuente estaba degradada, pasará a PENDING_APPROVAL para validación.
             </p>
             <div className="space-y-1">
-              <label className="text-[11px] font-mono text-content-meta">Nuevo Endpoint URL:</label>
+              <label className="text-xs font-mono text-content-meta">Nuevo Endpoint URL:</label>
               <input
                 type="url"
                 value={newEndpoint}

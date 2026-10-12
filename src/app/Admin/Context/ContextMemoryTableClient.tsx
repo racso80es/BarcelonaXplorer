@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { DataTable, ColumnDef } from '@/components/ui/data-table';
+import { DataTable, ColumnDef, dataTableTypography, dataTableLayout } from '@/components/ui/data-table';
 import { ContextMemoryEntryItem } from '@/features/context-sources/context-admin.service';
 import { Eye, X, Copy, Check, Calendar, Layers } from 'lucide-react';
 
@@ -48,7 +48,7 @@ export function ContextMemoryTableClient({
           };
           const badgeClass = colors[item.category] ?? 'bg-zinc-50 text-zinc-700 border-zinc-200';
           return (
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${badgeClass}`}>
+            <span className={`${dataTableTypography.badgeText} font-semibold px-2 py-0.5 rounded-full border ${badgeClass}`}>
               {item.category}
             </span>
           );
@@ -59,11 +59,12 @@ export function ContextMemoryTableClient({
         header: 'Título / Resumen',
         sortable: true,
         cell: (item) => (
-          <div className="max-w-md">
+          <div>
             <p className="text-xs font-semibold text-content-primary line-clamp-1">{item.title}</p>
-            <p className="text-[11px] text-content-secondary line-clamp-2 mt-0.5">{item.summary}</p>
+            <p className={`${dataTableLayout.semanticContent} ${dataTableTypography.badgeText} text-content-secondary mt-0.5`}>{item.summary}</p>
           </div>
         ),
+        className: dataTableLayout.semanticColumn,
       },
       {
         key: 'startsAt',
@@ -89,7 +90,7 @@ export function ContextMemoryTableClient({
         cell: (item) => {
           const d = new Date(item.expiresAt);
           return (
-            <span className="text-[11px] font-mono text-content-meta">
+            <span className="text-xs font-mono text-content-meta">
               {d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })}
             </span>
           );
@@ -163,16 +164,16 @@ export function ContextMemoryTableClient({
               </div>
               <div className="relative">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-[11px] font-semibold text-content-primary">Payload Completo (JSON)</span>
+                  <span className="text-xs font-semibold text-content-primary">Payload Completo (JSON)</span>
                   <button
                     onClick={() => handleCopyJson(selectedEntry.rawMetadata)}
-                    className="inline-flex items-center gap-1 text-[11px] text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-2 py-0.5 rounded transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-2 py-0.5 rounded transition-colors"
                   >
                     {copiedJson ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                     <span>{copiedJson ? 'Copiado' : 'Copiar JSON'}</span>
                   </button>
                 </div>
-                <pre className="p-3 bg-zinc-900 text-zinc-100 rounded-lg overflow-x-auto text-[11px] leading-relaxed max-h-80">
+                <pre className="p-3 bg-zinc-900 text-zinc-100 rounded-lg overflow-x-auto text-xs leading-relaxed max-h-80">
                   {JSON.stringify(selectedEntry.rawMetadata, null, 2)}
                 </pre>
               </div>
