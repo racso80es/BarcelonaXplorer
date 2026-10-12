@@ -77,6 +77,104 @@ describe('ContextAdminService', () => {
     expect(envelope.result?.endpoint).toBe('https://test.bcn/events-corregido');
   });
 
+  describe('Aduana de APPROVE para CKAN_DATASTORE sin extracción (PBI-CTX-028)', () => {
+    const ckanSourceNoExtraction: ContextSourceSnapshot = {
+      id: 'src-ckan-1',
+      sourceTag: 'bcn-ckan-argos',
+      displayName: 'Propuesta CKAN Argos',
+      endpoint: 'https://opendata-ajuntament.barcelona.cat/data/api/3/action/package_show?id=agenda',
+      type: 'CKAN_DATASTORE',
+      category: 'EVENT',
+      status: 'PENDING_APPROVAL',
+      failedAttempts: 0,
+      proposedBy: 'ARGOS',
+    };
+
+    const validCkanExtraction = {
+      strategy: 'CKAN_DATASTORE' as const,
+      dataset: 'culturailleure-parcsjardins',
+      resourceSelector: {
+        format: 'CSV' as const,
+        datastoreActive: true,
+      },
+      fieldMap: {
+        externalId: 'register_id',
+        title: 'name',
+        summary: 'institution_name',
+      },
+      pageSize: 100,
+      maxRecords: 1000,
+      timeoutMs: 10000,
+    };
+
+    it('CA-1: rechaza APPROVE con 422 si extractionConfig es ausente o null sin llamar a save', async () => {
+      vi.mocked(mockSourceRepo.findAll).mockResolvedValue([ckanSourceNoExtraction]);
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const envelope = await service.transitionSource('src-ckan-1', 'APPROVE', 'HUMAN');
+
+      expect(envelope.success).toBe(false);
+      expect(envelope.exitCode).toBe(422);
+      expect(envelope.errors?.[0]).toContain('requiere una configuración de extracción válida');
+      expect(mockSourceRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('CA-2: rechaza APPROVE con 422 si extractionConfig no pasa CkanDatastoreExtractionConfigSchema', async () => {
+      const ckanSourceInvalidExtraction: ContextSourceSnapshot = {
+        ...ckanSourceNoExtraction,
+        // Configuración inválida (falta dataset y fieldMap)
+        extractionConfig: {
+          strategy: 'CKAN_DATASTORE',
+          pageSize: 50,
+        } as unknown as ContextSourceSnapshot['extractionConfig'],
+      };
+      vi.mocked(mockSourceRepo.findAll).mockResolvedValue([ckanSourceInvalidExtraction]);
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const envelope = await service.transitionSource('src-ckan-1', 'APPROVE', 'HUMAN');
+
+      expect(envelope.success).toBe(false);
+      expect(envelope.exitCode).toBe(422);
+      expect(mockSourceRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('CA-3: aprueba y llama a save cuando extractionConfig es válido', async () => {
+      const ckanSourceValidExtraction: ContextSourceSnapshot = {
+        ...ckanSourceNoExtraction,
+        extractionConfig: validCkanExtraction,
+      };
+      vi.mocked(mockSourceRepo.findAll).mockResolvedValue([ckanSourceValidExtraction]);
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const envelope = await service.transitionSource('src-ckan-1', 'APPROVE', 'HUMAN');
+
+      expect(envelope.success).toBe(true);
+      expect(envelope.result?.status).toBe('ACTIVE');
+      expect(mockSourceRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'src-ckan-1',
+          status: 'ACTIVE',
+        })
+      );
+    });
+
+    it('CA-4: permite REJECT de un CKAN_DATASTORE sin extracción pasando a INACTIVE', async () => {
+      vi.mocked(mockSourceRepo.findAll).mockResolvedValue([ckanSourceNoExtraction]);
+
+      const service = new ContextAdminService(mockSourceRepo);
+      const envelope = await service.transitionSource('src-ckan-1', 'REJECT', 'HUMAN');
+
+      expect(envelope.success).toBe(true);
+      expect(envelope.result?.status).toBe('INACTIVE');
+      expect(mockSourceRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'src-ckan-1',
+          status: 'INACTIVE',
+        })
+      );
+    });
+  });
+
   describe('listMemoryEntries', () => {
     it('retorna lista vacía con isAvailable: true si context_memory no existe', async () => {
       const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');

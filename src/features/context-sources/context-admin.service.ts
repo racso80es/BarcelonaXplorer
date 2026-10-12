@@ -10,6 +10,7 @@ import {
   canTransition,
 } from './context-source-state-machine';
 import {
+  CkanDatastoreExtractionConfigSchema,
   ContextSourceSnapshot,
   StateMachineActor,
   StateMachineEvent,
@@ -110,6 +111,19 @@ export class ContextAdminService {
         422,
         'Violación de la máquina de estados'
       );
+    }
+
+    if (event === 'APPROVE' && source.type === 'CKAN_DATASTORE') {
+      const extractionResult = CkanDatastoreExtractionConfigSchema.safeParse(source.extractionConfig);
+      if (!extractionResult.success) {
+        return createErrorEnvelope(
+          [
+            `Aduana de aprobación: la fuente CKAN_DATASTORE '${source.sourceTag}' requiere una configuración de extracción válida para ser aprobada.`,
+          ],
+          422,
+          'Extracción CKAN ausente o inválida'
+        );
+      }
     }
 
     try {
