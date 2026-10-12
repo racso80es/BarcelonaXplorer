@@ -7,6 +7,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
+import { dataTableTypography, dataTableLayout } from './typography';
 
 interface DataTablePaginationProps {
   currentPage: number;
@@ -34,16 +35,16 @@ export function DataTablePagination({
   const canNext = currentPage < totalPages;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-surface-subtle/40 border-t border-layout-divider text-xs font-mono text-content-meta select-none">
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-surface-subtle/40 border-t border-layout-divider ${dataTableTypography.chromeText} text-content-meta select-none`}>
       {/* Selector de densidad y rango */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap justify-center items-center gap-4">
         <div className="flex items-center gap-2">
           <span>Filas por página:</span>
           <select
             aria-label="Seleccionar filas por página"
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="bg-surface-container border border-layout-divider text-content-primary rounded px-2 py-1 focus:outline-none focus:border-emerald-500/80 cursor-pointer shadow-xs"
+            className={`bg-surface-container border border-layout-divider text-content-primary rounded px-2.5 py-1 ${dataTableLayout.touchControl} focus:outline-none focus:border-emerald-500/80 cursor-pointer shadow-xs`}
           >
             {pageSizeOptions.map((option) => (
               <option key={option} value={option}>
@@ -75,7 +76,7 @@ export function DataTablePagination({
             onClick={() => onPageChange(1)}
             disabled={!canPrev}
             aria-label="Primera página"
-            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
+            className={`${dataTableLayout.touchIconButton} flex items-center justify-center rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canPrev
                 ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
                 : 'text-zinc-300 opacity-40 cursor-not-allowed'
@@ -89,7 +90,7 @@ export function DataTablePagination({
             onClick={() => onPageChange(currentPage - 1)}
             disabled={!canPrev}
             aria-label="Página anterior"
-            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
+            className={`${dataTableLayout.touchIconButton} flex items-center justify-center rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canPrev
                 ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
                 : 'text-zinc-300 opacity-40 cursor-not-allowed'
@@ -103,7 +104,7 @@ export function DataTablePagination({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={!canNext}
             aria-label="Página siguiente"
-            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
+            className={`${dataTableLayout.touchIconButton} flex items-center justify-center rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canNext
                 ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
                 : 'text-zinc-300 opacity-40 cursor-not-allowed'
@@ -117,7 +118,7 @@ export function DataTablePagination({
             onClick={() => onPageChange(totalPages)}
             disabled={!canNext}
             aria-label="Última página"
-            className={`p-1.5 rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
+            className={`${dataTableLayout.touchIconButton} flex items-center justify-center rounded border border-layout-divider bg-surface-container transition-colors shadow-xs ${
               canNext
                 ? 'text-content-primary hover:text-emerald-700 hover:bg-zinc-50 cursor-pointer'
                 : 'text-zinc-300 opacity-40 cursor-not-allowed'

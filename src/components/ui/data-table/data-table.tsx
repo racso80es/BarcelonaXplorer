@@ -236,7 +236,7 @@ export function DataTable<T>({
       />
 
       {/* Contenedor Tabular con Scroll Horizontal */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain">
         <table className="w-full text-left border-collapse">
           <DataTableHeader
             columns={normalizedColumns}
