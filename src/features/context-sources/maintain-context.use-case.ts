@@ -29,6 +29,54 @@ export interface MaintainContextReport {
   durationMs: number;
 }
 
+interface ExplorationRule {
+  readonly matches: (normUri: string, parsedUrl: URL | null) => boolean;
+  readonly type: ContextSourceType;
+}
+
+const EXPLORATION_CLASSIFICATION_RULES: readonly ExplorationRule[] = [
+  {
+    matches: (normUri) => normUri.includes('.ics') || normUri.includes('ical'),
+    type: 'ICAL',
+  },
+  {
+    matches: (normUri, parsedUrl) =>
+      normUri.includes('socrata') || parsedUrl?.hostname === 'analisi.transparenciacatalunya.cat',
+    type: 'SOCRATA',
+  },
+  {
+    matches: (_normUri, parsedUrl) =>
+      parsedUrl?.hostname === 'opendata-ajuntament.barcelona.cat' &&
+      parsedUrl.pathname.includes('/api/3/action'),
+    type: 'CKAN_DATASTORE',
+  },
+  {
+    matches: (normUri) => normUri.includes('rss') || normUri.includes('feed'),
+    type: 'RSS',
+  },
+  {
+    matches: (normUri) => normUri.includes('sparql') || normUri.includes('wikidata'),
+    type: 'SPARQL',
+  },
+];
+
+export function classifyExploredEndpoint(normUri: string): ContextSourceType {
+  let parsedUrl: URL | null = null;
+  try {
+    parsedUrl = new URL(normUri);
+  } catch {
+    parsedUrl = null;
+  }
+
+  for (const rule of EXPLORATION_CLASSIFICATION_RULES) {
+    if (rule.matches(normUri, parsedUrl)) {
+      return rule.type;
+    }
+  }
+
+  return 'JSON_LD';
+}
+
 export class MaintainContextUseCase {
   constructor(
     private readonly sourceRepository: IContextSourceRepository,
@@ -229,19 +277,8 @@ export class MaintainContextUseCase {
             const normUri = uri.toLowerCase().replace(/\/+$/, '');
 
             if (!existingEndpoints.has(normUri)) {
-              // Deducción heurística del tipo de fuente
-              let detectedType: ContextSourceType = 'API_REST';
-              if (normUri.includes('socrata') || normUri.includes('opendata-ajuntament')) {
-                detectedType = 'SOCRATA';
-              } else if (normUri.includes('.ics') || normUri.includes('ical')) {
-                detectedType = 'ICAL';
-              } else if (normUri.includes('rss') || normUri.includes('feed')) {
-                detectedType = 'RSS';
-              } else if (normUri.includes('sparql') || normUri.includes('wikidata')) {
-                detectedType = 'SPARQL';
-              } else {
-                detectedType = 'JSON_LD';
-              }
+              // Matriz ordenada de deducción de tipo (Axioma III, PBI-CTX-027)
+              const detectedType = classifyExploredEndpoint(normUri);
 
               const baseTag = (gs.title || 'bcn-explora')
                 .toLowerCase()

@@ -4,7 +4,7 @@ import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { IaGatewayClient, UnsupportedCapabilityError } from '@/features/ai-engine/ia-gateway/ia-gateway.client';
 import { IContextSourceRepository } from './context-source.repository.port';
 import { ContextSourceSnapshot } from './context-source.types';
-import { MaintainContextUseCase } from './maintain-context.use-case';
+import { MaintainContextUseCase, classifyExploredEndpoint } from './maintain-context.use-case';
 
 describe('MaintainContextUseCase (Argos Sonda)', () => {
   let mockSourceRepo: IContextSourceRepository;
@@ -187,5 +187,135 @@ describe('MaintainContextUseCase (Argos Sonda)', () => {
     expect(envelope.result?.proposalsCreated).toBe(2);
     expect(envelope.result?.proposals).toHaveLength(2);
     expect(mockSourceRepo.create).toHaveBeenCalledTimes(2);
+  });
+
+  describe('Matriz de clasificación de Argos (PBI-CTX-027)', () => {
+    it('CA-1: asigna CKAN_DATASTORE a URLs con host Ajuntament y pathname /api/3/action', () => {
+      const type = classifyExploredEndpoint(
+        'https://opendata-ajuntament.barcelona.cat/data/api/3/action/package_show?id=agenda-cultural'
+      );
+      expect(type).toBe('CKAN_DATASTORE');
+    });
+
+    it('CA-2: asigna SOCRATA si el host es analisi.transparenciacatalunya.cat o contiene socrata', () => {
+      expect(
+        classifyExploredEndpoint('https://analisi.transparenciacatalunya.cat/resource/dataset-123.json')
+      ).toBe('SOCRATA');
+      expect(classifyExploredEndpoint('https://dadesobertes.gencat.cat/socrata/export')).toBe('SOCRATA');
+    });
+
+    it('CA-3: asigna ICAL si contiene .ics o ical; fila 1 tiene prioridad sobre socrata', () => {
+      expect(classifyExploredEndpoint('https://opendata-ajuntament.barcelona.cat/data/events.ics')).toBe(
+        'ICAL'
+      );
+      expect(classifyExploredEndpoint('https://opendata.bcn.cat/agenda-ical-export')).toBe('ICAL');
+      // Fila 1 (.ics) gana sobre fila 2 (socrata)
+      expect(classifyExploredEndpoint('https://analisi.transparenciacatalunya.cat/resource/agenda.ics')).toBe(
+        'ICAL'
+      );
+      expect(classifyExploredEndpoint('https://other.cat/socrata-export.ics')).toBe('ICAL');
+    });
+
+    it('CA-4: URL de descarga sin extensión en portal Ajuntament cae en JSON_LD', () => {
+      expect(
+        classifyExploredEndpoint(
+          'https://opendata-ajuntament.barcelona.cat/data/dataset/foo/resource/bar/download'
+        )
+      ).toBe('JSON_LD');
+    });
+
+    it('CA-6: asigna RSS para rss o feed, SPARQL para sparql o wikidata, y JSON_LD por defecto', () => {
+      expect(classifyExploredEndpoint('https://bcn.cat/noticies/rss')).toBe('RSS');
+      expect(classifyExploredEndpoint('https://bcn.cat/agenda/atom-feed')).toBe('RSS');
+      expect(classifyExploredEndpoint('https://query.wikidata.org/sparql')).toBe('SPARQL');
+      expect(classifyExploredEndpoint('https://bcn.cat/linked-data/wikidata-entity')).toBe('SPARQL');
+      expect(classifyExploredEndpoint('https://bcn.cat/events/generic-webpage')).toBe('JSON_LD');
+    });
+
+    it('resiste URLs inválidas evaluando heurísticas de cadena de forma segura', () => {
+      expect(classifyExploredEndpoint('cadena-sin-protocolo-con-socrata')).toBe('SOCRATA');
+      expect(classifyExploredEndpoint('cadena-sin-protocolo-ni-senales')).toBe('JSON_LD');
+    });
+
+    it('CA-1 (Integración): exploración crea propuesta CKAN_DATASTORE sin extractionConfig', async () => {
+      vi.mocked(mockSourceRepo.findByStatus).mockResolvedValue([]);
+      vi.mocked(mockIaGateway.generateWithGrounding).mockResolvedValue({
+        text: 'Exploración Ajuntament CKAN',
+        groundingSources: [
+          {
+            uri: 'https://opendata-ajuntament.barcelona.cat/data/api/3/action/package_show?id=agenda-cultural',
+            title: 'Agenda Cultural Open Data',
+          },
+        ],
+      });
+
+      const useCase = new MaintainContextUseCase(
+        mockSourceRepo,
+        mockIaGateway,
+        mockTelemetryRepo,
+        fetch,
+        { maxProposals: 1 }
+      );
+
+      const envelope = await useCase.execute();
+
+      expect(envelope.success).toBe(true);
+      expect(envelope.result?.proposalsCreated).toBe(1);
+      const proposal = envelope.result?.proposals[0];
+      expect(proposal?.type).toBe('CKAN_DATASTORE');
+      expect(proposal?.category).toBe('EVENT');
+
+      expect(mockSourceRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'CKAN_DATASTORE',
+          category: 'EVENT',
+          status: 'PENDING_APPROVAL',
+          proposedBy: 'ARGOS',
+          supersedesSourceTag: null,
+        })
+      );
+      const callArg = vi.mocked(mockSourceRepo.create).mock.calls[0][0];
+      expect(callArg.extractionConfig).toBeUndefined();
+    });
+
+    it('CA-5 (Integración): fuente DEGRADED de tipo ICAL conserva su tipo y categoría ante redirección a CKAN', async () => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url === 'https://bcn.cat/agenda-old') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            url: 'https://opendata-ajuntament.barcelona.cat/data/api/3/action/package_show?id=agenda-cultural',
+          });
+        }
+        if (url.includes('/robots.txt')) {
+          return Promise.resolve({ ok: true, status: 200 });
+        }
+        return Promise.resolve({ ok: false, status: 404 });
+      });
+
+      const useCase = new MaintainContextUseCase(
+        mockSourceRepo,
+        mockIaGateway,
+        mockTelemetryRepo,
+        mockFetch as unknown as typeof fetch,
+        { maxProposals: 1 }
+      );
+
+      const envelope = await useCase.execute();
+
+      expect(envelope.success).toBe(true);
+      expect(envelope.result?.proposalsCreated).toBe(1);
+      const proposal = envelope.result?.proposals[0];
+      // Conserva ICAL y EVENT de la fuente degradada original, no adopta CKAN_DATASTORE
+      expect(proposal?.type).toBe('ICAL');
+      expect(proposal?.category).toBe('EVENT');
+      expect(mockSourceRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ICAL',
+          category: 'EVENT',
+          supersedesSourceTag: degradedSource.sourceTag,
+        })
+      );
+    });
   });
 });
