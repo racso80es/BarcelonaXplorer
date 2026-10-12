@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe2, ShieldCheck, Activity, AlertTriangle } from 'lucide-react';
 import { ContextAdminService } from '@/features/context-sources/context-admin.service';
 import type { ContextSourceSnapshot } from '@/features/context-sources/context-source.types';
+import { diagnoseDbError } from '@/features/context-sources/db-error-diagnosis';
 import { ContextSourcesTableClient } from './ContextSourcesTableClient';
 
 export interface ContextSourcesCardProps {
@@ -38,7 +39,7 @@ export async function ContextSourcesCard({
     }
   } catch (error) {
     console.warn('[ContextSourcesCard] Error listando fuentes de contexto:', error);
-    dbError = error instanceof Error ? error.message : 'Error en la conexión a la base de datos de fuentes';
+    dbError = diagnoseDbError(error).message;
   }
 
   const activeCount = sources.filter((s) => s.status === 'ACTIVE').length;

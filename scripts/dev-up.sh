@@ -40,6 +40,30 @@ if ! docker ps --format '{{.Names}}' | grep -q "^bx-mysql-dev$"; then
   docker start bx-mysql-dev >/dev/null
 fi
 
+# Host y puerto desde DATABASE_URL (fallback 127.0.0.1:3306), sin imprimir credenciales
+DB_URL="$(grep -E '^DATABASE_URL=' "$ENV_FILE" | head -n1 | cut -d= -f2- | tr -d '"')"
+DB_HOSTPORT="${DB_URL##*@}"
+DB_HOSTPORT="${DB_HOSTPORT%%/*}"
+MYSQL_HOST="${DB_HOSTPORT%%:*}"
+MYSQL_PORT="${DB_HOSTPORT##*:}"
+[[ "$MYSQL_HOST" =~ ^[A-Za-z0-9._-]+$ ]] || MYSQL_HOST="127.0.0.1"
+[[ "$MYSQL_PORT" =~ ^[0-9]+$ ]] || MYSQL_PORT="3306"
+
+echo "==> Esperando socket MySQL (${MYSQL_HOST}:${MYSQL_PORT})..."
+MYSQL_READY=false
+for _ in $(seq 1 30); do
+  if (echo > "/dev/tcp/${MYSQL_HOST}/${MYSQL_PORT}") >/dev/null 2>&1; then
+    MYSQL_READY=true
+    break
+  fi
+  sleep 0.5
+done
+if [[ "$MYSQL_READY" != "true" ]]; then
+  echo "[ERROR] MySQL no abrió ${MYSQL_HOST}:${MYSQL_PORT} tras 15 segundos. Revisa: docker logs bx-mysql-dev" >&2
+  exit 1
+fi
+echo "==> MySQL listo para conexiones."
+
 # --- 2. Instancias previas de next dev de ESTE proyecto ----------------------
 # Next 16 aborta si detecta otro `next dev` en el mismo directorio.
 STALE_PIDS="$(pgrep -f "${PROJECT_DIR}/node_modules/.bin/next dev" || true)"

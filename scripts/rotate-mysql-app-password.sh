@@ -21,7 +21,9 @@ set +a
 : "${MYSQL_USER:?MYSQL_USER no definida}"
 : "${MYSQL_PASSWORD:?MYSQL_PASSWORD no definida}"
 
-docker exec barcelonaxplorer_mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e \
-  "ALTER USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}'; FLUSH PRIVILEGES;"
+export MYSQL_PWD="${MYSQL_ROOT_PASSWORD}"
+printf "ALTER USER '%s'@'%%' IDENTIFIED BY '%s'; FLUSH PRIVILEGES;\n" "${MYSQL_USER}" "${MYSQL_PASSWORD}" \
+  | docker exec -i -e MYSQL_PWD barcelonaxplorer_mysql mysql -uroot
+unset MYSQL_PWD
 
 echo "Contraseña de ${MYSQL_USER} actualizada en MySQL (sin imprimir el valor)."

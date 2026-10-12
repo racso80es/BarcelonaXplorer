@@ -352,6 +352,15 @@ cp src/.env.example src/.env.local
 
 ### 3. Prerrequisitos de Infraestructura Local
 - **Motor Docker:** Debe disponerse de un contenedor MySQL de desarrollo denominado `bx-mysql-dev`. Si no está iniciado, el lanzador lo activará automáticamente.
+  - *Aprovisionamiento seguro:* Utiliza el helper versionado `./scripts/db-dev.sh create` (que enlaza a `127.0.0.1:3306` y añade `--restart unless-stopped`).
+  - *Contenedor existente:* Para blindar un contenedor ya existente contra reinicios del daemon Docker (ej. actualizaciones de paquetes), aplica:
+    ```bash
+    docker update --restart unless-stopped bx-mysql-dev
+    ```
+- **Higiene de Terminal y Guardarraíl de Shell (Recomendado):** Para evitar registrar accidentalmente contraseñas en el historial de comandos, añade a `~/.bashrc`:
+  ```bash
+  HISTIGNORE='*MYSQL_*PASSWORD=*:*IDENTIFIED BY*:*mysql* -p?*:*MYSQL_PWD=*'
+  ```
 - **Node.js:** Versión >= 20.
 
 ### 4. Arranque Unificado con `scripts/dev-up.sh` (Recomendado)
@@ -361,7 +370,7 @@ BarcelonaXplorer desacopla el monolito web del microservicio IA Gateway. El scri
 ```
 El lanzador ejecuta de forma determinista:
 1. Comprobación y aduana de variables requeridas en `src/.env.local`.
-2. Aseguramiento del contenedor `bx-mysql-dev`.
+2. Aseguramiento del contenedor `bx-mysql-dev` y espera activa determinista del socket TCP (`127.0.0.1:3306`).
 3. Cierre limpio de procesos zombi de `next dev` en el mismo proyecto.
 4. Compilación del microservicio `ia-gateway/` y arranque en segundo plano en el puerto `3001` (`http://127.0.0.1:3001`).
 5. Espera activa del endpoint de salud `GET http://127.0.0.1:3001/healthz`.
