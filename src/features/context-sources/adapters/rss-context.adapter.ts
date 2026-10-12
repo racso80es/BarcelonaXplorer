@@ -38,11 +38,25 @@ export class RssContextAdapter implements IContextSourceAdapter {
       const itemBlocks = rawXml.split(/<item[\s>]/i).slice(1);
 
       const extractTag = (xml: string, tag: string): string => {
-        const cdataRegex = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i');
+        const escapedTag = tag.replace(/[:]/g, '\\:');
+        // 1. CDATA con cierre limpio de ]]>
+        const cdataRegex = new RegExp(
+          `<${escapedTag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]>(?:\\s*<\\/${escapedTag}>)?`,
+          'i'
+        );
         const cdataMatch = xml.match(cdataRegex);
-        if (cdataMatch) return cdataMatch[1].trim();
+        if (cdataMatch && cdataMatch[1].trim().length > 0) return cdataMatch[1].trim();
 
-        const normalRegex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+        // 2. CDATA sin cerrar en EOF (feed truncado)
+        const unclosedCdataRegex = new RegExp(`<${escapedTag}[^>]*><!\\[CDATA\\[([\\s\\S]*)$`, 'i');
+        const unclosedMatch = xml.match(unclosedCdataRegex);
+        if (unclosedMatch && unclosedMatch[1].trim().length > 0) return unclosedMatch[1].trim();
+
+        // 3. Contenido normal sin CDATA
+        const normalRegex = new RegExp(
+          `<${escapedTag}[^>]*>([\\s\\S]*?)<\\/${escapedTag}>`,
+          'i'
+        );
         const normalMatch = xml.match(normalRegex);
         return normalMatch ? normalMatch[1].trim() : '';
       };
@@ -71,14 +85,25 @@ export class RssContextAdapter implements IContextSourceAdapter {
         const title = stripHtml(extractTag(itemXml, 'title'));
         const link = extractTag(itemXml, 'link');
         const guid = extractTag(itemXml, 'guid') || link;
+
+        // PBI-CTX-019 (CA-1): Priorizar content:encoded sobre description si tiene >= 10 chars
+        const rawContentEncoded = extractTag(itemXml, 'content:encoded');
+        const strippedContent = stripHtml(rawContentEncoded);
+
         const rawDesc = extractTag(itemXml, 'description');
         const strippedDesc = stripHtml(rawDesc);
-        const pubDateStr = extractTag(itemXml, 'pubDate');
 
-        const summary = (strippedDesc.length >= 10
-          ? strippedDesc
-          : `${title} - Actualitat i notícies de Barcelona.`
-        ).slice(0, 1200);
+        let summaryText = '';
+        if (strippedContent.length >= 10) {
+          summaryText = strippedContent;
+        } else if (strippedDesc.length >= 10) {
+          summaryText = strippedDesc;
+        } else {
+          summaryText = `${title} - Actualitat i notícies de Barcelona.`;
+        }
+
+        const summary = summaryText.slice(0, 1200);
+        const pubDateStr = extractTag(itemXml, 'pubDate');
 
         const pubDate = pubDateStr ? new Date(pubDateStr) : new Date();
         const startsAt = !isNaN(pubDate.getTime()) ? pubDate.toISOString() : new Date().toISOString();

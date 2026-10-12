@@ -27,7 +27,7 @@ describe('RssContextAdapter', () => {
     updatedAt: new Date(),
   };
 
-  it('debe procesar exitosamente la muestra real de Betevé RSS purgando HTML de las descripciones', async () => {
+  it('debe procesar exitosamente la muestra real de Betevé RSS usando content:encoded en el resumen (CA-1 & CA-2)', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -47,6 +47,39 @@ describe('RssContextAdapter', () => {
     expect(first.summary).not.toContain('<p>');
     expect(first.summary).not.toContain('<div>');
     expect(first.tags.length).toBeGreaterThan(0);
+
+    // CA-2: El resumen debe salir de content:encoded (no del extracto cortado con puntos suspensivos)
+    expect(first.summary).not.toContain('[&#8230;]');
+    expect(first.summary).not.toContain('[…]');
+    expect(first.summary).toContain('en què van morir 11 persones');
+  });
+
+  it('debe hacer fallback a description si content:encoded no está presente o tiene menos de 10 caracteres', async () => {
+    const rssWithoutEncoded = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>betevé</title>
+    <item>
+      <title>Noticia Breve de Barcelona</title>
+      <link>https://beteve.cat/noticia-breu</link>
+      <pubDate>Fri, 02 Oct 2026 12:00:00 +0000</pubDate>
+      <description><![CDATA[<p>Descripción válida de la noticia breve para comprobar fallback.</p>]]></description>
+    </item>
+  </channel>
+</rss>`;
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => rssWithoutEncoded,
+    });
+
+    const adapter = new RssContextAdapter(mockFetch as unknown as typeof fetch);
+    const result = await adapter.fetch(baseSource);
+
+    expect(result.success).toBe(true);
+    const entry = result.result![0];
+    expect(entry.summary).toBe('Descripción válida de la noticia breve para comprobar fallback.');
   });
 
   it('debe rechazar con error 422 si el contenido recibido no es un feed RSS', async () => {
