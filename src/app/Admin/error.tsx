@@ -27,7 +27,7 @@ export default function AdminErrorBoundary({
         Se ha detectado una interrupción en el enlace de datos o persistencia del Nodo 11. El perímetro permanece seguro.
       </p>
       {error.digest && (
-        <span className="inline-block text-[11px] font-mono px-2 py-1 bg-zinc-100 text-zinc-600 rounded border border-layout-divider">
+        <span className="inline-block text-xs font-mono px-2 py-1 bg-zinc-100 text-zinc-600 rounded border border-layout-divider">
           Firma: {error.digest}
         </span>
       )}

@@ -151,7 +151,7 @@ export default async function AdminDashboardPage() {
                   Sondas y Sensores del Sistema
                 </CardTitle>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                 6 Sensores
               </span>
             </CardHeader>
@@ -177,7 +177,7 @@ export default async function AdminDashboardPage() {
                   Logs del Sistema
                 </CardTitle>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-layout-divider">
+              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-layout-divider">
                 Logs
               </span>
             </CardHeader>

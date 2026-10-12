@@ -54,7 +54,7 @@ export function AdminSidebarRight({
             <span>SALA DE CONTROL</span>
           </div>
           <span
-            className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${
+            className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-full border ${
               isProductionNode
                 ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                 : 'bg-sky-100 text-sky-800 border-sky-200'
@@ -65,7 +65,7 @@ export function AdminSidebarRight({
         </div>
 
         <nav className="flex flex-row lg:flex-col gap-1 overflow-x-auto pb-1 lg:pb-0">
-          <p className="hidden lg:block text-[11px] font-mono uppercase tracking-wider text-content-meta mb-2 px-3">
+          <p className="hidden lg:block text-xs font-mono uppercase tracking-wider text-content-meta mb-2 px-3">
             Navegación Táctica
           </p>
           {NAV_ITEMS.map((item) => {
@@ -86,7 +86,7 @@ export function AdminSidebarRight({
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-200 text-zinc-700">
+                  <span className="hidden sm:inline-block text-xs font-mono px-1.5 py-0.2 rounded bg-zinc-200 text-zinc-700">
                     {item.badge}
                   </span>
                 )}
