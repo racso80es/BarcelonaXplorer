@@ -1,8 +1,63 @@
+import { z } from 'zod';
 import { createErrorEnvelope, createSuccessEnvelope, OperationEnvelope } from '@/shared/operation-envelope';
-import { calculateContextContentHash, ContextEntry, ContextEntrySchema } from '../context-entry.schema';
+import {
+  calculateContextContentHash,
+  ContextEntry,
+  ContextEntryCategory,
+  ContextEntryCategorySchema,
+  ContextEntrySchema,
+} from '../context-entry.schema';
 import { IContextSourceAdapter } from '../context-source-adapter.port';
 import { ContextSourceSnapshot, ContextSourceType } from '../context-source.types';
 
+const RestItemSchema = z
+  .object({
+    id: z.union([z.string(), z.number()]).optional(),
+    title: z.string().optional(),
+    name: z.string().optional(),
+    summary: z.string().optional(),
+    description: z.string().optional(),
+    startsAt: z.string().optional(),
+    endsAt: z.string().optional(),
+    expiresAt: z.string().optional(),
+    url: z.string().optional(),
+    locationName: z.string().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    tags: z.array(z.string()).optional(),
+    price: z.string().optional(),
+  })
+  .passthrough();
+
+const RestPayloadSchema = z.union([
+  z.array(RestItemSchema),
+  z.object({
+    data: z.array(RestItemSchema),
+  }),
+  z.object({
+    items: z.array(RestItemSchema),
+  }),
+]);
+
+function normalizeIsoDateTime(raw?: string): string | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return `${trimmed}T00:00:00.000Z`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(trimmed)) {
+    return `${trimmed}Z`;
+  }
+  const parsed = new Date(trimmed);
+  if (isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
+}
+
+/**
+ * Adaptador genérico para fuentes API REST (PBI-CTX-018).
+ * Desacoplado de CKAN y validado estrictamente mediante esquemas Zod (Filtro C - Sin LLM).
+ */
 export class ApiRestContextAdapter implements IContextSourceAdapter {
   readonly type: ContextSourceType = 'API_REST';
 
@@ -25,102 +80,101 @@ export class ApiRestContextAdapter implements IContextSourceAdapter {
         );
       }
 
-      const rawJson = (await response.json()) as unknown;
-      if (!rawJson || typeof rawJson !== 'object') {
+      const rawJson = await response.json();
+      const parsedPayload = RestPayloadSchema.safeParse(rawJson);
+
+      if (!parsedPayload.success) {
         return createErrorEnvelope(
-          ['El payload retornado por la API REST no es un objeto JSON válido'],
+          ['El payload retornado por la API REST no cumple el esquema estructural esperado'],
           422,
           'Payload estructural inválido'
         );
       }
 
-      const root = rawJson as Record<string, unknown>;
-      let items: Record<string, unknown>[] = [];
-
-      // Detección de CKAN package_search: { success: true, result: { results: [...] } }
-      if (root.success === true && root.result && typeof root.result === 'object') {
-        const resultObj = root.result as Record<string, unknown>;
-        if (Array.isArray(resultObj.results)) {
-          items = resultObj.results as Record<string, unknown>[];
-        }
-      } else if (Array.isArray(root)) {
-        items = root as Record<string, unknown>[];
-      } else if (Array.isArray(root.data)) {
-        items = root.data as Record<string, unknown>[];
+      let rawItems: z.infer<typeof RestItemSchema>[] = [];
+      if (Array.isArray(parsedPayload.data)) {
+        rawItems = parsedPayload.data;
+      } else if ('data' in parsedPayload.data) {
+        rawItems = parsedPayload.data.data;
+      } else if ('items' in parsedPayload.data) {
+        rawItems = parsedPayload.data.items;
       }
 
+      const parsedCategory = ContextEntryCategorySchema.safeParse(source.category);
+      const category: ContextEntryCategory = parsedCategory.success ? parsedCategory.data : 'EVENT';
+
       const validEntries: ContextEntry[] = [];
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + 30 * 86400000).toISOString(); // 30 días TTL
 
-      for (const item of items) {
-        if (!item || typeof item !== 'object') continue;
+      for (let i = 0; i < rawItems.length; i++) {
+        const item = rawItems[i];
+        const rawId = item.id !== undefined && item.id !== null ? String(item.id).trim() : `item-${i + 1}`;
+        const id = `${source.sourceTag}:${rawId}`;
 
-        const id = String(item.id ?? item.code ?? `item-${validEntries.length + 1}`);
+        const rawTitle = (item.title ?? item.name ?? '').trim();
+        if (rawTitle.length < 3) continue;
+        const title = rawTitle;
 
-        // Título traducido o directo
-        let title = '';
-        if (item.title_translated && typeof item.title_translated === 'object') {
-          const t = item.title_translated as Record<string, string>;
-          title = t.ca || t.es || t.en || '';
-        }
-        if (!title && typeof item.title === 'string') {
-          title = item.title;
-        }
-        if (!title && typeof item.name === 'string') {
-          title = item.name;
-        }
-        title = title.trim();
-        if (!title || title.length < 3) continue;
-
-        // Notas / Descripción
-        let notes = '';
-        if (item.notes_translated && typeof item.notes_translated === 'object') {
-          const n = item.notes_translated as Record<string, string>;
-          notes = n.ca || n.es || n.en || '';
-        }
-        if (!notes && typeof item.notes === 'string') {
-          notes = item.notes;
-        }
-        if (!notes && typeof item.description === 'string') {
-          notes = item.description;
-        }
-        const summary = (notes && notes.trim().length >= 10
-          ? notes.trim()
-          : `${title} - Conjunt de dades i agenda pública de l'Ajuntament de Barcelona.`
+        const rawSummary = (item.summary ?? item.description ?? '').trim();
+        const summary = (
+          rawSummary.length >= 10
+            ? rawSummary
+            : `${title} - Información de ${source.displayName}.`
         ).slice(0, 1200);
 
-        const url = typeof item.url === 'string' && item.url.startsWith('http')
-          ? item.url
-          : `https://opendata-ajuntament.barcelona.cat/data/dataset/${id}`;
+        const startsAt = normalizeIsoDateTime(item.startsAt);
+        const endsAt = normalizeIsoDateTime(item.endsAt);
 
-        const tags: string[] = [];
-        if (Array.isArray(item.tags)) {
-          for (const t of item.tags) {
-            if (t && typeof t === 'object' && 'name' in t && typeof t.name === 'string') {
-              tags.push(t.name);
-            }
-          }
+        let expiresAt = normalizeIsoDateTime(item.expiresAt);
+        if (!expiresAt) {
+          const baseDate = endsAt
+            ? new Date(endsAt)
+            : startsAt
+              ? new Date(startsAt)
+              : new Date(Date.now() + 7 * 86400000);
+          expiresAt = new Date(baseDate.getTime() + 86400000).toISOString();
         }
-        const filteredTags = tags.slice(0, 12);
-        const location = { name: 'Barcelona' };
+
+        let location: { name?: string; lat?: number; lng?: number } | undefined = undefined;
+        if (typeof item.lat === 'number' && typeof item.lng === 'number') {
+          location = {
+            name: item.locationName ?? 'Barcelona',
+            lat: item.lat,
+            lng: item.lng,
+          };
+        } else if (item.locationName) {
+          location = { name: item.locationName };
+        }
+
+        const validUrl =
+          item.url && (item.url.startsWith('http://') || item.url.startsWith('https://'))
+            ? item.url
+            : undefined;
+
+        const tags = (item.tags ?? []).map((t) => String(t).trim()).filter((t) => t.length > 0).slice(0, 12);
+        const price = item.price ? String(item.price).trim() : undefined;
 
         const contentHash = calculateContextContentHash({
           title,
           summary,
+          startsAt,
+          endsAt,
           location,
-          url,
+          url: validUrl,
+          price,
         });
 
-        const candidate = {
-          id: `bcn-opendata:${id}`,
+        const candidate: ContextEntry = {
+          id,
           sourceTag: source.sourceTag,
-          category: 'EVENT' as const,
+          category,
           title,
           summary,
+          startsAt,
+          endsAt,
           location,
-          url,
-          tags: filteredTags,
+          url: validUrl,
+          price,
+          tags,
           expiresAt,
           contentHash,
         };
