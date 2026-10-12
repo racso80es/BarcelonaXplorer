@@ -163,7 +163,7 @@
         `sourceTag` VARCHAR(64) NOT NULL,
         `displayName` VARCHAR(191) NOT NULL,
         `endpoint` VARCHAR(2048) NOT NULL,
-        `type` ENUM('API_REST', 'SOCRATA', 'JSON_LD', 'ICAL', 'RSS', 'SPARQL') NOT NULL,
+        `type` ENUM('API_REST', 'SOCRATA', 'JSON_LD', 'ICAL', 'RSS', 'SPARQL', 'CKAN_DATASTORE') NOT NULL,
         `category` VARCHAR(64) NOT NULL,
         `status` ENUM('ACTIVE', 'DEGRADED', 'PENDING_APPROVAL', 'INACTIVE') NOT NULL DEFAULT 'PENDING_APPROVAL',
         `failedAttempts` INTEGER NOT NULL DEFAULT 0,
@@ -196,6 +196,8 @@
     PREPARE stmt_extraction FROM @sql_add_extraction_col;
     EXECUTE stmt_extraction;
     DEALLOCATE PREPARE stmt_extraction;
+
+    ALTER TABLE `context_sources` MODIFY COLUMN `type` ENUM('API_REST', 'SOCRATA', 'JSON_LD', 'ICAL', 'RSS', 'SPARQL', 'CKAN_DATASTORE') NOT NULL;
     EOF
   args:
     chdir: "{{ ansistrano_deploy_to }}/current"

@@ -7,6 +7,7 @@ export const ContextSourceTypeSchema = z.enum([
   'ICAL',
   'RSS',
   'SPARQL',
+  'CKAN_DATASTORE',
 ]);
 export type ContextSourceType = z.infer<typeof ContextSourceTypeSchema>;
 
