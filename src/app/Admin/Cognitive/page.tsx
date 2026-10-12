@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export default function AdminCognitivePage() {
   return (
-    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8">
       <AdminPageHeader
         title="Observabilidad Cognitiva"
         description="Monitoreo sensorial de memoria vectorial LanceDB, métricas Zeigarnik y telemetría de sesiones"

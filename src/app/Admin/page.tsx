@@ -90,8 +90,8 @@ export default async function AdminDashboardPage() {
       : '0.0';
 
   return (
-      <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto">
-        <AdminPageHeader
+    <div className="space-y-6 sm:space-y-8">
+      <AdminPageHeader
           title="Sala de Control: Dashboard Táctico"
           description="Métricas de retención B2C, anclajes omnicanal y fricción sensorial del sistema"
           icon={<Gauge className="text-emerald-600 w-7 h-7 sm:w-8 sm:h-8" />}

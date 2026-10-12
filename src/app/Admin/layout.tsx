@@ -20,8 +20,13 @@ export default function AdminRootLayout({
   return (
     <div className="min-h-screen bg-surface-canvas text-content-primary font-sans flex flex-col lg:flex-row">
       {/* Área de Trabajo Fluida (Izquierda en desktop, centro en móvil) */}
-      <main className="flex-1 min-w-0 order-last lg:order-first">
-        {children}
+      <main className="flex-1 min-w-0 order-last lg:order-first text-sm md:text-base leading-relaxed">
+        <div
+          data-testid="admin-canvas"
+          className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 py-4 sm:py-8"
+        >
+          {children}
+        </div>
       </main>
 
       {/* HUD Táctico (Arriba en móvil gracias a order-first, fijado a la derecha en lg:order-last) */}
