@@ -30,7 +30,7 @@ export class SparqlContextAdapter implements IContextSourceAdapter {
       };
 
       const defaultSparqlQuery =
-        'SELECT ?item ?itemLabel ?coord ?description WHERE { ?item wdt:P31 wd:Q4989906; wdt:P131 wd:Q1492; wdt:P625 ?coord. SERVICE wikibase:label { bd:serviceParam wikibase:language "ca,es,en". } } LIMIT 25';
+        'SELECT ?item ?itemLabel ?coord (?itemDescription AS ?description) WHERE { ?item wdt:P31 wd:Q4989906; wdt:P131 wd:Q1492; wdt:P625 ?coord. SERVICE wikibase:label { bd:serviceParam wikibase:language "ca,es,en". } } LIMIT 25';
 
       const targetUrl = source.endpoint.includes('query=')
         ? source.endpoint
@@ -61,12 +61,17 @@ export class SparqlContextAdapter implements IContextSourceAdapter {
       }
 
       const validEntries: ContextEntry[] = [];
+      const seenIds = new Set<string>();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 90 * 86400000).toISOString(); // TTL POI: 90 días
 
       for (const binding of parsedRoot.data.results.bindings) {
         const itemUri = binding.item.value;
         const qid = itemUri.split('/').pop() || itemUri;
+        const id = `wikidata:${qid}`;
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+
         const title = binding.itemLabel.value.trim();
         const rawDesc = binding.description?.value?.trim();
         const summary = (rawDesc && rawDesc.length >= 10
@@ -107,7 +112,7 @@ export class SparqlContextAdapter implements IContextSourceAdapter {
         });
 
         const candidate = {
-          id: `wikidata:${qid}`,
+          id,
           sourceTag: source.sourceTag,
           category: 'POI' as const,
           title,
