@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SearchX, RotateCcw } from 'lucide-react';
+import { dataTableTypography, dataTableLayout } from './typography';
 
 interface DataTableEmptyProps {
   colSpan: number;
@@ -26,14 +27,14 @@ export function DataTableEmpty({
 
           <div className="space-y-1">
             <p className="text-sm text-content-primary font-medium">Bóveda sin coincidencias</p>
-            <p className="text-xs text-content-meta">{emptyMessage}</p>
+            <p className={`${dataTableTypography.emptyMessage} text-content-meta`}>{emptyMessage}</p>
           </div>
 
           {hasActiveFilters && onResetFilters && (
             <button
               type="button"
               onClick={onResetFilters}
-              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium rounded-md bg-surface-container hover:bg-zinc-50 text-emerald-700 border border-layout-divider shadow-xs transition-colors"
+              className={`mt-2 inline-flex items-center gap-1.5 px-3 ${dataTableLayout.touchControl} ${dataTableTypography.chromeText} font-medium rounded-md bg-surface-container hover:bg-zinc-50 text-emerald-700 border border-layout-divider shadow-xs transition-colors`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Limpiar filtros</span>

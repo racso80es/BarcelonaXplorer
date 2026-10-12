@@ -3,6 +3,7 @@
 import React from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { ColumnDef, SortState } from './types';
+import { dataTableTypography } from './typography';
 
 interface DataTableHeaderProps<T> {
   columns: ColumnDef<T>[];
@@ -54,7 +55,7 @@ export function DataTableHeader<T>({
                   onSortToggle(column.key);
                 }
               }}
-              className={`px-4 py-3 text-xs font-mono text-zinc-700 uppercase tracking-wider select-none text-left transition-colors ${
+              className={`px-4 py-3 ${dataTableTypography.headerText} text-zinc-700 select-none text-left transition-colors ${
                 isSortable
                   ? 'cursor-pointer hover:text-zinc-900 hover:bg-zinc-200/50 focus:outline-none focus:bg-zinc-200/60 focus:text-emerald-700'
                   : ''

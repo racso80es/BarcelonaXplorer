@@ -68,6 +68,8 @@ describe('DataTable Generic Component (La Forja Visual)', () => {
     render(<DataTable<TestItem> data={mockData} columns={mockColumns} pageSize={10} />);
 
     expect(screen.getByText('Alpha Service').textContent).toBe('Alpha Service');
+    expect(screen.getByText('Alpha Service').closest('td')?.className).toContain('text-sm');
+    expect(screen.getByText('Alpha Service').closest('td')?.className).toContain('lg:text-data');
     expect(screen.getByText('Beta Gateway').textContent).toBe('Beta Gateway');
     expect(screen.getByTestId('badge-1').textContent).toBe('INFO');
     expect(screen.getByTestId('badge-2').textContent).toBe('ERROR');

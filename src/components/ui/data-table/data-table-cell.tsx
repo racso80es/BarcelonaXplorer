@@ -3,6 +3,7 @@
 import React from 'react';
 import { ColumnDef } from './types';
 import { extractCellValue } from './utils';
+import { dataTableTypography } from './typography';
 
 interface DataTableCellProps<T> {
   item: T;
@@ -13,7 +14,7 @@ interface DataTableCellProps<T> {
 export function DataTableCell<T>({ item, column, rowIndex }: DataTableCellProps<T>) {
   if (column.cell) {
     return (
-      <td className={`px-4 py-3 text-xs font-mono text-content-primary align-middle ${column.className || ''}`}>
+      <td className={`px-4 py-3 ${dataTableTypography.cellText} text-content-primary align-middle ${column.className || ''}`}>
         {column.cell(item, rowIndex)}
       </td>
     );
@@ -33,7 +34,7 @@ export function DataTableCell<T>({ item, column, rowIndex }: DataTableCellProps<
   }
 
   return (
-    <td className={`px-4 py-3 text-xs font-mono text-content-primary align-middle ${column.className || ''}`}>
+    <td className={`px-4 py-3 ${dataTableTypography.cellText} text-content-primary align-middle ${column.className || ''}`}>
       {renderedContent}
     </td>
   );
