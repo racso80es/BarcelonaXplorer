@@ -4,8 +4,8 @@ title: "[OPERATIVO] Configuración de Entorno y Desacople Documental hacia Linea
 format: markdown
 version: "1.1.0"
 created: "2026-10-01"
-updated: "2026-10-12"
-status: "abierto"
+updated: "2026-10-13"
+status: "cerrada"
 priority: alta
 process: infrastructure
 aligns_with:
@@ -50,11 +50,11 @@ La serie Linear de SddIA está cerrada. Esta HU solo configura la instancia BX. 
 
 #### 4. Criterios de aceptación
 
-- [ ] `.SddIA/.dev/.env` define `LINEAR_API_TOKEN`. El ejemplo de bóveda, si se versiona, nombra la variable vacía. El valor no está en git.
-- [ ] `.SddIA/project.md` es `contract_version: "1.3.0"`, valida con el binding del Core y declara `tracker.done_gate: git`. No existe `.SddIA/config/linear-mapping.json` ni UUIDs de estado.
-- [ ] `docs_layout.todos_pending` y `todos_done` (y el árbol de historias que use el índice inverso) apuntan a directorios que existen en este repo, o queda escrito el desvío y el inverso se considera no operativo hasta corregirlo.
-- [ ] `Documentacion/HistoriasDeUsuario/` y `Documentacion/PBI/` no se archivan ni se vacían en esta HU.
-- [ ] Una invocación `fetch_issue` del equipo BX no vuelca `LINEAR_API_TOKEN` en stdout ni en eventos.
+- [x] `.SddIA/.dev/.env` define `LINEAR_API_TOKEN`. El ejemplo de bóveda, si se versiona, nombra la variable vacía. El valor no está en git.
+- [x] `.SddIA/project.md` es `contract_version: "1.3.0"`, valida con el binding del Core y declara `tracker.done_gate: git`. No existe `.SddIA/config/linear-mapping.json` ni UUIDs de estado.
+- [x] `docs_layout.todos_pending` y `todos_done` (y el árbol de historias que use el índice inverso) apuntan a directorios que existen en este repo, o queda escrito el desvío y el inverso se considera no operativo hasta corregirlo.
+- [x] `Documentacion/HistoriasDeUsuario/` y `Documentacion/PBI/` no se archivan ni se vacían en esta HU.
+- [x] Una invocación `fetch_issue` del equipo BX no vuelca `LINEAR_API_TOKEN` en stdout ni en eventos.
 
 #### 5. Fuera de alcance
 
@@ -63,3 +63,15 @@ La serie Linear de SddIA está cerrada. Esta HU solo configura la instancia BX. 
 - Borrar issues o administrar el workspace desde SddIA.
 - Crear HU o PBI nuevos solo desde Linear (sin markdown local no hay alta).
 - Mutar genoma del Core (`SddIA/`).
+
+#### 6. PBIs
+
+| Orden | ID | Corte |
+| --- | --- | --- |
+| 1 | [PBI-BX-LINEAR-003](../PBI/Realizado/PBI%20-%20Manifiesto%20Tracker%201.3.0%20y%20Alineaci%C3%B3n%20de%20docs_layout%20%28P1%29.md) | `project.md` a `1.3.0`: `tracker` con `done_gate: git` y `docs_layout` hacia directorios reales. El inverso queda no operativo, por escrito. |
+| 1 | [PBI-BX-LINEAR-002](../PBI/Realizado/PBI%20-%20B%C3%B3veda%20LINEAR_API_TOKEN%20sin%20Valor%20en%20Git%20%28P1%29.md) | `LINEAR_API_TOKEN` en `.SddIA/.dev/.env`. El ejemplo versionado lleva la variable vacía. |
+| 2 | [PBI-BX-LINEAR-001](../PBI/Realizado/PBI%20-%20Equipo%20Linear%20BX%20con%20Estados%20y%20Labels%20Can%C3%B3nicos%20%28P1%29.md) | Equipo `BX`, seis estados y siete labels. Acto en Linear, sin diff y sin UUIDs. |
+| 3 | [PBI-BX-LINEAR-004](../PBI/Realizado/PBI%20-%20Prueba%20de%20Vida%20fetch_issue%20sin%20Filtrar%20el%20Token%20%28P1%29.md) | `fetch_issue` devuelve `issue_ref` y no vuelca el token. |
+
+003 y 002 forjados y validados. 001 configurado en Linear con estados y labels canónicos. 004 validado con prueba de vida exitosa. HU completada.
+
