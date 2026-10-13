@@ -41,16 +41,18 @@ export class ContextAdminService {
 
   async listMemoryEntries(limit = 100): Promise<{
     entries: ContextMemoryEntryItem[];
+    totalRows: number;
     isAvailable: boolean;
   }> {
     try {
       const db = await getLanceDbConnection();
       const tables = await db.tableNames();
       if (!tables.includes('context_memory')) {
-        return { entries: [], isAvailable: true };
+        return { entries: [], totalRows: 0, isAvailable: true };
       }
 
       const table = await db.openTable('context_memory');
+      const totalRows = await table.countRows();
       const rows = await table.query().limit(limit).toArray();
 
       const entries: ContextMemoryEntryItem[] = rows.map((row) => {
@@ -79,10 +81,10 @@ export class ContextAdminService {
         };
       });
 
-      return { entries, isAvailable: true };
+      return { entries, totalRows, isAvailable: true };
     } catch (err) {
       console.warn('[ContextAdminService] LanceDB no disponible para context_memory:', err);
-      return { entries: [], isAvailable: false };
+      return { entries: [], totalRows: 0, isAvailable: false };
     }
   }
 

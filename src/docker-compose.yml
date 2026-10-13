@@ -97,7 +97,10 @@ services:
       - web
     env_file: .env.cron
     volumes:
-      # Axioma I y II: Crontab versionado montado en solo lectura
-      - ./cron/crontab:/etc/crontabs/root:ro
-    command: ["crond", "-f", "-l", "2"]
+      # Axioma I y II: Crontab versionado montado en solo lectura en staging
+      - ./cron/crontab:/etc/crontabs.src/root:ro
+    command:
+      - sh
+      - -c
+      - install -o root -g root -m 0600 /etc/crontabs.src/root /etc/crontabs/root && exec crond -f -l 2 -L /dev/stdout
 

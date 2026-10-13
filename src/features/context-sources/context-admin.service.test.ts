@@ -176,7 +176,7 @@ describe('ContextAdminService', () => {
   });
 
   describe('listMemoryEntries', () => {
-    it('retorna lista vacía con isAvailable: true si context_memory no existe', async () => {
+    it('retorna lista vacía con isAvailable: true y totalRows: 0 si context_memory no existe', async () => {
       const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');
       vi.mocked(getLanceDbConnection).mockResolvedValueOnce({
         tableNames: vi.fn().mockResolvedValue(['other_table']),
@@ -187,11 +187,13 @@ describe('ContextAdminService', () => {
 
       expect(res.isAvailable).toBe(true);
       expect(res.entries).toEqual([]);
+      expect(res.totalRows).toBe(0);
     });
 
-    it('retorna registros mapeados correctamente cuando context_memory existe', async () => {
+    it('retorna registros mapeados y totalRows desde countRows() cuando context_memory existe', async () => {
       const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');
       const mockTable = {
+        countRows: vi.fn().mockResolvedValue(77),
         query: vi.fn().mockReturnValue({
           limit: vi.fn().mockReturnValue({
             toArray: vi.fn().mockResolvedValue([
@@ -221,13 +223,14 @@ describe('ContextAdminService', () => {
       const res = await service.listMemoryEntries(10);
 
       expect(res.isAvailable).toBe(true);
+      expect(res.totalRows).toBe(77);
       expect(res.entries).toHaveLength(1);
       expect(res.entries[0].title).toBe('Sagrada Família');
       expect(res.entries[0].category).toBe('POI');
       expect(res.entries[0].sourceTag).toBe('wikidata-monuments');
     });
 
-    it('retorna isAvailable: false cuando falla la conexión con LanceDB', async () => {
+    it('retorna isAvailable: false y totalRows: 0 cuando falla la conexión con LanceDB', async () => {
       const { getLanceDbConnection } = await import('@/features/cognitive-memory/lancedb-client');
       vi.mocked(getLanceDbConnection).mockRejectedValueOnce(new Error('LanceDB connection failed'));
 
@@ -236,6 +239,7 @@ describe('ContextAdminService', () => {
 
       expect(res.isAvailable).toBe(false);
       expect(res.entries).toEqual([]);
+      expect(res.totalRows).toBe(0);
     });
   });
 });

@@ -89,6 +89,19 @@ export function ContextMemoryTableClient({
         sortable: true,
         cell: (item) => {
           const d = new Date(item.expiresAt);
+          const isExpired = Boolean(
+            item.expiresAt && !isNaN(d.getTime()) && d.getTime() < Date.now(),
+          );
+          if (isExpired) {
+            return (
+              <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200">
+                <span>Caducada</span>
+                <span className="text-rose-600 font-normal">
+                  ({d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })})
+                </span>
+              </span>
+            );
+          }
           return (
             <span className="text-xs font-mono text-content-meta">
               {d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })}

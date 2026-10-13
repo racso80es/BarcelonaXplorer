@@ -3,6 +3,7 @@ import { Globe2, ShieldCheck, Activity, AlertTriangle } from 'lucide-react';
 import { ContextAdminService } from '@/features/context-sources/context-admin.service';
 import type { ContextSourceSnapshot } from '@/features/context-sources/context-source.types';
 import { diagnoseDbError } from '@/features/context-sources/db-error-diagnosis';
+import { assessIngestionFreshness } from '@/features/context-sources/ingestion-freshness';
 import { ContextSourcesTableClient } from './ContextSourcesTableClient';
 
 export interface ContextSourcesCardProps {
@@ -50,6 +51,7 @@ export async function ContextSourcesCard({
   const activeCount = sources.filter((s) => s.status === 'ACTIVE').length;
   const degradedCount = sources.filter((s) => s.status === 'DEGRADED').length;
   const pendingCount = sources.filter((s) => s.status === 'PENDING_APPROVAL').length;
+  const freshness = assessIngestionFreshness(sources);
 
   return (
     <Card className="bg-surface-container border-layout-divider text-content-primary shadow-sm">
@@ -62,6 +64,28 @@ export async function ContextSourcesCard({
           <p className="text-xs text-content-meta">
             Máquina de estados finitos determinista y soberanía del Vértice Biológico
           </p>
+          {freshness.stale && (
+            <div
+              data-testid="ingestion-stale-alert"
+              className="mt-2 p-2.5 rounded-md bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2"
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-950">Aviso de Inanición de Ingesta</p>
+                <p className="text-amber-800 mt-0.5">
+                  El ciclo no tiene un éxito en las últimas 26 h.
+                  {freshness.newestSuccessAt ? (
+                    <> Último éxito registrado: {freshness.newestSuccessAt.toLocaleString('es-ES')}.</>
+                  ) : (
+                    <> No consta ningún éxito previo en el catálogo.</>
+                  )}
+                  {freshness.activeWithoutSuccess > 0 && (
+                    <> {freshness.activeWithoutSuccess} de {freshness.activeCount} fuentes activas sin bitácora.</>
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs font-mono">

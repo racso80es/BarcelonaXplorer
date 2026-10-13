@@ -206,6 +206,20 @@
 # Axioma IV: El Peaje del Oráculo — Sonda sintética post-despliegue con reversión automática
 - name: Oráculo de Salud Sintético y Mitigación Automática Post-Despliegue
   block:
+    # CA-2 (PBI-CTX-030): Verificar que el crontab efectivo en barcelonaxplorer_cron pertenece a root (UID 0)
+    - name: Verificar que el crontab efectivo en barcelonaxplorer_cron pertenece a root (UID 0)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        uid="$(docker exec barcelonaxplorer_cron stat -c %u /etc/crontabs/root)"
+        test "$uid" = "0"
+      args:
+        executable: /bin/bash
+      register: cron_uid_check
+      until: cron_uid_check.rc == 0
+      retries: 20
+      delay: 2
+      changed_when: false
+
     # CA-1 (PBI-GW-013): Verificar que el contenedor barcelonaxplorer_ia_gateway alcance estado healthy
     - name: Verificar salud del contenedor IA Gateway vía Docker Healthcheck
       ansible.builtin.command: docker inspect --format '{% raw %}{{.State.Health.Status}}{% endraw %}' barcelonaxplorer_ia_gateway
