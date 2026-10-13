@@ -7,12 +7,13 @@
 
 # Minuto Hora DíaMes Mes DíaSemana Comando
 
-# Poda ontológica de telemetría (diaria a las 03:30 AM)
-30 3 * * * wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/telemetry/prune > /dev/null 2>&1
+# Poda ontológica de telemetría (diaria a las 03:30 AM UTC)
+30 3 * * * wget -O - -T 60 --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/telemetry/prune > /proc/1/fd/1 2>&1
 
-# Ingesta diaria de fuentes de contexto hiperlocal (diaria a las 04:00 AM)
-0 4 * * * wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/ingest > /dev/null 2>&1
+# Ingesta diaria de fuentes de contexto hiperlocal (diaria a las 04:00 AM UTC -> 06:00 CEST / 05:00 CET peninsular)
+# Presupuesto térmico secuencial: 5 fuentes previas (5 × 10 s) + 5 fuentes CKAN (5 × 3 × 90 s) = 1.400 s de aborto máximo -> -T 1800 de margen
+0 4 * * * wget -O - -T 1800 --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/ingest > /proc/1/fd/1 2>&1
 
-# Sonda Argos de mantenimiento y exploración de contexto (semanal domingos a las 05:00 AM)
-0 5 * * 0 wget -qO- --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/maintain > /dev/null 2>&1
+# Sonda Argos de mantenimiento y exploración de contexto (semanal domingos a las 05:00 AM UTC -> 07:00 CEST / 06:00 CET peninsular)
+0 5 * * 0 wget -O - -T 600 --header="Authorization: Bearer ${CRON_SECRET}" --post-data='' http://web:3000/api/context/maintain > /proc/1/fd/1 2>&1
 

@@ -66,6 +66,12 @@ sources:
     status: "INACTIVE"
     proposedBy: "SEED"
 
+  # ── Fuentes Minadas Ajuntament de Barcelona (CKAN Datastore) ─────────────
+  # Protocolo de Acero (Axioma III): extracción declarativa.
+  # Nota de latencia empírica (ESTUDIO-CTX-002): el portal CKAN registró 27–59 s por petición,
+  # por lo que timeoutMs se fija en 90000 ms para blindar el Circuit Breaker ante picos de latencia.
+  # Estado en semilla: PENDING_APPROVAL (el alta a ACTIVE la ejecuta soberanamente Racso vía APPROVE).
+
   # Fuente B1: Agenda Cultural Ajuntament de Barcelona (CKAN Datastore Minado)
   - sourceTag: "bcn-agenda-cultural"
     displayName: "Ajuntament de Barcelona - Agenda Cultural CKAN"
@@ -82,7 +88,7 @@ sources:
         datastoreActive: true
       pageSize: 50
       maxRecords: 100
-      timeoutMs: 5000
+      timeoutMs: 90000
       groupBy: "register_id"
       fieldMap:
         externalId: "register_id"
@@ -114,7 +120,7 @@ sources:
         datastoreActive: true
       pageSize: 50
       maxRecords: 100
-      timeoutMs: 5000
+      timeoutMs: 90000
       groupBy: "register_id"
       fieldMap:
         externalId: "register_id"
@@ -146,7 +152,7 @@ sources:
         datastoreActive: true
       pageSize: 50
       maxRecords: 100
-      timeoutMs: 5000
+      timeoutMs: 90000
       groupBy: "register_id"
       fieldMap:
         externalId: "register_id"
@@ -178,7 +184,7 @@ sources:
         datastoreActive: true
       pageSize: 50
       maxRecords: 100
-      timeoutMs: 5000
+      timeoutMs: 90000
       groupBy: "register_id"
       fieldMap:
         externalId: "register_id"
@@ -208,7 +214,7 @@ sources:
         datastoreActive: true
       pageSize: 50
       maxRecords: 100
-      timeoutMs: 5000
+      timeoutMs: 90000
       groupBy: "register_id"
       fieldMap:
         externalId: "register_id"

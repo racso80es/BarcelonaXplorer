@@ -44,6 +44,24 @@ describe('ContextSourceSeedService', () => {
     expect(agendaSource?.proposedBy).toBe('HUMAN');
     expect(agendaSource?.extraction).toBeDefined();
     expect(agendaSource?.extraction?.strategy).toBe('CKAN_DATASTORE');
+    expect(agendaSource?.extraction?.timeoutMs).toBe(90000);
+
+    // Validación de las 5 fuentes CKAN del Ajuntament preparadas para APPROVE soberano (PBI-CTX-029 CA-4)
+    const sovereignTags = [
+      'bcn-agenda-cultural',
+      'bcn-agenda-diaria',
+      'bcn-agenda-esportiva',
+      'bcn-mercats-municipals',
+      'bcn-espais-verds',
+    ];
+    for (const tag of sovereignTags) {
+      const source = calledWith.find((s) => s.sourceTag === tag);
+      expect(source, `Fuente ${tag} debe existir en el seed`).toBeDefined();
+      expect(source?.status, `Fuente ${tag} debe permanecer en PENDING_APPROVAL antes de APPROVE`).toBe('PENDING_APPROVAL');
+      expect(source?.proposedBy, `Fuente ${tag} debe indicar proposedBy HUMAN`).toBe('HUMAN');
+      expect(source?.extraction?.strategy, `Fuente ${tag} debe usar estrategia CKAN_DATASTORE`).toBe('CKAN_DATASTORE');
+      expect(source?.extraction?.timeoutMs, `Fuente ${tag} debe tener timeoutMs de 90000 ms`).toBe(90000);
+    }
   });
 
   it('debe rechazar YAML con esquema inválido retornando 422 en el sobre determinista', async () => {
