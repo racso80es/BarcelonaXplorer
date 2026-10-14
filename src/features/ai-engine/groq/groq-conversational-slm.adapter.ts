@@ -141,9 +141,16 @@ export class GroqConversationalSlmAdapter implements IConversationalSLMPort {
     prompt: string,
     currentContext?: string,
   ): Promise<string> {
+    const dayMatch = prompt.match(
+      /\b(domingo|s[aá]bado|lunes|martes|mi[eé]rcoles|jueves|viernes|diumenge|dissabte|dilluns|dimarts|dimecres|dijous|divendres|sunday|saturday|monday|tuesday|wednesday|thursday|friday|\d{4}-\d{2}-\d{2}|\d{1,2}\s+de\s+[a-z]+)\b/i,
+    );
+    const dayStr = dayMatch ? dayMatch[0] : 'el día indicado';
+
     const fallbackReprompts: Record<string, string> = {
       time_window:
         '¡Suena genial! Para calibrar el ritmo exacto de la ruta, ¿cuántas horas o qué parte del día tienes disponible?',
+      concrete_date:
+        `¡Entendido para ${dayStr}! Para calibrar la ruta y disponibilidad con precisión, ¿qué fecha concreta tienes en mente?`,
       group_size:
         'Excelente plan. Para seleccionar los rincones y locales adecuados, ¿cuántas personas seréis?',
       vibe:

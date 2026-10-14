@@ -45,6 +45,10 @@ describe('AffiliateEnricherService (Protocolo de Acero S+ / HU-10)', () => {
 
     const enriched = await enricher.enrichRoute(route, 'operational');
     const wp = enriched.waypoints[0];
+    // CA-3: La cultura deja de ser comida (clasificación correcta)
+    expect(wp.category).toBe('CULTURE');
+    expect(wp.affiliateProvider).toBe('CIVITATIS');
+    expect(wp.affiliateUrl).toContain('civitatis.com');
 
     // Seguridad innegociable presente
     expect(wp.tacticalMetadata).toBeDefined();
@@ -59,6 +63,41 @@ describe('AffiliateEnricherService (Protocolo de Acero S+ / HU-10)', () => {
     // Sin pase prioritario forzado en Base
     expect(wp.options[0].isPriorityAccess).toBe(false);
     expect(wp.options[0].placementTrigger).toBeUndefined();
+  });
+
+  it('CA-1 (La ciudad no es un restaurante): "bar" y "cafe" no clasifican por coincidencia parcial en Barcelona o barrio', async () => {
+    // 1. Waypoint con Barcelona y barrio + monumento cultural -> CULTURE y CIVITATIS (no THEFORK)
+    const culturalWithBarrioWp = new TacticalWaypoint(
+      'wp-barrio-culture',
+      'Paseo por el barrio de Gràcia hasta Park Güell en Barcelona',
+      'Caminata por calles peatonales de Barcelona sin paradas gastronómicas',
+      undefined,
+      new TimeSpan('10:00', '12:00'),
+    );
+    const culturalRoute = new TacticalRoute('route-bcn-1', 'Ruta Barrio Cultural', [culturalWithBarrioWp]);
+    const enrichedCulture = await enricher.enrichRoute(culturalRoute, 'operational');
+    const wpCulture = enrichedCulture.waypoints[0];
+
+    expect(wpCulture.category).toBe('CULTURE');
+    expect(wpCulture.affiliateProvider).toBe('CIVITATIS');
+    expect(wpCulture.affiliateUrl).toContain('civitatis.com');
+    expect(wpCulture.affiliateUrl).not.toContain('thefork.es');
+
+    // 2. Waypoint con Barcelona y barrio sin monumento cultural ni gastronomía -> ACTIVITY, NONE, sin affiliateUrl
+    const activityWithBarrioWp = new TacticalWaypoint(
+      'wp-barrio-activity',
+      'Recorrido por el barrio de Sants en Barcelona',
+      'Paseo fotográfico urbano por las plazas emblemáticas de Barcelona',
+      undefined,
+      new TimeSpan('16:00', '18:00'),
+    );
+    const activityRoute = new TacticalRoute('route-bcn-2', 'Ruta Barrio Actividad', [activityWithBarrioWp]);
+    const enrichedActivity = await enricher.enrichRoute(activityRoute, 'operational');
+    const wpActivity = enrichedActivity.waypoints[0];
+
+    expect(wpActivity.category).toBe('ACTIVITY');
+    expect(wpActivity.affiliateProvider).toBe('NONE');
+    expect(wpActivity.affiliateUrl).toBeUndefined();
   });
 
   it('debe activar el Modo S+ Grade: revela alternativas gastronómicas auténticas y Drops Preventivos CPA con acceso prioritario', async () => {

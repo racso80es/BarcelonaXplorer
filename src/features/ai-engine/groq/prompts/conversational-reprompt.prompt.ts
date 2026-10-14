@@ -21,6 +21,7 @@ export function buildConversationalRepromptUserPrompt(
 ): string {
   const variableLabels: Record<string, string> = {
     time_window: 'el tiempo disponible o duración (horas, días o momentos del día)',
+    concrete_date: 'la fecha concreta en el calendario para el día ya indicado (mencionando explícitamente dicho día y pidiendo la fecha exacta)',
     group_size: 'el número de personas o acompañantes',
     vibe: 'el ambiente, ritmo o tipo de experiencia que buscan (cultural, fiesta, relax)',
     constraints: 'presupuesto aproximado o restricciones de movilidad/dieta',

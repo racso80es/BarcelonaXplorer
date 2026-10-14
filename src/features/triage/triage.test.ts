@@ -109,7 +109,14 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       mockConversationalSlm = {
         getActiveModelId: vi.fn().mockReturnValue('qwen/qwen3.8-27b'),
         generateBounceMessage: vi.fn().mockResolvedValue('Rebote fuera de perímetro.'),
-        generateRepromptMessage: vi.fn().mockResolvedValue('¿Cuántas horas tienes disponibles?'),
+        generateRepromptMessage: vi.fn().mockImplementation(async (missingVar: string, prompt: string) => {
+          if (missingVar === 'concrete_date') {
+            const dayMatch = prompt.match(/\b(domingo|s[aá]bado|lunes|martes|mi[eé]rcoles|jueves|viernes|sunday)\b/i);
+            const dayStr = dayMatch ? dayMatch[0] : 'el día indicado';
+            return `¡Entendido para el ${dayStr}! Para calibrar la ruta y disponibilidad con precisión, ¿qué fecha concreta tienes en mente?`;
+          }
+          return '¿Cuántas horas tienes disponibles?';
+        }),
         generateEmpatheticDialogue: vi.fn().mockResolvedValue({
           message: 'Barcelona puede agotar; tómate un café.',
         }),
@@ -202,6 +209,54 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(result.missingVariable).toBe('time_window');
       expect(mockMatrixRepo.saveMatrixPayload).toHaveBeenCalled();
       expect(mockRouteUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('CA-7 y CA-8: un prompt que nombra el día (el domingo ya estaba en el prompt) pide fecha concreta y no repite la pregunta de horas', async () => {
+      // Caso formulado ante fila cmv80sfzo002bpnv307kjj369 ausente en BD local
+      const result = await useCase.execute({
+        sessionId: 'sess-sunday-triage',
+        prompt: 'Quiero hacer una ruta cultural el domingo', // vibe (15) < 60
+      });
+
+      expect(result.status).toBe('INCOMPLETE_REPROMPT');
+      expect(result.score).toBe(15);
+      expect(result.isThresholdSatisfied).toBe(false);
+      // CA-8: no responde missingVariable: 'time_window'
+      expect(result.missingVariable).not.toBe('time_window');
+      expect(result.missingVariable).toBe('concrete_date');
+
+      // CA-8: La respuesta nombra el día entendido y pide la fecha concreta sin preguntar por horas
+      expect(result.repromptMessage).toContain('domingo');
+      expect(result.repromptMessage).toContain('fecha concreta');
+      expect(result.repromptMessage).not.toContain('cuántas horas');
+      expect(result.repromptMessage).not.toContain('qué parte del día tienes disponible');
+
+      // CA-8: No despacha la ruta solo con el nombre del día
+      expect(mockRouteUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('CA-9: la duración o tramo horario sigue llenando time_window y alcanza el peso 60 sin entrar por CA-8', async () => {
+      // 1. Duración explícita (3 horas) ya probada en CA-3 alcanza 75%
+      // 2. Tramo horario explícito (por la tarde)
+      const resultAfternoon = await useCase.execute({
+        sessionId: 'sess-afternoon-triage',
+        prompt: 'Ruta modernista por la tarde con 2 amigos', // time_window (60) + vibe (15) + group_size (15) = 90
+      });
+
+      expect(resultAfternoon.status).toBe('DISPATCH_READY');
+      expect(resultAfternoon.score).toBeGreaterThanOrEqual(60);
+      expect(resultAfternoon.isThresholdSatisfied).toBe(true);
+      expect(mockRouteUseCase.execute).toHaveBeenCalled();
+
+      // 3. Día + tramo horario combinado ("el domingo por la tarde")
+      const resultSundayAfternoon = await useCase.execute({
+        sessionId: 'sess-sunday-afternoon',
+        prompt: 'Ruta cultural el domingo por la tarde', // time_window (60) + vibe (15) = 75
+      });
+
+      expect(resultSundayAfternoon.status).toBe('DISPATCH_READY');
+      expect(resultSundayAfternoon.score).toBeGreaterThanOrEqual(60);
+      expect(resultSundayAfternoon.isThresholdSatisfied).toBe(true);
     });
 
     it('CA-3 & CA-4: debe disparar el LLM pesado al superar el 60%, enriquecer con afiliados y persistir en MySQL', async () => {

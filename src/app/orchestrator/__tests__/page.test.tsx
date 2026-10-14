@@ -455,6 +455,161 @@ describe('OrchestratorPage Choreography (Laudo 1: Endpoint Único /api/triage)',
       expect(screen.getByText(/11:30 - 12:30/i).textContent).toContain('11:30 - 12:30');
     });
   });
+
+  describe('Forjar Ruta Inmediata y Entrega a Telegram (PBI-ORCH-PRO-001 / CA-4, CA-5, CA-6)', () => {
+    it('CA-6: el botón sigue deshabilitado por debajo del umbral de supervivencia', () => {
+      render(<OrchestratorPage />);
+      // Por defecto el score inicial es 0 y el botón no está disponible o está deshabilitado
+      const forgeBtn = screen.queryByRole('button', { name: /Forjar Ruta Inmediata/i });
+      expect(forgeBtn).toBeNull();
+    });
+
+    it('CA-4: con anclaje, pulsar Forjar Ruta Inmediata envía mensaje a Telegram sin llamar a /api/triage ni añadir turno falso', async () => {
+      let triageCallsCount = 0;
+      let forgeImmediateCalled = false;
+
+      global.fetch = vi.fn(async (url) => {
+        if (url === '/api/triage') {
+          triageCallsCount++;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 'DISPATCH_READY',
+              sessionId: 'sess-anchor-test',
+              matrixId: 'default',
+              score: 80,
+              survivalThreshold: 60,
+              isThresholdSatisfied: true,
+              durationMs: 20,
+              _sys_lang: 'es',
+              route: {
+                id: 'route-test-1',
+                summary: 'Ruta Activa',
+                waypoints: [{ id: 'w1', title: 'Punto 1', description: 'Desc' }],
+              },
+            }),
+          } as unknown as Response;
+        }
+
+        if (url === '/api/orchestrator/forge-immediate') {
+          forgeImmediateCalled = true;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              success: true,
+              exitCode: 0,
+              result: {
+                status: 'DELIVERED',
+                telegramChatId: '123456789',
+                magicUrl: 'https://barcelonaxplorer.com/api/auth/magic-link?token=test-tok',
+              },
+            }),
+          } as unknown as Response;
+        }
+
+        return {} as unknown as Response;
+      });
+
+      render(<OrchestratorPage />);
+
+      // Primero alcanzar el umbral para habilitar el botón
+      const input = screen.getByPlaceholderText(/Indica tus preferencias/i);
+      fireEvent.change(input, { target: { value: 'Ruta de 3 horas por el centro' } });
+      fireEvent.submit(screen.getByRole('button', { name: /Enviar/i }));
+
+      const forgeBtn = await screen.findByRole('button', { name: /Forjar Ruta Inmediata/i }, { timeout: 3000 });
+      expect(forgeBtn).not.toBeNull();
+
+      const initialTriageCount = triageCallsCount;
+
+      // Pulsar "Forjar Ruta Inmediata"
+      fireEvent.click(forgeBtn);
+
+      // Debe llamar a /api/orchestrator/forge-immediate
+      await vi.waitFor(() => {
+        expect(forgeImmediateCalled).toBe(true);
+      });
+
+      // NO debe haber llamado a /api/triage por esa pulsación
+      expect(triageCallsCount).toBe(initialTriageCount);
+
+      // NO debe haber añadido el turno con el prompt de texto repetido
+      expect(screen.queryByText(/Por favor, forja la ruta táctica inmediata con el contexto actual/i)).toBeNull();
+
+      // Debe mostrar la notificación de éxito
+      expect(await screen.findByText(/Ruta táctica inmediata enviada a tu Telegram con éxito/i)).not.toBeNull();
+    });
+
+    it('CA-5: sin anclaje, pulsar Forjar Ruta Inmediata muestra el deep link oficial sin lanzar triaje', async () => {
+      let triageCallsCount = 0;
+
+      global.fetch = vi.fn(async (url) => {
+        if (url === '/api/triage') {
+          triageCallsCount++;
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              status: 'DISPATCH_READY',
+              sessionId: 'sess-no-anchor',
+              matrixId: 'default',
+              score: 80,
+              survivalThreshold: 60,
+              isThresholdSatisfied: true,
+              durationMs: 20,
+              _sys_lang: 'es',
+              route: {
+                id: 'route-test-2',
+                summary: 'Ruta Sin Anclaje',
+                waypoints: [{ id: 'w1', title: 'Punto 1', description: 'Desc' }],
+              },
+            }),
+          } as unknown as Response;
+        }
+
+        if (url === '/api/orchestrator/forge-immediate') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              success: true,
+              exitCode: 0,
+              result: {
+                status: 'ANCHOR_REQUIRED',
+                deepLink: 'https://t.me/BXplorerBot?start=token-anchor-555',
+              },
+            }),
+          } as unknown as Response;
+        }
+
+        return {} as unknown as Response;
+      });
+
+      render(<OrchestratorPage />);
+
+      const input = screen.getByPlaceholderText(/Indica tus preferencias/i);
+      fireEvent.change(input, { target: { value: 'Ruta de 3 horas por el centro' } });
+      fireEvent.submit(screen.getByRole('button', { name: /Enviar/i }));
+
+      const forgeBtn = await screen.findByRole('button', { name: /Forjar Ruta Inmediata/i }, { timeout: 3000 });
+      const initialTriageCount = triageCallsCount;
+
+      fireEvent.click(forgeBtn);
+
+      // Debe mostrar el deep link para anclar
+      const anchorLink = await screen.findByRole('link', { name: /Asegurar Ruta en Telegram/i });
+      expect(anchorLink.getAttribute('href')).toBe('https://t.me/BXplorerBot?start=token-anchor-555');
+
+      // NO debe haber llamado a /api/triage por esa pulsación
+      expect(triageCallsCount).toBe(initialTriageCount);
+
+      // NO debe haber lanzado turno de triaje
+      expect(screen.queryByText(/Por favor, forja la ruta táctica inmediata con el contexto actual/i)).toBeNull();
+    });
+  });
 });
+
 
 

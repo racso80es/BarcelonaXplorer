@@ -589,7 +589,16 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         );
       }
 
-      const missingVar = density.highestMissingVariable ?? 'time_window';
+      let missingVar = density.highestMissingVariable ?? 'time_window';
+
+      const namedDayMatch = trimmedPrompt.match(
+        /\b(domingo|s[aá]bado|lunes|martes|mi[eé]rcoles|jueves|viernes|diumenge|dissabte|dilluns|dimarts|dimecres|dijous|divendres|sunday|saturday|monday|tuesday|wednesday|thursday|friday|\d{4}-\d{2}-\d{2}|\d{1,2}\s+de\s+[a-z]+)\b/i,
+      );
+
+      if (missingVar === 'time_window' && namedDayMatch) {
+        missingVar = 'concrete_date';
+      }
+
       const repromptMessage =
         await this.conversationalSlm.generateRepromptMessage(
           missingVar,
@@ -806,7 +815,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
     // 1. time_window (Vector Crítico de 60%)
     if (!payload.time_window) {
       const hasExplicitTime =
-        /\b(\d+\s*(horas?|h|d[ií]as?)|todo el \w+|por la (ma[ñn]ana|tarde|noche)|fin de semana|s[aá]bado|domingo|hoy|ma[ñn]ana|(el|del|durante el)\s*d[ií]a|durante el d[ií]a)\b/i.test(
+        /\b(\d+\s*(horas?|h|d[ií]as?)|todo el \w+|por la (ma[ñn]ana|tarde|noche)|fin de semana|ma[ñn]ana y tarde|(el|del|durante el)\s*d[ií]a|durante el d[ií]a)\b/i.test(
           prompt,
         );
 

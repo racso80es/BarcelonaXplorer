@@ -208,6 +208,18 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     };
   }
 
+  private normalizeText(text: string): string {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private matchesKeyword(text: string, keyword: string): boolean {
+    const normText = this.normalizeText(text);
+    const normKw = this.normalizeText(keyword);
+    const escaped = normKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}([^\\p{L}\\p{N}]|$)`, 'iu');
+    return regex.test(normText);
+  }
+
   private enrichWaypoint(
     wp: TacticalWaypoint,
     index: number,
@@ -216,10 +228,10 @@ export class AffiliateEnricherService implements IAffiliateEnricherService {
     const textToAnalyze = `${wp.title} ${wp.description}`.toLowerCase();
 
     const isGastronomy = this.gastronomyKeywords.some((kw) =>
-      textToAnalyze.includes(kw),
+      this.matchesKeyword(textToAnalyze, kw),
     );
     const isCultural = this.culturalKeywords.some((kw) =>
-      textToAnalyze.includes(kw),
+      this.matchesKeyword(textToAnalyze, kw),
     );
 
     let category: 'GASTRONOMY' | 'CULTURE' | 'ACTIVITY' | 'TRANSIT' | 'GENERAL' = 'GENERAL';

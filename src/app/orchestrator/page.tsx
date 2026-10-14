@@ -71,6 +71,8 @@ export default function OrchestratorPage() {
   });
   const [sysLang, setSysLang] = useState<SupportedLanguage>('es');
   const [ignitionGreetingAt, setIgnitionGreetingAt] = useState<Date | null>(null);
+  const [isForgingRoute, setIsForgingRoute] = useState(false);
+  const [anchorDeepLink, setAnchorDeepLink] = useState<string | null>(null);
   const ui = getUiDictionary(sysLang);
   const scrollRef = useRef<HTMLDivElement>(null);
   const promptFormRef = useRef<HTMLFormElement>(null);
@@ -583,28 +585,43 @@ export default function OrchestratorPage() {
   const canvasThermalState =
     thermalState.score >= 100 ? 'saturated' : 'operational';
 
-  const handleForceDispatch = () => {
-    if (!thermalState.isThresholdSatisfied || isLocked) return;
-    const newTurnId = `turn-${Date.now()}`;
-    const createdAt = new Date();
-    const newTurn: Turn = {
-      id: newTurnId,
-      userPrompt: ui.orchestrator.defaultForceDispatchPrompt,
-      sparks: [],
-      status: 'pending',
-      createdAt,
-    };
-    setTurns((prev) => [...prev, newTurn]);
-    setTimeout(() => {
-      const orchestratingAt = new Date();
-      setTurns((prev) =>
-        prev.map((t) =>
-          t.id === newTurnId
-            ? { ...t, status: 'orchestrating', orchestratingAt }
-            : t,
-        ),
-      );
-    }, 400);
+  const handleForceDispatch = async () => {
+    if (!thermalState.isThresholdSatisfied || isLocked || isForgingRoute) return;
+
+    try {
+      setIsForgingRoute(true);
+      const res = await fetch('/api/orchestrator/forge-immediate', {
+        method: 'POST',
+      });
+      const envelope = await res.json().catch(() => ({}));
+      if (envelope?.success && envelope?.result) {
+        const result = envelope.result;
+        if (result.status === 'DELIVERED') {
+          setNotification({
+            type: 'success',
+            message: '🛡️ ¡Ruta táctica inmediata enviada a tu Telegram con éxito!',
+          });
+        } else if (result.status === 'ANCHOR_REQUIRED' && result.deepLink) {
+          setAnchorDeepLink(result.deepLink);
+          setNotification({
+            type: 'success',
+            message: '🔗 Para asegurar la recepción en tu Telegram, activa primero tu anclaje con el enlace que aparece a continuación.',
+          });
+        }
+      } else {
+        setNotification({
+          type: 'error',
+          message: '⚠️ No se pudo enviar la ruta a Telegram. Por favor, inténtalo de nuevo.',
+        });
+      }
+    } catch {
+      setNotification({
+        type: 'error',
+        message: '⚠️ Error de comunicación táctica al enviar la ruta.',
+      });
+    } finally {
+      setIsForgingRoute(false);
+    }
   };
 
   return (
@@ -645,6 +662,24 @@ export default function OrchestratorPage() {
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+          )}
+
+          {anchorDeepLink && (
+            <div className="w-full p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/50 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+              <div className="flex items-center gap-2 text-sm text-emerald-200">
+                <Send className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Sesión lista para anclar en Telegram:</span>
+              </div>
+              <a
+                href={anchorDeepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold tracking-wide flex items-center gap-2 shadow-sm shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Send className="w-4 h-4 text-emerald-100" />
+                <span>Asegurar Ruta en Telegram</span>
+              </a>
             </div>
           )}
 
@@ -810,7 +845,7 @@ export default function OrchestratorPage() {
             matrixId={thermalState.matrixId}
             lang={sysLang}
             onForceDispatch={thermalState.isThresholdSatisfied ? handleForceDispatch : undefined}
-            isDispatching={isLocked}
+            isDispatching={isLocked || isForgingRoute}
           />
           <form
             ref={promptFormRef}

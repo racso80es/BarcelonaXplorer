@@ -66,6 +66,15 @@ describe('GatewayConversationalSlmAdapter (CA-5, CA-6, CA-7)', () => {
     const failingAdapter = new GatewayConversationalSlmAdapter(failingClient, mockTelemetry);
     const fallback = await failingAdapter.generateRepromptMessage('group_size', 'Ir a cenar');
     expect(fallback).toContain('¿cuántas personas seréis?');
+
+    // CA-8: fallback de concrete_date nombra el día y pide fecha concreta sin preguntar por horas
+    const dateFallback = await failingAdapter.generateRepromptMessage(
+      'concrete_date',
+      'Quiero una ruta cultural el domingo',
+    );
+    expect(dateFallback).toContain('domingo');
+    expect(dateFallback).toContain('fecha concreta');
+    expect(dateFallback).not.toContain('cuántas horas');
   });
 
   it('CA-6 y CA-7: generateEmpatheticDialogue devuelve diálogo empático o reserva ante fallo', async () => {
