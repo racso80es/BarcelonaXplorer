@@ -318,4 +318,147 @@ describe('IngestContextUseCase', () => {
     expect(result.result?.sourcesProcessed).toBe(1);
     expect(result.result?.persisted).toBe(1);
   });
+
+  describe('CA-3 (El fallo deja rastro): registro de error del adaptador y reseteo en éxito', () => {
+    it('un error 400 del adaptador deja el aviso feedback + error en lastError de la fuente', async () => {
+      vi.mocked(mockAdapter.fetch).mockResolvedValue(
+        createErrorEnvelope(
+          ['Error HTTP 400 al consultar endpoint Socrata: Type mismatch for op>='],
+          400,
+          'Fallo en la llamada HTTP al origen Socrata'
+        )
+      );
+
+      const useCase = new IngestContextUseCase(
+        mockSourceRepo,
+        { SOCRATA: mockAdapter },
+        mockVectorStore,
+        mockEmbeddingPort,
+        mockTelemetryRepo
+      );
+
+      const result = await useCase.execute();
+
+      expect(result.success).toBe(true);
+      expect(mockSourceRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'src-1',
+          failedAttempts: 1,
+          lastError:
+            'Fallo en la llamada HTTP al origen Socrata: Error HTTP 400 al consultar endpoint Socrata: Type mismatch for op>=',
+        })
+      );
+    });
+
+    it('un error 422 del adaptador deja el aviso feedback + error en lastError de la fuente', async () => {
+      vi.mocked(mockAdapter.fetch).mockResolvedValue(
+        createErrorEnvelope(
+          ['El payload retornado por la API no cumple con la estructura esperada'],
+          422,
+          'Payload estructural inválido'
+        )
+      );
+
+      const useCase = new IngestContextUseCase(
+        mockSourceRepo,
+        { SOCRATA: mockAdapter },
+        mockVectorStore,
+        mockEmbeddingPort,
+        mockTelemetryRepo
+      );
+
+      const result = await useCase.execute();
+
+      expect(result.success).toBe(true);
+      expect(mockSourceRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'src-1',
+          failedAttempts: 1,
+          lastError:
+            'Payload estructural inválido: El payload retornado por la API no cumple con la estructura esperada',
+        })
+      );
+    });
+
+    it('si el adaptador devuelve sobre de error sin texto, se conserva Error de ingesta no especificado', async () => {
+      vi.mocked(mockAdapter.fetch).mockResolvedValue(
+        createErrorEnvelope([], 500, undefined)
+      );
+
+      const useCase = new IngestContextUseCase(
+        mockSourceRepo,
+        { SOCRATA: mockAdapter },
+        mockVectorStore,
+        mockEmbeddingPort,
+        mockTelemetryRepo
+      );
+
+      const result = await useCase.execute();
+
+      expect(result.success).toBe(true);
+      expect(mockSourceRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'src-1',
+          failedAttempts: 1,
+          lastError: 'Error de ingesta no especificado',
+        })
+      );
+    });
+
+    it('recorta el aviso de error a un máximo de 300 caracteres', async () => {
+      const veryLongError = 'x'.repeat(400);
+      vi.mocked(mockAdapter.fetch).mockResolvedValue(
+        createErrorEnvelope([veryLongError], 500, 'Fallo muy largo')
+      );
+
+      const useCase = new IngestContextUseCase(
+        mockSourceRepo,
+        { SOCRATA: mockAdapter },
+        mockVectorStore,
+        mockEmbeddingPort,
+        mockTelemetryRepo
+      );
+
+      const result = await useCase.execute();
+
+      expect(result.success).toBe(true);
+      const savedSource = vi.mocked(mockSourceRepo.save).mock.calls[0][0];
+      expect(savedSource.lastError?.length).toBe(300);
+      expect(savedSource.lastError?.startsWith('Fallo muy largo: x')).toBe(true);
+    });
+
+    it('un éxito de ingesta subsiguiente resetea lastError a null por la transición INGEST_OK', async () => {
+      const sourceWithPriorError: ContextSourceSnapshot = {
+        ...sampleSource1,
+        failedAttempts: 2,
+        lastError: 'Error HTTP 400 previo',
+        lastErrorAt: new Date('2026-10-13T10:00:00Z'),
+      };
+      vi.mocked(mockSourceRepo.findByStatus).mockResolvedValue([sourceWithPriorError]);
+      vi.mocked(mockAdapter.fetch).mockResolvedValue(
+        createSuccessEnvelope([sampleEntry1])
+      );
+
+      const useCase = new IngestContextUseCase(
+        mockSourceRepo,
+        { SOCRATA: mockAdapter },
+        mockVectorStore,
+        mockEmbeddingPort,
+        mockTelemetryRepo
+      );
+
+      const result = await useCase.execute();
+
+      expect(result.success).toBe(true);
+      expect(mockSourceRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'src-1',
+          status: 'ACTIVE',
+          failedAttempts: 0,
+          lastError: null,
+          lastErrorAt: null,
+        })
+      );
+    });
+  });
 });

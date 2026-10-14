@@ -66,23 +66,43 @@ export class IngestContextUseCase {
 
         let fetchSuccess = false;
         let fetchedEntries: ContextEntry[] = [];
+        let fetchError: string | undefined = undefined;
 
         try {
           if (!adapter) {
             fetchSuccess = false;
+            fetchError = `Adaptador no registrado para el tipo '${source.type}'`;
           } else {
             const fetchEnvelope = await adapter.fetch(source);
             fetchSuccess = fetchEnvelope.success;
             if (fetchEnvelope.success && Array.isArray(fetchEnvelope.result)) {
               fetchedEntries = fetchEnvelope.result;
+            } else if (!fetchEnvelope.success) {
+              const feedback = fetchEnvelope.feedback?.trim();
+              const firstError = fetchEnvelope.errors?.[0]?.trim();
+              if (feedback && firstError) {
+                fetchError = feedback === firstError ? feedback : `${feedback}: ${firstError}`;
+              } else {
+                fetchError = feedback || firstError || undefined;
+              }
+              if (fetchError && fetchError.length > 300) {
+                fetchError = fetchError.slice(0, 300);
+              }
             }
           }
-        } catch {
+        } catch (err) {
           fetchSuccess = false;
+          fetchError = err instanceof Error ? err.message : String(err);
+          if (fetchError && fetchError.length > 300) {
+            fetchError = fetchError.slice(0, 300);
+          }
         }
 
         // 2. Circuit Breaker puro: aplicar resultado a la máquina de estados (CA-3)
-        const transitionEnv = applyIngestionResult(source, { success: fetchSuccess });
+        const transitionEnv = applyIngestionResult(source, {
+          success: fetchSuccess,
+          error: fetchError,
+        });
         if (transitionEnv.success && transitionEnv.result) {
           const updatedSource = transitionEnv.result;
           if (updatedSource.status === 'DEGRADED' && source.status !== 'DEGRADED') {

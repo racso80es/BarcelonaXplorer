@@ -20,9 +20,9 @@ export class SocrataContextAdapter implements IContextSourceAdapter {
 
       let targetUrl = source.endpoint;
       if (targetUrl.includes('rhpv-yr4f')) {
-        const nowIso = new Date().toISOString();
+        const todayUtc = new Date().toISOString().slice(0, 10);
         if (targetUrl.includes('{hoy}')) {
-          targetUrl = targetUrl.replace(/\{hoy\}/g, `'${nowIso}'`);
+          targetUrl = targetUrl.replace(/\{hoy\}/g, `'${todayUtc}'`);
         }
 
         const separator = targetUrl.includes('?') ? '&' : '?';
@@ -31,7 +31,7 @@ export class SocrataContextAdapter implements IContextSourceAdapter {
           params.push('$order=data_inici ASC');
         }
         if (!targetUrl.includes('$where=')) {
-          params.push(`$where=data_fi >= '${nowIso}'`);
+          params.push(`$where=data_fi >= '${todayUtc}'`);
         }
         if (params.length > 0) {
           targetUrl = `${targetUrl}${separator}${params.join('&')}`;

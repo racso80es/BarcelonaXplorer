@@ -33,7 +33,7 @@ describe('CkanDatastoreContextAdapter', () => {
     updatedAt: new Date(),
     extractionConfig: {
       strategy: 'CKAN_DATASTORE',
-      dataset: 'cultura-agenda-cultural',
+      dataset: 'agenda-cultural',
       resourceSelector: {
         format: 'CSV',
         datastoreActive: true,
@@ -85,7 +85,7 @@ describe('CkanDatastoreContextAdapter', () => {
 
     // Verificar que package_show y datastore_search fueron llamados
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    expect(mockFetch.mock.calls[0][0]).toContain('package_show?id=cultura-agenda-cultural');
+    expect(mockFetch.mock.calls[0][0]).toContain('package_show?id=agenda-cultural');
     expect(mockFetch.mock.calls[1][0]).toContain('datastore_search?resource_id=3abb2414-1ee0-446e-9c25-380e938adb73');
 
     // Verificar estructura del primer registro
@@ -139,7 +139,7 @@ describe('CkanDatastoreContextAdapter', () => {
     const emptyResourcesShow = {
       success: true,
       result: {
-        id: 'cultura-agenda-cultural',
+        id: 'agenda-cultural',
         resources: [
           { id: 'res-1', format: 'JSON', datastore_active: false },
         ],
@@ -164,7 +164,7 @@ describe('CkanDatastoreContextAdapter', () => {
     const ambiguousShow = {
       success: true,
       result: {
-        id: 'cultura-agenda-cultural',
+        id: 'agenda-cultural',
         resources: [
           { id: 'res-1', format: 'CSV', datastore_active: true },
           { id: 'res-2', format: 'CSV', datastore_active: true },

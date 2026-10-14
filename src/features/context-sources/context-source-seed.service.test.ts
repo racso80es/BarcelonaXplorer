@@ -44,6 +44,7 @@ describe('ContextSourceSeedService', () => {
     expect(agendaSource?.proposedBy).toBe('HUMAN');
     expect(agendaSource?.extraction).toBeDefined();
     expect(agendaSource?.extraction?.strategy).toBe('CKAN_DATASTORE');
+    expect(agendaSource?.extraction?.dataset).toBe('agenda-cultural');
     expect(agendaSource?.extraction?.timeoutMs).toBe(90000);
 
     // Validación de las 5 fuentes CKAN del Ajuntament preparadas para APPROVE soberano (PBI-CTX-029 CA-4)

@@ -56,6 +56,8 @@ export const CONTEXT_SOURCE_TRANSITIONS: readonly TransitionRule[] = [
       status: 'ACTIVE',
       failedAttempts: 0,
       lastSuccessAt: meta?.now ?? new Date(),
+      lastError: null,
+      lastErrorAt: null,
     }),
   },
   // 4 y 5. ACTIVE + INGEST_FAIL por CRON -> ACTIVE (fallos < 3) o DEGRADED (fallos >= 3)
@@ -71,7 +73,7 @@ export const CONTEXT_SOURCE_TRANSITIONS: readonly TransitionRule[] = [
         status: newStatus,
         failedAttempts: newAttempts,
         lastErrorAt: meta?.now ?? new Date(),
-        lastError: meta?.error ?? 'Error de ingesta no especificado',
+        lastError: meta?.error && meta.error.trim().length > 0 ? meta.error : 'Error de ingesta no especificado',
       };
     },
   },

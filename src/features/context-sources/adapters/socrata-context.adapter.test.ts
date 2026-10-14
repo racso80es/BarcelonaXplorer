@@ -86,7 +86,7 @@ describe('SocrataContextAdapter', () => {
     );
   });
 
-  it('PBI-CTX-021 / CA-1: añade ventana temporal data_fi y orden data_inici ASC si el endpoint contiene rhpv-yr4f', async () => {
+  it('CA-2 / PBI-CTX-031: añade ventana temporal data_fi YYYY-MM-DD sin T ni Z y orden data_inici ASC si el endpoint contiene rhpv-yr4f', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -106,10 +106,15 @@ describe('SocrataContextAdapter', () => {
 
     expect(requestedUrl).toContain('rhpv-yr4f.json');
     expect(requestedUrl).toContain('$order=data_inici ASC');
-    expect(requestedUrl).toMatch(/\$where=data_fi >= '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    expect(requestedUrl).toMatch(/\$where=data_fi >= '\d{4}-\d{2}-\d{2}'/);
+    const match = requestedUrl.match(/\$where=data_fi >= '([^']+)'/);
+    expect(match).not.toBeNull();
+    expect(match![1]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(match![1]).not.toContain('T');
+    expect(match![1]).not.toContain('Z');
   });
 
-  it('PBI-CTX-021 / CA-1: resuelve el placeholder {hoy} sin conservar el texto literal', async () => {
+  it('CA-2 / PBI-CTX-031: resuelve el placeholder {hoy} con fecha YYYY-MM-DD sin T ni Z', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -126,7 +131,12 @@ describe('SocrataContextAdapter', () => {
 
     const requestedUrl = mockFetch.mock.calls[0][0] as string;
     expect(requestedUrl).not.toContain('{hoy}');
-    expect(requestedUrl).toMatch(/data_fi >= '\d{4}-\d{2}-\d{2}T/);
+    expect(requestedUrl).toMatch(/data_fi >= '\d{4}-\d{2}-\d{2}'/);
+    const match = requestedUrl.match(/data_fi >= '([^']+)'/);
+    expect(match).not.toBeNull();
+    expect(match![1]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(match![1]).not.toContain('T');
+    expect(match![1]).not.toContain('Z');
   });
 
   it('debe retornar sobre con error si el servidor Socrata responde HTTP 500', async () => {

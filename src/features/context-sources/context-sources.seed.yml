@@ -82,7 +82,7 @@ sources:
     proposedBy: "HUMAN"
     extraction:
       strategy: "CKAN_DATASTORE"
-      dataset: "cultura-agenda-cultural"
+      dataset: "agenda-cultural"
       resourceSelector:
         format: "CSV"
         datastoreActive: true

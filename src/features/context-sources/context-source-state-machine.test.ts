@@ -52,6 +52,8 @@ describe('ContextSourceStateMachine (PBI-CTX-004)', () => {
         status: 'ACTIVE',
         failedAttempts: 2,
         lastSuccessAt: pastDate,
+        lastError: 'HTTP 500 fatal',
+        lastErrorAt: pastDate,
       });
 
       const res = transitionContextSource(source, 'INGEST_OK', 'CRON', { now: nowDate });
@@ -60,6 +62,8 @@ describe('ContextSourceStateMachine (PBI-CTX-004)', () => {
       expect(res.result?.status).toBe('ACTIVE');
       expect(res.result?.failedAttempts).toBe(0);
       expect(res.result?.lastSuccessAt).toEqual(nowDate);
+      expect(res.result?.lastError).toBeNull();
+      expect(res.result?.lastErrorAt).toBeNull();
     });
 
     it('4. ACTIVE -> INGEST_FAIL por CRON (intento 1 y 2) => ACTIVE con failedAttempts incrementado', () => {
