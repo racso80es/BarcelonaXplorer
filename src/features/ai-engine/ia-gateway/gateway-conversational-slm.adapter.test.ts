@@ -146,4 +146,26 @@ describe('GatewayConversationalSlmAdapter (CA-5, CA-6, CA-7)', () => {
     const fallbackLang = await failingAdapter.detectLanguageIntent('Bonjour', 'ca');
     expect(fallbackLang).toBe('ca');
   });
+
+  it('PBI-ORCH-PRO-002 CA-4: generateClaudicationMessage genera frase de claudicación en idioma de sesión y cae al diccionario ante fallo', async () => {
+    const mockClient = {
+      generateText: vi.fn().mockResolvedValue('No se ha podido cerrar el horario de la ruta en este momento. Puedes reenviar tu consulta.'),
+    } as unknown as IaGatewayClient;
+
+    const adapter = new GatewayConversationalSlmAdapter(mockClient, mockTelemetry);
+    const msg = await adapter.generateClaudicationMessage('Ruta en 2 horas', 'es');
+    expect(msg).toBe('No se ha podido cerrar el horario de la ruta en este momento. Puedes reenviar tu consulta.');
+
+    // Fallback ante fallo
+    const failingClient = {
+      generateText: vi.fn().mockRejectedValue(new Error('Gateway timeout')),
+    } as unknown as IaGatewayClient;
+
+    const failingAdapter = new GatewayConversationalSlmAdapter(failingClient, mockTelemetry);
+    const fallbackMsg = await failingAdapter.generateClaudicationMessage('Ruta en 2 horas', 'es');
+    expect(fallbackMsg).toContain('El motor de rutas no está disponible temporalmente');
+    expect(fallbackMsg).not.toContain('aduana');
+    expect(fallbackMsg).not.toContain('Zod');
+    expect(fallbackMsg).not.toContain('contrato de datos');
+  });
 });

@@ -16,8 +16,8 @@ export const TacticalRouteSchema = z.object({
         .optional(),
       timeSpan: z
         .object({
-          start: z.string(),
-          end: z.string(),
+          start: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+          end: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
         })
         .optional(),
       recommendations: z.array(z.string()).optional(),

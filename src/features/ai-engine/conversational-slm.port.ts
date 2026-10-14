@@ -72,5 +72,16 @@ export interface IConversationalSLMPort {
     prompt: string,
     currentLanguage: SupportedLanguage,
   ): Promise<SupportedLanguage>;
+
+  /**
+   * Genera un mensaje de claudicación en lenguaje natural en el idioma de la sesión
+   * informando de que el horario de la ruta no se pudo cerrar y que se puede reenviar la petición,
+   * sin pedir de nuevo la ventana horaria ni nombrar time_window (CA-4).
+   */
+  generateClaudicationMessage?(
+    prompt: string,
+    language?: SupportedLanguage,
+  ): Promise<string>;
 }
+
 

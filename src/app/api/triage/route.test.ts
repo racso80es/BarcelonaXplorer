@@ -3,6 +3,17 @@ import { NextRequest } from 'next/server';
 import { POST } from './route';
 import { resetPublicLlmRateLimitForTests } from '@/features/triage/public-llm-rate-limit';
 import { TriageOutcome } from '@/features/triage/triage-outcome.vo';
+import { TriageOutcomeDtoSchema } from '@/features/triage/triage.schema';
+
+let executeImplementation: () => Promise<TriageOutcome> = () =>
+  Promise.resolve(
+    TriageOutcome.createCasualDialogue({
+      sessionId: 'ignored-in-mock',
+      matrixId: 'default',
+      dialogueMessage: 'ok',
+      durationMs: 1,
+    }),
+  );
 
 vi.mock('@/features/triage/server', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/features/triage/server')>();
@@ -10,14 +21,7 @@ vi.mock('@/features/triage/server', async (importOriginal) => {
     ...actual,
     TriageInputUseCase: class {
       execute() {
-        return Promise.resolve(
-          TriageOutcome.createCasualDialogue({
-            sessionId: 'ignored-in-mock',
-            matrixId: 'default',
-            dialogueMessage: 'ok',
-            durationMs: 1,
-          }),
-        );
+        return executeImplementation();
       }
     },
   };
@@ -71,6 +75,15 @@ describe('POST /api/triage (PBI-STEEL-004)', () => {
   beforeEach(() => {
     resetPublicLlmRateLimitForTests();
     vi.clearAllMocks();
+    executeImplementation = () =>
+      Promise.resolve(
+        TriageOutcome.createCasualDialogue({
+          sessionId: 'ignored-in-mock',
+          matrixId: 'default',
+          dialogueMessage: 'ok',
+          durationMs: 1,
+        }),
+      );
   });
 
   it('ignora x-session-id y body.sessionId para la identidad', async () => {
@@ -135,4 +148,27 @@ describe('POST /api/triage (PBI-STEEL-004)', () => {
     expect(blocked.headers.get('Retry-After')).toBeTruthy();
   });
 
+  it('PBI-ORCH-PRO-002 CA-3: responde 200 con status DISPATCH_CLAUDICATION y pasa TriageOutcomeSchema ante claudicación de horario', async () => {
+    executeImplementation = () =>
+      Promise.resolve(
+        TriageOutcome.createDispatchClaudication({
+          sessionId: 'sess-claudication-http',
+          matrixId: 'default',
+          score: 80,
+          survivalThreshold: 60,
+          claudicationMessage: 'El motor de rutas no está disponible temporalmente.',
+          payload: { constraints: [], districts: [], time_window: '3 horas' },
+          durationMs: 120,
+        }),
+      );
+
+    const res = await POST(triageRequest({ body: { prompt: 'Ruta 3 horas' } }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe('DISPATCH_CLAUDICATION');
+    expect(body.claudicationMessage).toBe('El motor de rutas no está disponible temporalmente.');
+    expect(TriageOutcomeDtoSchema.safeParse(body).success).toBe(true);
+    expect(body).not.toHaveProperty('error');
+    expect(body).not.toHaveProperty('errors');
+  });
 });

@@ -1454,5 +1454,89 @@ describe('Feature Triage (Vertical Slicing - Protocolo de Acero S+)', () => {
       expect(casualResult.status).toBe('CASUAL_DIALOGUE');
       expect(isHangingResolved).toBe(false);
     });
+
+    describe('PBI-ORCH-PRO-002 CA-3 & CA-4: Claudicación por contrato de horario de ruta', () => {
+      it('debe responder DISPATCH_CLAUDICATION con redacción de conversationalSlm en el idioma de la sesión y pasar TriageOutcomeSchema', async () => {
+        const mockRouteUseCaseClaudication = {
+          execute: vi.fn().mockResolvedValue('No se pudo cerrar el horario de la ruta.'),
+        } as unknown as GenerateTacticalRouteUseCase;
+
+        const customClaudicationMsg = 'No pudimos encajar los horarios detallados de la ruta. Si lo deseas, puedes reenviar tu solicitud con un pequeño ajuste.';
+        const mockSlmWithClaudication: IConversationalSLMPort = {
+          ...mockConversationalSlm,
+          generateClaudicationMessage: vi.fn().mockResolvedValue(customClaudicationMsg),
+        };
+
+        const claudicationUseCase = new TriageInputUseCase(
+          mockDecisionEngine,
+          mockSlmWithClaudication,
+          mockMatrixRepo,
+          mockRouteUseCaseClaudication,
+          mockTelemetryRepo,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          mockItineraryRepo,
+        );
+
+        const result = await claudicationUseCase.execute({
+          sessionId: 'sess-claudication-slm',
+          prompt: 'Quiero una ruta de 3 horas por el Poblenou',
+        });
+
+        expect(result.status).toBe('DISPATCH_CLAUDICATION');
+        expect(result.claudicationMessage).toBe(customClaudicationMsg);
+
+        // Sin mención a aduana, Zod ni contrato de datos
+        expect(result.claudicationMessage).not.toContain('aduana');
+        expect(result.claudicationMessage).not.toContain('Zod');
+        expect(result.claudicationMessage).not.toContain('contrato de datos');
+        expect(result.claudicationMessage).not.toContain('time_window');
+
+        // Pasa TriageOutcomeDtoSchema
+        const dto = result.toDto();
+        expect(TriageOutcomeDtoSchema.parse(dto)).toBeDefined();
+        expect(dto.status).toBe('DISPATCH_CLAUDICATION');
+      });
+
+      it('debe utilizar defaultClaudicationMessage si conversationalSlm lanza una excepción', async () => {
+        const mockRouteUseCaseClaudication = {
+          execute: vi.fn().mockResolvedValue('No se pudo cerrar el horario de la ruta.'),
+        } as unknown as GenerateTacticalRouteUseCase;
+
+        const mockSlmFailing: IConversationalSLMPort = {
+          ...mockConversationalSlm,
+          generateClaudicationMessage: vi.fn().mockRejectedValue(new Error('SLM unreachable')),
+        };
+
+        const claudicationUseCase = new TriageInputUseCase(
+          mockDecisionEngine,
+          mockSlmFailing,
+          mockMatrixRepo,
+          mockRouteUseCaseClaudication,
+          mockTelemetryRepo,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          mockItineraryRepo,
+        );
+
+        const result = await claudicationUseCase.execute({
+          sessionId: 'sess-claudication-fallback',
+          prompt: 'Ruta de 2 horas en pareja por el Born',
+        });
+
+        expect(result.status).toBe('DISPATCH_CLAUDICATION');
+        expect(result.claudicationMessage).toContain('El motor de rutas no está disponible temporalmente');
+        expect(result.claudicationMessage).not.toContain('aduana');
+        expect(result.claudicationMessage).not.toContain('Zod');
+        expect(result.claudicationMessage).not.toContain('contrato de datos');
+
+        const dto = result.toDto();
+        expect(TriageOutcomeDtoSchema.parse(dto)).toBeDefined();
+      });
+    });
   });
 });

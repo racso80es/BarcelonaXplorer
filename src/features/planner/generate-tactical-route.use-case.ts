@@ -4,6 +4,8 @@ import { IContextRetrievalPort } from '@/features/context-sources/context-retrie
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { TacticalRoute } from './tactical-route.entity';
 import { TelemetryEntry } from '@/features/telemetry';
+import { ZodError } from 'zod';
+import { InvalidTimeSpanException } from '@/shared/exceptions/invalid-time-span.exception';
 import {
   LlmEnvironmentContext,
   LlmTelemetryEvent,
@@ -258,6 +260,56 @@ export class GenerateTacticalRouteUseCase {
         });
 
         return 'No se pudo forjar la ruta.';
+      }
+
+      const isTimeSpanZodIssue =
+        error instanceof ZodError &&
+        error.issues.some((issue) => {
+          const path = issue.path.map(String);
+          return (
+            path.includes('timeSpan') &&
+            (path.includes('start') || path.includes('end'))
+          );
+        });
+
+      const isInvalidTimeSpan = error instanceof InvalidTimeSpanException;
+
+      if (isTimeSpanZodIssue || isInvalidTimeSpan) {
+        const zodPath = error instanceof ZodError
+          ? error.issues.map((i) => i.path.join('.')).join('; ')
+          : undefined;
+        const detailsMessage = zodPath
+          ? `Path Zod: ${zodPath}`
+          : errorMessage;
+
+        this.emitTelemetry({
+          level: 'ERROR',
+          context: 'LLM_ENGINE',
+          message: `[LLM ERROR] Contrato de horario de ruta inválido: ${detailsMessage}`,
+          statusCode: 422,
+          durationMs,
+          payload: {
+            model: this.resolveModelName(),
+            prompt,
+            promptLength: prompt.length,
+            errorMessage,
+            statusCode: 422,
+            environmentVariables: environment,
+            zodPath,
+            request: {
+              prompt,
+              promptLength: prompt.length,
+              environmentVariables: environment,
+            },
+            response: {
+              statusCode: 422,
+              error: errorMessage,
+              zodPath,
+            },
+          },
+        });
+
+        return 'No se pudo cerrar el horario de la ruta.';
       }
 
       // Fallo periférico de infraestructura, cuota o red (ERROR)

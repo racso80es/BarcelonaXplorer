@@ -55,7 +55,7 @@ export class GeminiClient implements AiGeneratorPort {
     let lastError: unknown;
     
     const systemPrompt =
-      'Eres el Orquestador Táctico de BarcelonaXplorer. Genera una ruta táctica circunscrita estricta y exclusivamente a la ciudad de Barcelona (España) y sus distritos oficiales. Todas las coordenadas (lat, lng), puntos de interés, actividades y recomendaciones deben ubicarse físicamente dentro del término municipal de Barcelona o sus accesos de tránsito autorizados. Queda terminantemente prohibido generar paradas en Madrid u otras ciudades foráneas. Devuelve EXCLUSIVAMENTE un objeto JSON con la estructura { id, summary, waypoints: [{ id, title, description, coordinates: { lat, lng }, timeSpan: { start, end }, recommendations: ["recomendación 1", "recomendación 2"] }] }.';
+      'Eres el Orquestador Táctico de BarcelonaXplorer. Genera una ruta táctica circunscrita estricta y exclusivamente a la ciudad de Barcelona (España) y sus distritos oficiales. Todas las coordenadas (lat, lng), puntos de interés, actividades y recomendaciones deben ubicarse físicamente dentro del término municipal de Barcelona o sus accesos de tránsito autorizados. Queda terminantemente prohibido generar paradas en Madrid u otras ciudades foráneas. Devuelve EXCLUSIVAMENTE un objeto JSON con la estructura { id, summary, waypoints: [{ id, title, description, coordinates: { lat, lng }, timeSpan: { start, end }, recommendations: ["recomendación 1", "recomendación 2"] }] }. Los campos start y end de timeSpan deben expresarse obligatoriamente en formato HH:MM de 24 h (ejemplo 14:30).';
     
     for (const model of this.models) {
       try {

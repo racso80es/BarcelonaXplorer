@@ -26,6 +26,7 @@ import {
   SupportedLanguage,
   SupportedLanguageVo,
   SUPPORTED_LANGUAGES,
+  getUiDictionary,
 } from '@/features/i18n';
 
 /**
@@ -416,6 +417,76 @@ export class GatewayConversationalSlmAdapter implements IConversationalSLMPort {
       return resolved;
     } catch {
       return currentLanguage;
+    }
+  }
+
+  async generateClaudicationMessage(
+    prompt: string,
+    language: SupportedLanguage = 'es',
+  ): Promise<string> {
+    const fallbackMessage = getUiDictionary(language).orchestrator.defaultClaudicationMessage;
+    const startTime = Date.now();
+
+    try {
+      const systemInstruction = `Eres el redactor de asistencia de BarcelonaXplorer. Informa con amabilidad y brevedad (máximo 2 oraciones) en el idioma ${language} de que el horario detallado de la ruta no se ha podido cerrar y que el usuario puede reenviar o ajustar ligeramente su petición. Prohibido terminantemente pedir de nuevo la ventana horaria o mencionar "time_window". Prohibido mencionar términos técnicos como "Zod", "aduana" o "contrato de datos".`;
+      const userPrompt = `Consulta del usuario: ${prompt}\nRedacta el mensaje de aviso en idioma ${language}.`;
+
+      const message = await this.client.generateText(userPrompt, 'FAST_LLM', {
+        systemInstruction,
+        temperature: 0.3,
+      });
+
+      const trimmed = message?.trim();
+      const finalMessage = trimmed && trimmed.length > 0 ? trimmed : fallbackMessage;
+      const durationMs = Date.now() - startTime;
+
+      if (process.env['TELEMETRY_LLM_ENABLED'] !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo
+          .log(
+            new TelemetryEntry(
+              'INFO',
+              'LLM_ENGINE',
+              '[Gateway SLM Claudication] Mensaje de claudicación horaria generado',
+              {
+                model: this.modelId,
+                prompt,
+                language,
+                claudicationMessage: finalMessage,
+                durationMs,
+              },
+              200,
+              durationMs,
+            ),
+          )
+          .catch((e) => console.warn('[Telemetry Fire-and-Forget Error]', e));
+      }
+
+      return finalMessage;
+    } catch (err: unknown) {
+      const durationMs = Date.now() - startTime;
+
+      if (process.env['TELEMETRY_LLM_ENABLED'] !== 'false' && this.telemetryRepo) {
+        void this.telemetryRepo
+          .log(
+            new TelemetryEntry(
+              'WARN',
+              'LLM_ENGINE',
+              `[Gateway SLM Claudication] Fallo al generar mensaje de claudicación: ${err instanceof Error ? err.message : 'Error desconocido'}`,
+              {
+                model: this.modelId,
+                prompt,
+                language,
+                error: err instanceof Error ? err.message : String(err),
+                durationMs,
+              },
+              500,
+              durationMs,
+            ),
+          )
+          .catch((e) => console.warn('[Telemetry Fire-and-Forget Error]', e));
+      }
+
+      return fallbackMessage;
     }
   }
 }

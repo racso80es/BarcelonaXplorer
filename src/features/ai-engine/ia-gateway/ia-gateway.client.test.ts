@@ -252,6 +252,140 @@ describe('IaGatewayClient (PBI-GW-006)', () => {
     expect(route.waypoints[0]?.coordinates?.lat).toBe(41.3916);
   });
 
+  describe('PBI-ORCH-PRO-002 CA-2: Reintento ante formato de hora inválido en timeSpan', () => {
+    it('debe reintentar ante ZodError de timeSpan.start (10:00 AM) y triunfar si el segundo JSON pasa', async () => {
+      // Mock fetch: primera llamada con start: '10:00 AM' (falla TacticalRouteZodSchema)
+      // segunda llamada con start: '10:00' (pasa)
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            exitCode: 0,
+            result: {
+              text: '{}',
+              json: {
+                id: 'route-am-1',
+                summary: 'Ruta con hora inicial en AM',
+                waypoints: [
+                  {
+                    id: 'wp-1',
+                    title: 'Casa Batlló',
+                    description: 'Visita matinal',
+                    timeSpan: { start: '10:00 AM', end: '11:30' },
+                  },
+                ],
+              },
+              metrics: {
+                engineType: 'REASONING_LLM',
+                provider: 'GOOGLE',
+                modelId: 'gemini-2.5-flash',
+                promptTokens: 150,
+                completionTokens: 80,
+                totalTokens: 230,
+                fallbackTriggered: false,
+                attemptedProviders: ['GOOGLE'],
+                durationMs: 300,
+              },
+            },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            exitCode: 0,
+            result: {
+              text: '{}',
+              json: {
+                id: 'route-am-1-fixed',
+                summary: 'Ruta corregida con hora 24h',
+                waypoints: [
+                  {
+                    id: 'wp-1',
+                    title: 'Casa Batlló',
+                    description: 'Visita matinal',
+                    timeSpan: { start: '10:00', end: '11:30' },
+                  },
+                ],
+              },
+              metrics: {
+                engineType: 'REASONING_LLM',
+                provider: 'GOOGLE',
+                modelId: 'gemini-2.5-flash',
+                promptTokens: 170,
+                completionTokens: 80,
+                totalTokens: 250,
+                fallbackTriggered: false,
+                attemptedProviders: ['GOOGLE'],
+                durationMs: 250,
+              },
+            },
+          }),
+        });
+
+      const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+      const route = await client.generateTacticalRoute('Ruta modernista por la mañana');
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      // Verificamos que la corrección del segundo prompt nombra timeSpan.start, timeSpan.end, HH:MM y 14:30
+      const secondCallBody = JSON.parse(mockFetch.mock.calls[1][1].body as string);
+      expect(secondCallBody.prompt).toContain('timeSpan.start');
+      expect(secondCallBody.prompt).toContain('timeSpan.end');
+      expect(secondCallBody.prompt).toContain('HH:MM');
+      expect(secondCallBody.prompt).toContain('14:30');
+
+      expect(route.id).toBe('route-am-1-fixed');
+      expect(route.waypoints[0]?.timeSpan?.start).toBe('10:00');
+    });
+
+    it('no debe hacer una tercera llamada si el segundo JSON sigue fallando el Zod de timeSpan', async () => {
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            success: true,
+            exitCode: 0,
+            result: {
+              text: '{}',
+              json: {
+                id: 'route-am-persist',
+                summary: 'Ruta con hora AM persistente',
+                waypoints: [
+                  {
+                    id: 'wp-1',
+                    title: 'Casa Batlló',
+                    description: 'Visita',
+                    timeSpan: { start: '10:00 AM', end: '11:30' },
+                  },
+                ],
+              },
+              metrics: {
+                engineType: 'REASONING_LLM',
+                provider: 'GOOGLE',
+                modelId: 'gemini-2.5-flash',
+                promptTokens: 150,
+                completionTokens: 80,
+                totalTokens: 230,
+                fallbackTriggered: false,
+                attemptedProviders: ['GOOGLE'],
+                durationMs: 300,
+              },
+            },
+          }),
+        });
+
+      const client = new IaGatewayClient({ baseUrl, gatewaySecret: secret }, undefined, mockFetch as unknown as typeof fetch);
+      await expect(client.generateTacticalRoute('Ruta imposible')).rejects.toThrow();
+
+      // Máximo 2 llamadas: intento inicial + 1 reintento
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('CA-2: debe generar texto libre mediante generateText', async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce({
       ok: true,

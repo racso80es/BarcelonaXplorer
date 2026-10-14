@@ -1,6 +1,5 @@
 import { ITriageInputUseCasePort } from './triage-input.use-case.port';
-import { ITypedDecisionEngine } from '@/features/ai-engine';
-import { IConversationalSLMPort } from '@/features/ai-engine';
+import { ITypedDecisionEngine, IConversationalSLMPort, IEmbeddingPort } from '@/features/ai-engine';
 import { DensityMatrixRepositoryPort } from '@/features/planner';
 import { TelemetryRepositoryPort } from '@/features/telemetry';
 import { GeographicDecisionEnginePort } from '@/features/planner';
@@ -36,8 +35,9 @@ import {
   MEMORY_VARIABLE_DURABILITY,
   COGNITIVE_MEMORY_KNN_MIN_SIMILARITY,
 } from '@/features/cognitive-memory';
-import { IEmbeddingPort } from '@/features/ai-engine';
-import { SupportedLanguage, SupportedLanguageVo } from '@/features/i18n';
+import { SupportedLanguage, SupportedLanguageVo, getUiDictionary } from '@/features/i18n';
+import { ZodError } from 'zod';
+import { InvalidTimeSpanException } from '@/shared/exceptions/invalid-time-span.exception';
 import {
   buildRouteLanguageDirective,
   detectLanguageFromPrompt,
@@ -641,12 +641,31 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         ? ` | GPS: ${input.userLocation.lat},${input.userLocation.lng}`
         : '';
       const enrichedPrompt = `${buildRouteLanguageDirective(sovereignLang)} [Geo: Barcelona | Distritos: ${districtsLabel}${gpsLabel}] ${trimmedPrompt} | Contexto Semántico: ${denseMatrix.toDensePromptString()}`;
-      forgedRoute = await this.routeUseCase.execute({
-        prompt: enrichedPrompt,
-        environment: {
-          localTime: new Date().toISOString(),
-        },
-      });
+      try {
+        forgedRoute = await this.routeUseCase.execute({
+          prompt: enrichedPrompt,
+          environment: {
+            localTime: new Date().toISOString(),
+          },
+        });
+      } catch (routeErr: unknown) {
+        const isTimeSpanContractError =
+          (routeErr instanceof ZodError &&
+            routeErr.issues.some((issue) => {
+              const path = issue.path.map(String);
+              return (
+                path.includes('timeSpan') &&
+                (path.includes('start') || path.includes('end'))
+              );
+            })) ||
+          routeErr instanceof InvalidTimeSpanException;
+
+        if (isTimeSpanContractError) {
+          forgedRoute = 'No se pudo cerrar el horario de la ruta.';
+        } else {
+          throw routeErr;
+        }
+      }
     }
 
     if (typeof forgedRoute === 'string') {
@@ -656,14 +675,36 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         priorPayload,
       );
 
+      let claudicationMsg = forgedRoute;
+
+      if (forgedRoute === 'No se pudo cerrar el horario de la ruta.') {
+        // CA-4: Con el puerto ya inyectado en el triaje, la frase de CA-3 puede salir de una llamada a ese puerto,
+        // en el idioma de la sesión, diciendo que el horario de la ruta no se pudo cerrar y que se puede reenviar la petición.
+        // Si el puerto falta o lanza, queda defaultClaudicationMessage.
+        const defaultMsg = getUiDictionary(sovereignLang).orchestrator.defaultClaudicationMessage;
+        if (typeof this.conversationalSlm?.generateClaudicationMessage === 'function') {
+          try {
+            const slmMsg = await this.conversationalSlm.generateClaudicationMessage(
+              trimmedPrompt,
+              sovereignLang,
+            );
+            claudicationMsg = slmMsg && slmMsg.trim() ? slmMsg.trim() : defaultMsg;
+          } catch {
+            claudicationMsg = defaultMsg;
+          }
+        } else {
+          claudicationMsg = defaultMsg;
+        }
+      }
+
       const providerCodeMatch = forgedRoute.match(/\b(503|429)\b/);
       const providerStatusCode = providerCodeMatch
         ? Number.parseInt(providerCodeMatch[1], 10)
-        : 503;
+        : (forgedRoute === 'No se pudo cerrar el horario de la ruta.' ? 200 : 503);
       this.emitTelemetry({
         level: 'WARN',
         context: 'SECURITY_PERIMETER',
-        message: `[Triage] Claudicación del proveedor (${providerStatusCode}): ${forgedRoute.slice(0, 200)}`,
+        message: `[Triage] Claudicación del despacho (${providerStatusCode}): ${claudicationMsg.slice(0, 200)}`,
         statusCode: providerStatusCode,
         durationMs: Date.now() - startTime,
         payload: {
@@ -680,7 +721,7 @@ export class TriageInputUseCase implements ITriageInputUseCasePort {
         matrixId,
         score: density.score,
         survivalThreshold: density.survivalThreshold,
-        claudicationMessage: forgedRoute,
+        claudicationMessage: claudicationMsg,
         payload: mergedPayload,
         geographicScope,
         detectedDistricts,

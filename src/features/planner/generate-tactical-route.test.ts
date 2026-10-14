@@ -11,6 +11,8 @@ import {
   LlmTelemetryEvent,
 } from '@/features/telemetry';
 import { createSuccessEnvelope, createErrorEnvelope } from '@/shared/operation-envelope';
+import { ZodError } from 'zod';
+import { InvalidTimeSpanException } from '@/shared/exceptions/invalid-time-span.exception';
 
 interface MockAiPort extends AiGeneratorPort {
   generateTacticalRoute: Mock<(prompt: string) => Promise<TacticalRoute>>;
@@ -226,6 +228,71 @@ describe('GenerateTacticalRouteUseCase (Aduana Cognitiva del Motor LLM)', () => 
       statusCode: 429,
       error: expect.stringContaining('429 RESOURCE_EXHAUSTED'),
     });
+  });
+
+  it('PBI-ORCH-PRO-002 CA-3: Ante ZodError de timeSpan (ej. 10:00 AM), no relanza, devuelve claudicación y registra telemetría ERROR con el path Zod', async () => {
+    // Simulamos un ZodError en waypoints.0.timeSpan.start (10:00 AM)
+    const zodError = new ZodError([
+      {
+        code: 'custom',
+        message: 'Invalid time format',
+        path: ['waypoints', 0, 'timeSpan', 'start'],
+      },
+    ]);
+    mockAiPort.generateTacticalRoute.mockRejectedValue(zodError);
+
+    const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
+    const context: LlmEnvironmentContext = {
+      localTime: '2026-10-14T10:00:00.000Z',
+    };
+
+    const result = await useCase.execute({
+      prompt: 'Ruta con hora no 24h',
+      environment: context,
+    });
+
+    // CA-3: El caso de uso no relanza
+    expect(result).toBe('No se pudo cerrar el horario de la ruta.');
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    // Telemetría de error conserva el path Zod
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
+    expect(loggedEntry.level).toBe('ERROR');
+    expect(loggedEntry.context).toBe('LLM_ENGINE');
+    expect(loggedEntry.statusCode).toBe(422);
+    expect(loggedEntry.message).toContain('waypoints.0.timeSpan.start');
+    const payload = loggedEntry.payload as Record<string, unknown>;
+    expect(payload.zodPath).toBe('waypoints.0.timeSpan.start');
+  });
+
+  it('PBI-ORCH-PRO-002 CA-3: Ante InvalidTimeSpanException (start > end), no relanza, devuelve claudicación y registra telemetría ERROR', async () => {
+    const timeSpanException = new InvalidTimeSpanException('start (15:00) no puede ser posterior a end (14:00)');
+    mockAiPort.generateTacticalRoute.mockRejectedValue(timeSpanException);
+
+    const useCase = new GenerateTacticalRouteUseCase(mockAiPort, mockTelemetryRepo);
+    const context: LlmEnvironmentContext = {
+      localTime: '2026-10-14T12:00:00.000Z',
+    };
+
+    const result = await useCase.execute({
+      prompt: 'Ruta con horario invertido',
+      environment: context,
+    });
+
+    // CA-3: El caso de uso no relanza
+    expect(result).toBe('No se pudo cerrar el horario de la ruta.');
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    // Telemetría de error conserva el mensaje de InvalidTimeSpanException
+    expect(mockTelemetryRepo.log).toHaveBeenCalledTimes(1);
+    const loggedEntry = mockTelemetryRepo.log.mock.calls[0][0] as TelemetryEntry;
+    expect(loggedEntry.level).toBe('ERROR');
+    expect(loggedEntry.context).toBe('LLM_ENGINE');
+    expect(loggedEntry.statusCode).toBe(422);
+    expect(loggedEntry.message).toContain('start (15:00) no puede ser posterior a end (14:00)');
   });
 
   it('Escenario 4: Supresión Térmica mediante Feature Flag (TELEMETRY_LLM_ENABLED=false)', async () => {

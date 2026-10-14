@@ -489,5 +489,72 @@ describe('POST /v1/llm/generate (PBI-GW-003)', () => {
         { uri: 'https://primaverasound.com', title: 'Primavera Sound' },
       ]);
     });
+
+    it('CA-6 (PBI-ORCH-PRO-002): una ruta con start: 10:00 AM no sale del handler como sobre de éxito', async () => {
+      // Mock Gemini devolviendo start: '10:00 AM'
+      mockGeminiGenerate.mockResolvedValueOnce({
+        text: JSON.stringify({
+          id: 'route-am-fail',
+          summary: 'Ruta con hora no 24h',
+          waypoints: [
+            {
+              id: 'wp-1',
+              title: 'Catedral de Barcelona',
+              timeSpan: {
+                start: '10:00 AM',
+                end: '11:30',
+              },
+            },
+          ],
+        }),
+        modelId: 'gemini-2.5-flash',
+        promptTokens: 100,
+        completionTokens: 50,
+        totalTokens: 150,
+        durationMs: 220,
+      });
+
+      // Si rota a Groq, mockeamos que también falla o se agota
+      mockGroqGenerate.mockResolvedValueOnce({
+        text: JSON.stringify({
+          id: 'route-am-groq-fail',
+          summary: 'Ruta groq con hora no 24h',
+          waypoints: [
+            {
+              id: 'wp-1',
+              title: 'Catedral de Barcelona',
+              timeSpan: {
+                start: '10:00 AM',
+                end: '11:30',
+              },
+            },
+          ],
+        }),
+        modelId: 'llama-3.3-70b-versatile',
+        promptTokens: 100,
+        completionTokens: 50,
+        totalTokens: 150,
+        durationMs: 180,
+      });
+
+      const res = await fetch(`${baseUrl}/v1/llm/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [AUTH_HEADER_NAME]: testSecret,
+        },
+        body: JSON.stringify({
+          prompt: 'Forja ruta catedral',
+          engineType: 'REASONING_LLM',
+          responseFormat: 'json',
+          schemaId: 'tactical-route',
+        }),
+      });
+
+      // No debe salir como sobre de éxito (éxito con 10:00 AM)
+      const body = (await res.json()) as OperationEnvelope<unknown>;
+      expect(body.success).toBe(false);
+      expect(body.errors?.some((e) => e.includes('no cumple el esquema tactical-route'))).toBe(true);
+    });
   });
 });

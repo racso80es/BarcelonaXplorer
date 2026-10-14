@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DecisionInputSchema, DecisionOutputSchema } from './decision.schema.js';
 import { LlmGenerateInputSchema, LlmGenerateOutputSchema } from './llm.schema.js';
+import { TacticalRouteSchema } from '../endpoints/llm/schemas-registry.js';
 
 describe('IA Gateway Schemas', () => {
   describe('LlmGenerateInputSchema', () => {
@@ -102,6 +103,61 @@ describe('IA Gateway Schemas', () => {
         },
       };
       const result = LlmGenerateOutputSchema.safeParse(output);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('TacticalRouteSchema (PBI-ORCH-PRO-002 CA-6)', () => {
+    it('debe rechazar timeSpan.start con formato 10:00 AM', () => {
+      const routeWithAm = {
+        id: 'route-test-1',
+        summary: 'Ruta con hora AM',
+        waypoints: [
+          {
+            id: 'wp-1',
+            title: 'Sagrada Família',
+            timeSpan: {
+              start: '10:00 AM',
+              end: '12:00',
+            },
+          },
+        ],
+      };
+      const result = TacticalRouteSchema.safeParse(routeWithAm);
+      expect(result.success).toBe(false);
+    });
+
+    it('debe aceptar 09:30 y 14:30 en timeSpan.start y timeSpan.end', () => {
+      const validRoute = {
+        id: 'route-test-2',
+        summary: 'Ruta válida',
+        waypoints: [
+          {
+            id: 'wp-1',
+            title: 'Parc Güell',
+            timeSpan: {
+              start: '09:30',
+              end: '14:30',
+            },
+          },
+        ],
+      };
+      const result = TacticalRouteSchema.safeParse(validRoute);
+      expect(result.success).toBe(true);
+    });
+
+    it('mantiene description como opcional', () => {
+      const routeNoDesc = {
+        id: 'route-test-3',
+        summary: 'Sin descripción',
+        waypoints: [
+          {
+            id: 'wp-1',
+            title: 'Plaça Catalunya',
+          },
+        ],
+      };
+      const result = TacticalRouteSchema.safeParse(routeNoDesc);
       expect(result.success).toBe(true);
     });
   });

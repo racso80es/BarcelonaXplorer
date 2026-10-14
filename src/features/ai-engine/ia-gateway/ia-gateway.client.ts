@@ -21,6 +21,7 @@ import {
   IaGatewayNoulEnvelopeSchema,
 } from './ia-gateway-decision.schema';
 import { IaGatewayLlmEnvelopeSchema } from './ia-gateway-llm.schema';
+import { ZodError } from 'zod';
 
 /**
  * Validador puro de runtime y estrechamiento de tipos (Narrowing) para opciones de elección.
@@ -399,55 +400,84 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
 
   async generateTacticalRoute(prompt: string): Promise<TacticalRoute> {
     const systemPrompt =
-      'Eres el Orquestador Táctico de BarcelonaXplorer. Genera una ruta táctica circunscrita estricta y exclusivamente a la ciudad de Barcelona (España) y sus distritos oficiales. Todas las coordenadas (lat, lng), puntos de interés, actividades y recomendaciones deben ubicarse físicamente dentro del término municipal de Barcelona o sus accesos de tránsito autorizados. Queda terminantemente prohibido generar paradas en Madrid u otras ciudades foráneas. Devuelve EXCLUSIVAMENTE un objeto JSON con la estructura { id, summary, waypoints: [{ id, title, description, coordinates: { lat, lng }, timeSpan: { start, end }, recommendations: ["recomendación 1", "recomendación 2"] }] }.';
+      'Eres el Orquestador Táctico de BarcelonaXplorer. Genera una ruta táctica circunscrita estricta y exclusivamente a la ciudad de Barcelona (España) y sus distritos oficiales. Todas las coordenadas (lat, lng), puntos de interés, actividades y recomendaciones deben ubicarse físicamente dentro del término municipal de Barcelona o sus accesos de tránsito autorizados. Queda terminantemente prohibido generar paradas en Madrid u otras ciudades foráneas. Devuelve EXCLUSIVAMENTE un objeto JSON con la estructura { id, summary, waypoints: [{ id, title, description, coordinates: { lat, lng }, timeSpan: { start, end }, recommendations: ["recomendación 1", "recomendación 2"] }] }. Los campos start y end de timeSpan deben expresarse obligatoriamente en formato HH:MM de 24 h (ejemplo 14:30).';
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    const executeLlmCall = async (currentPrompt: string): Promise<unknown> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
-    try {
-      const response = await this.fetchFn(`${this.baseUrl}/v1/llm/generate`, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          prompt,
-          engineType: 'REASONING_LLM',
-          responseFormat: 'json',
-          schemaId: 'tactical-route',
-          systemInstruction: systemPrompt,
-        }),
-        signal: controller.signal,
-      });
+      try {
+        const response = await this.fetchFn(`${this.baseUrl}/v1/llm/generate`, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify({
+            prompt: currentPrompt,
+            engineType: 'REASONING_LLM',
+            responseFormat: 'json',
+            schemaId: 'tactical-route',
+            systemInstruction: systemPrompt,
+          }),
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      const rawJson: unknown = await response.json();
-      const envelope = IaGatewayLlmEnvelopeSchema.parse(rawJson);
+        const rawJson: unknown = await response.json();
+        const envelope = IaGatewayLlmEnvelopeSchema.parse(rawJson);
 
-      if (!envelope.success || !envelope.result) {
-        const errorMsg =
-          envelope.errors?.join('; ') || envelope.feedback || 'Fallo en generación de ruta táctica';
-        throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
+        if (!envelope.success || !envelope.result) {
+          const errorMsg =
+            envelope.errors?.join('; ') || envelope.feedback || 'Fallo en generación de ruta táctica';
+          throw new Error(`IA Gateway error (${envelope.exitCode}): ${errorMsg}`);
+        }
+
+        this.recordTelemetry(envelope.result.metrics, response.status);
+        return envelope.result.json;
+      } catch (err: unknown) {
+        clearTimeout(timeoutId);
+        throw err;
       }
+    };
 
-      this.recordTelemetry(envelope.result.metrics, response.status);
+    let rawRouteJson = await executeLlmCall(prompt);
 
-      // Validación del Escudo Zod sobre el JSON retornado
-      const parsed = TacticalRouteZodSchema.parse(envelope.result.json);
-
-      // Mapeo a Entidades de Dominio puras
-      const waypoints = parsed.waypoints.map((wp) => {
-        const coords = wp.coordinates
-          ? new GeoCoordinates(wp.coordinates.lat, wp.coordinates.lng)
-          : undefined;
-        const time = wp.timeSpan ? new TimeSpan(wp.timeSpan.start, wp.timeSpan.end) : undefined;
-        return new TacticalWaypoint(wp.id, wp.title, wp.description, coords, time, wp.recommendations);
+    const isTimeSpanZodIssue = (err: unknown): boolean => {
+      if (!(err instanceof ZodError)) return false;
+      return err.issues.some((issue) => {
+        const path = issue.path.map(String);
+        return (
+          path.includes('timeSpan') &&
+          (path.includes('start') || path.includes('end'))
+        );
       });
+    };
 
-      return new TacticalRoute(parsed.id, parsed.summary, waypoints);
-    } catch (err: unknown) {
-      clearTimeout(timeoutId);
-      throw err;
+    let parsed: ReturnType<typeof TacticalRouteZodSchema.parse>;
+    try {
+      parsed = TacticalRouteZodSchema.parse(rawRouteJson);
+    } catch (firstErr: unknown) {
+      if (isTimeSpanZodIssue(firstErr)) {
+        // CA-2: Reintento dentro del mismo request ante ZodError de timeSpan.start o timeSpan.end
+        const correction =
+          '\n\n[CORRECCIÓN]: Los campos timeSpan.start y timeSpan.end deben usar obligatoriamente el formato HH:MM de 24 h (ejemplo 14:30).';
+        const retryPrompt = `${prompt}${correction}`;
+        rawRouteJson = await executeLlmCall(retryPrompt);
+        parsed = TacticalRouteZodSchema.parse(rawRouteJson);
+      } else {
+        throw firstErr;
+      }
     }
+
+    // Mapeo a Entidades de Dominio puras
+    const waypoints = parsed.waypoints.map((wp) => {
+      const coords = wp.coordinates
+        ? new GeoCoordinates(wp.coordinates.lat, wp.coordinates.lng)
+        : undefined;
+      const time = wp.timeSpan ? new TimeSpan(wp.timeSpan.start, wp.timeSpan.end) : undefined;
+      return new TacticalWaypoint(wp.id, wp.title, wp.description, coords, time, wp.recommendations);
+    });
+
+    return new TacticalRoute(parsed.id, parsed.summary, waypoints);
   }
 
   async generateText(
