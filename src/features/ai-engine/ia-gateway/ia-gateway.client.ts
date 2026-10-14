@@ -73,6 +73,19 @@ export interface GenerateTextOptions {
   temperature?: number;
 }
 
+export interface ProviderHealthEvaluationResult {
+  isHealthy: boolean;
+  isReachable: boolean;
+  latencyMs: number;
+  statusCode?: number;
+  error?: string;
+  hasCredential?: boolean;
+  configuredModel?: string;
+  circuitState?: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+  operationalStatus?: 'HEALTHY' | 'DEGRADED' | 'UNHEALTHY';
+  averageLatencyMs?: number;
+}
+
 export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
   private readonly baseUrl: string;
   private readonly gatewaySecret: string;
@@ -198,6 +211,85 @@ export class IaGatewayClient implements ITypedDecisionEngine, AiGeneratorPort {
           : err instanceof Error
             ? err.message
             : 'Fallo desconocido en sonda de salud IA Gateway',
+      };
+    }
+  }
+
+  async evaluateProviderHealth(
+    provider: 'GROQ' | 'GOOGLE' | 'JEV'
+  ): Promise<ProviderHealthEvaluationResult> {
+    const t0 = performance.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+    try {
+      const response = await this.fetchFn(`${this.baseUrl}/healthz`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const latencyMs = Math.round(performance.now() - t0);
+
+      if (!response.ok) {
+        return {
+          isHealthy: false,
+          isReachable: false,
+          latencyMs,
+          statusCode: response.status,
+          error: `HTTP ${response.status} en IA Gateway /healthz`,
+        };
+      }
+
+      const rawData: unknown = await response.json();
+      const parsed = IaGatewayHealthEnvelopeSchema.parse(rawData);
+
+      const providerInfo = parsed.result?.providers?.[provider];
+      if (!providerInfo) {
+        return {
+          isHealthy: false,
+          isReachable: true,
+          latencyMs,
+          statusCode: response.status,
+          error: `Proveedor ${provider} no encontrado en reporte de salud del gateway`,
+        };
+      }
+
+      const hasCredential = providerInfo.hasCredential ?? false;
+      const isHealthy =
+        providerInfo.operationalStatus === 'HEALTHY' &&
+        providerInfo.circuitState === 'CLOSED' &&
+        providerInfo.activeProbeSuccess !== false &&
+        hasCredential;
+
+      return {
+        isHealthy,
+        isReachable: true,
+        latencyMs,
+        statusCode: response.status,
+        hasCredential,
+        configuredModel: providerInfo.configuredModel,
+        circuitState: providerInfo.circuitState,
+        operationalStatus: providerInfo.operationalStatus,
+        averageLatencyMs: providerInfo.averageLatencyMs,
+      };
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      const latencyMs = Math.round(performance.now() - t0);
+      const isAbort =
+        (err instanceof Error && err.name === 'AbortError') ||
+        (err as { type?: string })?.type === 'aborted';
+
+      return {
+        isHealthy: false,
+        isReachable: false,
+        latencyMs,
+        error: isAbort
+          ? 'Timeout al conectar con IA Gateway (3000ms)'
+          : err instanceof Error
+            ? err.message
+            : 'Fallo desconocido de conexión con IA Gateway',
       };
     }
   }

@@ -3,7 +3,6 @@ import {
   TriageInputUseCase,
   DensityPresenceSentinel,
 } from '@/features/triage/server';
-import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
 import {
   InMemoryDensityMatrixRepository,
   GenerateTacticalRouteUseCase,
@@ -13,6 +12,7 @@ import {
 import {
   IaGatewayClient,
   GeminiEmbeddingAdapter,
+  GatewayConversationalSlmAdapter,
 } from '@/features/ai-engine/server';
 import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import {
@@ -117,8 +117,8 @@ export async function POST(req: NextRequest) {
     const iaGatewayClient = new IaGatewayClient(undefined, telemetryRepo);
     const decisionEngine = iaGatewayClient;
     const presenceSentinel = new DensityPresenceSentinel(decisionEngine);
-    const conversationalSlm = new GroqConversationalSlmAdapter(
-      undefined,
+    const conversationalSlm = new GatewayConversationalSlmAdapter(
+      iaGatewayClient,
       telemetryRepo,
     );
     const embeddingPort = new GeminiEmbeddingAdapter(undefined, telemetryRepo);

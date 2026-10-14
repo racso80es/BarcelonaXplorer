@@ -1,6 +1,8 @@
 import { z } from 'zod';
-import { GroqFastAiAdapter } from '@/features/ai-engine/groq/groq-fast-ai.adapter';
-import { GenerateFastRadarUseCase } from '@/features/ai-engine/server';
+import {
+  GatewayFastRadarAdapter,
+  GenerateFastRadarUseCase,
+} from '@/features/ai-engine/server';
 import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import type { FastContextDto } from '@/features/ai-engine';
 
@@ -24,12 +26,12 @@ const requestSchema = z.object({
  * y lo inyecta en el caso de uso de aplicación.
  *
  * El Route Handler solo conoce el Use Case (capa de aplicación).
- * La dependencia con GroqFastAiAdapter (infraestructura) se resuelve
+ * La dependencia con GatewayFastRadarAdapter (infraestructura) se resuelve
  * aquí, en el borde más externo del sistema.
  */
 function composeUseCase(): GenerateFastRadarUseCase {
   const telemetryRepo = new PrismaTelemetryRepository();
-  const aiPort = new GroqFastAiAdapter(undefined, telemetryRepo);
+  const aiPort = new GatewayFastRadarAdapter(undefined, telemetryRepo);
   return new GenerateFastRadarUseCase(aiPort);
 }
 
@@ -99,17 +101,27 @@ export async function POST(request: Request): Promise<Response> {
     localTime: validation.data.localTime,
   };
 
-  const useCase = composeUseCase();
-  const rawStream = await useCase.execute(context);
-  const sseStream = toSseStream(rawStream);
+  try {
+    const useCase = composeUseCase();
+    const rawStream = await useCase.execute(context);
+    const sseStream = toSseStream(rawStream);
 
-  return new Response(sseStream, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
+    return new Response(sseStream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: 'Fallo al conectar con el motor de inferencia del IA Gateway.',
+      }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }
 

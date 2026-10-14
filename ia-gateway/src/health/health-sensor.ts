@@ -6,6 +6,9 @@ export interface HealthSensorConfig {
   jevApiKey?: string;
   groqApiKey?: string;
   geminiApiKey?: string;
+  groqModel?: string;
+  geminiModel?: string;
+  jevModel?: string;
   probeTimeoutMs?: number;
 }
 
@@ -24,9 +27,29 @@ export class HealthSensor {
     private readonly config: HealthSensorConfig = {},
     private readonly fetchFn: typeof fetch = fetch
   ) {
-    this.breakers.set('GOOGLE', new CircuitBreaker('GOOGLE'));
-    this.breakers.set('GROQ', new CircuitBreaker('GROQ'));
-    this.breakers.set('JEV', new CircuitBreaker('JEV'));
+    const hasGoogleKey = Boolean(this.config.geminiApiKey && this.config.geminiApiKey.trim().length > 0);
+    const hasGroqKey = Boolean(this.config.groqApiKey && this.config.groqApiKey.trim().length > 0);
+    const hasJevKey = Boolean(this.config.jevApiKey && this.config.jevApiKey.trim().length > 0);
+
+    const googleModel = this.config.geminiModel ?? process.env['GEMINI_REASONING_MODEL'] ?? 'gemini-2.5-flash';
+    const groqModel = this.config.groqModel ?? process.env['GROQ_FAST_MODEL'] ?? 'llama-3.3-70b-versatile';
+    const jevModel = this.config.jevModel ?? process.env['JEV_MODEL'] ?? 'jev-latest';
+
+    this.breakers.set('GOOGLE', new CircuitBreaker('GOOGLE', {
+      hasCredential: hasGoogleKey,
+      configuredModel: googleModel,
+      activeProbeSuccess: hasGoogleKey,
+    }));
+    this.breakers.set('GROQ', new CircuitBreaker('GROQ', {
+      hasCredential: hasGroqKey,
+      configuredModel: groqModel,
+      activeProbeSuccess: hasGroqKey,
+    }));
+    this.breakers.set('JEV', new CircuitBreaker('JEV', {
+      hasCredential: hasJevKey,
+      configuredModel: jevModel,
+      activeProbeSuccess: hasJevKey,
+    }));
   }
 
   getBreaker(provider: ProviderId): CircuitBreaker {
@@ -68,15 +91,27 @@ export class HealthSensor {
       const headers: Record<string, string> = { Accept: 'application/json' };
 
       if (provider === 'JEV') {
-        if (!this.config.jevApiKey) return true; // Si no hay key no penalizamos sonda activa
+        if (!this.config.jevApiKey) {
+          clearTimeout(timeoutId);
+          this.getBreaker('JEV').setActiveProbeStatus(false);
+          return false;
+        }
         url = `${(this.config.jevBaseUrl ?? 'https://jev-ai.pro/api').replace(/\/+$/, '')}/v1/models`;
         headers['Authorization'] = `Bearer ${this.config.jevApiKey}`;
       } else if (provider === 'GROQ') {
-        if (!this.config.groqApiKey) return true;
+        if (!this.config.groqApiKey) {
+          clearTimeout(timeoutId);
+          this.getBreaker('GROQ').setActiveProbeStatus(false);
+          return false;
+        }
         url = 'https://api.groq.com/openai/v1/models';
         headers['Authorization'] = `Bearer ${this.config.groqApiKey}`;
       } else if (provider === 'GOOGLE') {
-        if (!this.config.geminiApiKey) return true;
+        if (!this.config.geminiApiKey) {
+          clearTimeout(timeoutId);
+          this.getBreaker('GOOGLE').setActiveProbeStatus(false);
+          return false;
+        }
         url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.config.geminiApiKey}`;
       }
 

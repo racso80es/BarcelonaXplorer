@@ -3,9 +3,9 @@ import { NextRequest } from 'next/server';
 import { GET } from './route';
 import { resetPublicLlmRateLimitForTests } from '@/features/triage/public-llm-rate-limit';
 
-vi.mock('@/features/ai-engine/groq/groq-conversational-slm.adapter', () => {
+vi.mock('@/features/ai-engine/server', () => {
   return {
-    GroqConversationalSlmAdapter: class {
+    GatewayConversationalSlmAdapter: class {
       generateContextualGreeting() {
         return Promise.resolve('¡Buenos días! Bienvenido a Barcelona.');
       }

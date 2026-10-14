@@ -12,10 +12,13 @@ export interface ProviderRequestSample {
 }
 
 export interface CircuitBreakerConfig {
-  failureThreshold: number; // Número de fallos consecutivos o ratio
-  recoveryTimeoutMs: number; // Tiempo en OPEN antes de pasar a HALF_OPEN
+  failureThreshold?: number; // Número de fallos consecutivos o ratio
+  recoveryTimeoutMs?: number; // Tiempo en OPEN antes de pasar a HALF_OPEN
   latencyP95ThresholdMs?: number; // Umbral de latencia p95
-  windowSize: number; // Tamaño de ventana deslizante de muestras
+  windowSize?: number; // Tamaño de ventana deslizante de muestras
+  hasCredential?: boolean;
+  configuredModel?: string;
+  activeProbeSuccess?: boolean;
 }
 
 export interface ProviderHealthInfo {
@@ -29,4 +32,6 @@ export interface ProviderHealthInfo {
   averageLatencyMs: number;
   errorRate: number;
   activeProbeSuccess: boolean;
+  hasCredential?: boolean;
+  configuredModel?: string;
 }

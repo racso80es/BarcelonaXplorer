@@ -13,18 +13,26 @@ export class CircuitBreaker {
   private lastFailureTime: number | null = null;
   private lastSuccessTime: number | null = null;
   private samples: ProviderRequestSample[] = [];
-  private activeProbeSuccess = true;
+  private activeProbeSuccess: boolean;
   private halfOpenProbeInFlight = false;
+  private readonly config: Required<Pick<CircuitBreakerConfig, 'failureThreshold' | 'recoveryTimeoutMs' | 'latencyP95ThresholdMs' | 'windowSize'>>;
+  private hasCredential: boolean;
+  private configuredModel: string;
 
   constructor(
     public readonly provider: ProviderId,
-    private readonly config: CircuitBreakerConfig = {
-      failureThreshold: 3,
-      recoveryTimeoutMs: 10000,
-      latencyP95ThresholdMs: 8000,
-      windowSize: 20,
-    }
-  ) {}
+    config: CircuitBreakerConfig = {}
+  ) {
+    this.config = {
+      failureThreshold: config.failureThreshold ?? 3,
+      recoveryTimeoutMs: config.recoveryTimeoutMs ?? 10000,
+      latencyP95ThresholdMs: config.latencyP95ThresholdMs ?? 8000,
+      windowSize: config.windowSize ?? 20,
+    };
+    this.hasCredential = config.hasCredential ?? true;
+    this.configuredModel = config.configuredModel ?? '';
+    this.activeProbeSuccess = config.activeProbeSuccess ?? this.hasCredential;
+  }
 
   getState(): CircuitBreakerState {
     if (this.state === 'OPEN' && this.lastFailureTime !== null) {
@@ -129,6 +137,8 @@ export class CircuitBreaker {
       averageLatencyMs: avgLatency,
       errorRate,
       activeProbeSuccess: this.activeProbeSuccess,
+      hasCredential: this.hasCredential,
+      configuredModel: this.configuredModel,
     };
   }
 }

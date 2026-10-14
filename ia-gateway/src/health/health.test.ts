@@ -98,5 +98,53 @@ describe('Circuit Breaker and Health Sensor (PBI-GW-004)', () => {
       expect(info.operationalStatus).toBe('DEGRADED');
       expect(sensor.getBreaker('JEV').canExecute()).toBe(true);
     });
+
+    it('CA-4 y CA-7: sin clave, la sonda GROQ no es éxito y el indicador de credencial es falso', async () => {
+      const sensor = new HealthSensor({
+        groqApiKey: undefined,
+        groqModel: 'llama-3.3-70b-versatile',
+      });
+
+      const probeSuccess = await sensor.runActiveProbeForProvider('GROQ');
+      expect(probeSuccess).toBe(false);
+
+      const info = sensor.getBreaker('GROQ').getHealthInfo();
+      expect(info.hasCredential).toBe(false);
+      expect(info.activeProbeSuccess).toBe(false);
+      expect(info.configuredModel).toBe('llama-3.3-70b-versatile');
+
+      const allHealth = sensor.getAllHealth();
+      expect(allHealth.GROQ.hasCredential).toBe(false);
+      expect(allHealth.GROQ.configuredModel).toBe('llama-3.3-70b-versatile');
+    });
+
+    it('CA-4 y CA-7: con clave y GET /v1/models en 200, la sonda GROQ es éxito y no expone el secreto', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: [] }),
+      });
+
+      const sensor = new HealthSensor(
+        {
+          groqApiKey: 'gsk_secret_token_12345',
+          groqModel: 'llama-3.3-70b-versatile',
+        },
+        mockFetch as unknown as typeof fetch
+      );
+
+      const probeSuccess = await sensor.runActiveProbeForProvider('GROQ');
+      expect(probeSuccess).toBe(true);
+
+      const info = sensor.getBreaker('GROQ').getHealthInfo();
+      expect(info.hasCredential).toBe(true);
+      expect(info.activeProbeSuccess).toBe(true);
+      expect(info.configuredModel).toBe('llama-3.3-70b-versatile');
+
+      // Verificar que ningún campo contenga la clave ni prefijo
+      const serialized = JSON.stringify(sensor.getAllHealth());
+      expect(serialized).not.toContain('gsk_secret_token_12345');
+      expect(serialized).not.toContain('gsk_');
+    });
   });
 });

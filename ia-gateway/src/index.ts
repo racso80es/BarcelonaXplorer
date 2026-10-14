@@ -27,6 +27,9 @@ const healthSensor = new HealthSensor({
   jevApiKey: process.env.JEV_API_KEY,
   groqApiKey: process.env.GROQ_API_KEY,
   geminiApiKey: process.env.GEMINI_API_KEY,
+  groqModel: process.env.GROQ_FAST_MODEL ?? 'llama-3.3-70b-versatile',
+  geminiModel: process.env.GEMINI_REASONING_MODEL ?? 'gemini-2.5-flash',
+  jevModel: process.env.JEV_MODEL ?? 'jev-latest',
 });
 healthSensor.startPeriodicProbes(60000);
 

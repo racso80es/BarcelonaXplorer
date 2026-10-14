@@ -3,7 +3,7 @@ import {
   ContextualIgnitionUseCase,
   OpenMeteoWeatherAdapter,
 } from '@/features/triage/server';
-import { GroqConversationalSlmAdapter } from '@/features/ai-engine/groq/groq-conversational-slm.adapter';
+import { GatewayConversationalSlmAdapter } from '@/features/ai-engine/server';
 import { LanceDbCognitiveMemoryAdapter } from '@/features/cognitive-memory/server';
 import { PrismaTelemetryRepository } from '@/features/telemetry/server';
 import { BX_LANG_COOKIE } from '@/features/triage/language-detector';
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       'es';
 
     const telemetryRepo = new PrismaTelemetryRepository();
-    const conversationalSlm = new GroqConversationalSlmAdapter(
+    const conversationalSlm = new GatewayConversationalSlmAdapter(
       undefined,
       telemetryRepo,
     );
