@@ -1,137 +1,241 @@
-### [ARQUITECTURA] Historia de Usuario: Ecosistema de Afiliación Asimétrica (Vía del Fuego), Catálogo de Proveedores CPA/CPS y Telemetría de Conversión
+### [ARQUITECTURA] Historia de Usuario: Ecosistema de Afiliación Asimétrica (Vía del Fuego), Catálogo de Proveedores y Telemetría de Salida
+
 **Identificador:** HU-20
-**Estatus:** Refinado / Listo para Desglose en PBIs
-**Fecha de Emisión:** 2026-10-14
-**Autor:** Vértice Biológico (Racso) & Tormentosa (Protocolo de Acero S+ Grade)[cite: 19]
-**Referencias Normativas:** `CONSTITUTION.md` · `ADR-001 (Vertical Slicing)` · `Base Fundacional BX v1.0 (Vía del Fuego)`[cite: 19, 23, 32]
+**Estatus:** Refinado contra el código vigente / Listo para desglose en PBIs
+**Fecha de emisión:** 2026-10-14
+**Fecha de refinamiento:** 2026-10-14
+**Autor:** Vértice Biológico (Racso)
+**Referencias:** [`CONSTITUTION.md`](file:///home/racso/Proyectos/BarcelonaXplorer/CONSTITUTION.md) · [`ADR-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/ADR/ADR-001-Topologia-Codigo-Vertical-Slicing-vs-Capas.md) · [Motor híbrido de rutas predefinidas](./%5BARQUITECTURA%5D%20Historia%20de%20Usuario:%20Motor%20H%C3%ADbrido%20de%20Rutas%20Predefinidas%20%28%22Barcelona%20de%20libro%22%29%20e%20Inyecci%C3%B3n%20Contextual%20en%20Orquestador.md) · [`PBI-ORCH-PRO-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/Fricciones_interaccion_PRO_ruta_generada.md) · [`AUD-OPS-STEEL-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/Auditorias/Auditoria%20-%20Log%20de%20Friccion%20HU-15%20Hombre%20de%20Acero%20%28Delta%20v2.0.1-doc-anchor%20a%201c4d1b0%29.md)
 
 --------------------------------------------------------------------------------
 
-#### Matriz de Indexación Tridimensional
-* **Naturaleza:** Especificación Funcional de Negocio, Ingeniería de Ingresos Pasivos (CPA/CPS), Resolución Determinista de Enlaces de Afiliación y Trazabilidad de Conversión[cite: 19, 23, 27].
-* **Entorno:** Ecosistema `BarcelonaXplorer` (Monolito Next.js App Router + Persistencia Relacional `MySQL/Prisma` + Telemetría Centralizada en Nodo 11)[cite: 19, 30].
-* **Entropía Asimilada:** Destilado de la fricción simbiótica directa[cite: 10]. Evolución desde la referencia primitiva y estática a `TheFork` en el código actual hacia un subsistema completo de monetización desatendida que gestiona múltiples proveedores en los tres vectores de fricción logística (Gastronomía, Cultura/Ocio y Movilidad) sin permitir que el LLM alucine URLs[cite: 5, 23, 27].
+#### Matriz de indexación
+
+* **Naturaleza:** Firmar enlaces de afiliación con un identificador real, resolverlos fuera del LLM y dejar constancia del clic de salida.
+* **Entorno:** Monolito Next.js (App Router) en el Nodo 11, MySQL/Prisma (`TelemetryLog`, `GuideTemplate`, `TemplateItem.affiliateRefs`). El enriquecedor vive en [`src/features/planner/affiliate/`](file:///home/racso/Proyectos/BarcelonaXplorer/src/features/planner/affiliate/). El CTA se pinta en [`hybrid-canvas.tsx`](file:///home/racso/Proyectos/BarcelonaXplorer/src/components/tactical/hybrid-canvas.tsx).
+* **Qué cambia respecto del código de hoy:** el enriquecedor ya clasifica paradas y ya escribe una URL. Esa URL lleva el literal `bcn_xplorer`. Esta historia sustituye ese literal por una credencial de entorno, o omite el botón si la credencial no existe.
 
 --------------------------------------------------------------------------------
 
-#### 1. Descripción General
-**Como** Vértice Biológico / Operador de Negocio de BarcelonaXplorer[cite: 19],
-**Quiero** disponer de un sistema centralizado y declarativo para dar de alta proveedores de afiliación (Gastronomía, Cultura/FreeTours y Movilidad), inyectar sus enlaces de forma contextualizada en los puntos de fricción de los itinerarios (tanto generados por IA como procedentes de rutas predefinidas) y registrar cada clic de salida en el motor de telemetría[cite: 19, 22, 23, 27],
-**Para** activar la **Vía del Fuego** (monetización pasiva CPA/CPS de forma desatendida y sin parecer publicidad intrusiva), garantizando que todos los enlaces lleven correctamente mis credenciales de afiliado reales y que ningún enlace roto o alucinado por la IA arruine la conversión del usuario[cite: 5, 23, 27].
+#### 1. Descripción
+
+**Como** operador de BarcelonaXplorer,  
+**Quiero** un catálogo de proveedores cuyas URLs se construyen en servidor a partir de una ficha curada o de una plantilla de búsqueda firmada,  
+**Para** que el explorador salga hacia un programa de afiliación real y el clic quede en `TelemetryLog`, sin que el modelo de lenguaje escriba la URL.
 
 --------------------------------------------------------------------------------
 
-#### 2. Tareas Previas del Vértice Biológico (Operativa Externa y Alta en Proveedores)
+#### 2. Hecho vigente (contra lo que se construye)
 
-Antes de que el sistema pueda firmar enlaces reales en producción (Nodo 11), el Vértice Biológico debe completar el aprovisionamiento de cuentas externas[cite: 5, 19]. Para minimizar la fricción administrativa y no depender de aprobaciones individuales lentas, se establece una estrategia dual (Agregadores + Alta Directa):
+El LLM de ruta no emite `affiliateUrl`. La URL la escribe `AffiliateEnricherService.enrichWaypoint` después del parseo de la ruta.
 
-##### 2.1. Mapa de Proveedores, Portales de Alta y Estrategia de Acceso
+Sobre `título + descripción` en minúsculas se hace `includes`. La rama gastronómica va antes que la cultural. La lista gastronómica contiene las subcadenas `bar` y `cafe`. `bar` aparece dentro de `Barcelona` y de `barrio`, así que una parada que solo nombra la ciudad sale `GASTRONOMY` / `THEFORK`. Ese defecto es el corte A de `PBI-ORCH-PRO-001`. Esta historia no lo reimplementa. `PBI-AFF-002` espera a ese corte: si no, la plantilla firmada se pegaría al mismo falso positivo.
 
-| Vector de Fricción | Proveedor Objetivo | Estrategia Recomendada | URL del Portal de Afiliados / Registro | Identificador a Obtener (`Env Var`) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Agregador Global (Recomendado Paso 1)** | **Travelpayouts** *(Agrupa Tiqets, GetYourGuide, Booking, etc.)* | Alta única inmediata sin requisito de tráfico mínimo inicial. | `[https://www.travelpayouts.com/](https://www.travelpayouts.com/)` | `TRAVELPAYOUTS_MARKER_ID` |
-| **Agregador Alternativo (Europa/España)** | **Awin** *(Red oficial donde opera TheFork en España)* | Registro como Publisher para conectar con programas gastronómicos y de movilidad. | `[https://www.awin.com/es/afiliados](https://www.awin.com/es/afiliados)` | `AWIN_PUBLISHER_ID` |
-| **1. Cultura, Visitas y FreeTours**[cite: 23, 27] | **Civitatis** *(Prioritario para "Barcelona de libro" y FreeTours)* | Alta directa muy ágil para proyectos en español; excelente conversión en FreeTours. | `[https://www.civitatis.com/es/afiliados/](https://www.civitatis.com/es/afiliados/)` | `AFFILIATE_CIVITATIS_ID` |
-| **1. Cultura y Monumentos (Colas)**[cite: 23, 27] | **Tiqets** *(Sagrada Familia, Park Güell, Casa Batlló)* | Vía Travelpayouts o portal directo de afiliados de Tiqets. | `[https://www.tiqets.com/en/affiliate-program/](https://www.tiqets.com/en/affiliate-program/)` | `AFFILIATE_TIQETS_ID` |
-| **1. Cultura y Experiencias**[cite: 23, 27] | **GetYourGuide** | Vía Travelpayouts o portal directo de partners. | `[https://partner.getyourguide.com/](https://partner.getyourguide.com/)` | `AFFILIATE_GYG_PARTNER_ID` |
-| **2. Gastronomía (Reservas)**[cite: 23, 27] | **TheFork (ElTenedor)** | Vía red **Awin** (Programa TheFork ES) o programa de partners. | `[https://www.theforkmanager.com/](https://www.theforkmanager.com/)` / Vía Awin | `AFFILIATE_THEFORK_ID` |
-| **3. Movilidad (Fatiga / Lluvia)**[cite: 22, 23, 27] | **Cabify / FreeNow** | Alta en programa de referidos/afiliados B2B o enlaces profundos (Deep Links) a la App. | `[https://cabify.com/es](https://cabify.com/es)` / `[https://www.free-now.com/es/](https://www.free-now.com/es/)` | `AFFILIATE_CABIFY_CODE` |
+Plantillas escritas en el fuente, con el mismo literal en las dos opciones del waypoint:
 
-##### 2.2. Checklist de Tareas Manuales para Racso (Vértice Biológico)
-1. **[Tarea VB-01] Identidad Pública Mínima:** Asegurar que el dominio público de `BarcelonaXplorer` responde con la landing operativa, ya que Civitatis y Awin revisan que la URL declarada exista.
-2. **[Tarea VB-02] Alta en Civitatis y Travelpayouts (Quick Wins):** Registrarse primero en `Civitatis Afiliados` y `Travelpayouts`. Son los más rápidos en aprobar y desbloquean de inmediato la monetización de monumentos y de las rutas literarias (*"Barcelona de libro"*).
-3. **[Tarea VB-03] Alta en Awin para TheFork:** Solicitar ingreso en el programa de `TheFork España` dentro de Awin para obtener el formato de enlace de seguimiento (`[awin1.com/cread.php](https://awin1.com/cread.php)...` o parámetro de afiliado directo).
-4. **[Tarea VB-04] Custodia de Credenciales:** Anotar los identificadores obtenidos e inyectarlos en el fichero `.env.local` (y en la sincronización de Ansible hacia `shared/.env.local` en el Nodo 11)[cite: 28, 31].
+| Proveedor emitido | Plantilla actual |
+| :--- | :--- |
+| `THEFORK` | `https://www.thefork.es/search?cityId=415144&query=<título>&tag=bcn_xplorer` |
+| `CIVITATIS` | `https://www.civitatis.com/es/barcelona/?query=<título>&aid=bcn_xplorer` |
 
---------------------------------------------------------------------------------
+`cityId=415144`, `tag` y `aid` no leen entorno. `src/.env.example` no declara ninguna variable `AFFILIATE_*`. Ansible copia `src/.env.web` hacia `shared/.env.web` en el Nodo 11 (`ansible/deploy.yml`). El destino `shared/.env.local` no es el de este despliegue.
 
-#### 3. Funcionamiento del Subsistema en BarcelonaXplorer (Alcance Funcional)
+Dos enums conviven y no coinciden:
 
-Una vez que disponemos de los proveedores, el sistema en `BarcelonaXplorer` debe abandonar el ejemplo estático actual de `TheFork` y operar bajo **cuatro pilares funcionales**:
+| Superficie | Valores |
+| :--- | :--- |
+| Itinerario enriquecido y `PROVIDER_AFFILIATE_FETCH` | `THEFORK`, `CIVITATIS`, `NONE` |
+| `affiliateRefs` de la plantilla | `THE_FORK`, `CIVITATIS`, `TIQETS`, `CABIFY`, `FREE_NOW` |
 
-##### 3.1. Catálogo Declarativo de Proveedores de Afiliación
-El sistema contará con una configuración estructurada donde se definen los proveedores activos (`THEFORK`, `CIVITATIS`, `TIQETS`, `GETYOURGUIDE`, `CABIFY`)[cite: 23, 27], asociando cada uno a:
-* Su **Categoría de Fricción**: `GASTRONOMY` (Incertidumbre/Trampas), `CULTURE_TICKETS` (Espera/Colas/Tours), `MOBILITY` (Cansancio/Clima)[cite: 22, 23, 27].
-* Su **Estado Operativo**: Activo / Inactivo (si un proveedor aún no tiene cuenta aprobada o falta su variable de entorno, el sistema lo oculta limpiamente sin mostrar botones rotos — *Fail-Soft*)[cite: 19].
-* Su **Plantilla de Construcción de Enlace (URL Pattern)**: Cómo se inyecta el ID de afiliado y cómo se construye una búsqueda parametrizada en Barcelona cuando no hay una URL específica pre-curada.
+`GetYourGuide` no está en ninguno. El lienzo tiene ramas de copy para `CABIFY`, `FREENOW` y `TIQETS`, y el enriquecedor no emite esos valores. `EnrichedRoute` no tiene categoría de movilidad: las categorías son `GASTRONOMY`, `CULTURE`, `ACTIVITY`, `TRANSIT` y `GENERAL`.
 
-##### 3.2. Prohibición de Alucinación de Enlaces por el LLM (Resolución en Dos Niveles)
-Para cumplir el **Filtro A (Ausencia de Alucinación)**, el motor generativo (`Gemini / System Two`) **jamás inventará ni escribirá URLs de afiliados**[cite: 5, 19]. El LLM solo indicará en cada parada del itinerario qué tipo de necesidad logística existe (ej. *"Parada gastronómica en El Born"* o *"Monumento con alta cola de espera"*)[cite: 27].
+`enrichRoute(route, thermalState)` solo recibe `operational` o `saturated`. No recibe lluvia. Un CTA de movilidad por clima no tiene entrada en este servicio.
 
-Un servicio interno de `BarcelonaXplorer` resolverá el enlace aplicando esta jerarquía estricta:
-1. **Nivel 1 — Enlace Curado Exacto (Prioridad Máxima):** Si el nodo proviene de un `GuideTemplate` en MySQL (ej. el *FreeTour de La Sombra del Viento* en Civitatis o una entrada específica a Santa María del Mar)[cite: 19, 22], se utiliza la URL exacta verificada en la plantilla y se le anexa automáticamente el ID de afiliado del entorno.
-2. **Nivel 2 — Enlace Profundo de Búsqueda Contextual (Fallback Inteligente):** Si el nodo ha sido generado dinámicamente por la IA (ej. recomendación de comer cerca de una parada en el barrio de Gràcia), el sistema genera un enlace válido hacia el buscador del proveedor pre-filtrado por el nombre del lugar o el barrio en Barcelona (ej. búsqueda en `TheFork` o `Civitatis Barcelona`) firmado con nuestro ID de afiliado.
+`TemplateItem.affiliateRefs` ya persiste `provider`, `externalId`, `campaignUrl`, `ctaLabel` y `placementTrigger`. El enriquecedor no lee ese JSON. La modalidad `BOOKABLE_TOUR` y la columna `primaryAffiliateBookingUrl` están especificadas en la historia del motor híbrido y todavía no están en el esquema: el tour de *La sombra del viento* que esa historia contrastó es un producto de pago de Civitatis, en borrador hasta confirmar la ficha en castellano. No es un free tour, no sale de Canaletes y no cierra en Santa Maria del Mar.
 
-##### 3.3. Reglas de Inyección Asimétrica en la Ruta (Táctica del Refugio)
-Los botones de afiliación no se muestran en todas las paradas por igual para no saturar al usuario, sino que obedecen a las reglas de negocio de la **Táctica del Refugio**[cite: 22, 27]:
-* **Inyección Gastronómica (`TheFork`):** Se activa en los nodos de almuerzo/cena y de forma obligatoria inmediatamente debajo de las alertas del **Escudo Anti-Trampas** (*"Evita los locales trampa de esta avenida; asegura mesa en opciones verificadas de la zona"*)[cite: 22, 23, 27].
-* **Inyección Cultural (`Civitatis` / `Tiqets` / `GetYourGuide`):** Se activa en nodos de monumentos con alerta de colas y como botón principal de acción en las rutas predefinidas de modalidad `BOOKABLE_TOUR` (FreeTours)[cite: 22, 23, 27].
-* **Inyección de Movilidad (`Cabify` / `FreeNow`):** Se activa al final de itinerarios con alta carga peatonal acumulada o cuando el contexto climático indique lluvia[cite: 22, 23, 27].
+`STATIC_AFFILIATE_CATALOG` repite el literal `bcn_xplorer` en fichas de El Xampanyet, Cervecería Catalana, Sagrada Família y Casa Batlló. Ningún servicio lo importa. No es un inventario verificado.
 
-##### 3.4. Pasarela de Redirección y Telemetría de Conversión
-Para no operar a ciegas, el usuario no saldrá directamente al proveedor sin dejar rastro estadístico:
-* Cada clic en un botón de afiliado será registrado en el subsistema de `telemetry` (`TelemetryLog` en MySQL) asociando: el `bx_session_id` (Identidad Sombra), el proveedor (`THEFORK`, `CIVITATIS`, etc.), el identificador de la ruta o plantilla origen y el nodo donde se produjo la conversión[cite: 19, 20, 22].
-* Esto permitirá visualizar en el panel `/Admin/Logs` qué rutas y qué proveedores están generando tráfico monetizable real[cite: 19, 20].
+El evento `PROVIDER_AFFILIATE_FETCH` se escribe al enriquecer la ruta, con un solo `provider` (el primero distinto de `NONE`), el `sessionId` y el recuento de opciones. Se ve en `/Admin/Logs`. El `<a target="_blank">` del lienzo no llama a telemetría. No hay pasarela de redirección.
+
+El mismo método rellena `priceEstimate` (`25€ - 40€`, `18€ - 30€`) y `rating` (`4.8`, `4.6`) con literales. Esos números no vienen de ningún proveedor.
+
+La patrulla de Telegram ya nombra `CABIFY`, `FREENOW` y `UBER` en sus drops de movilidad. Ese canal no es el CTA del itinerario y esta historia no lo modifica.
 
 --------------------------------------------------------------------------------
 
-#### 4. Coreografía Funcional del Flujo de Monetización
+#### 3. Tareas del operador (fuera del código)
+
+El alta en una red es una revisión del publisher. Esta historia no fija plazos ni exige tráfico mínimo: eso lo dice el programa el día de la solicitud.
+
+El operador guarda, por cada programa aceptado, **una URL de ejemplo** copiada del panel del proveedor. El código no inventa el formato (`cread.php`, `marker`, `aid`, `tag`). La variable de entorno se nombra en `.env.example` cuando esa URL de ejemplo existe.
+
+| Vector | Programa a solicitar | Dónde se pide | Qué no usar como portal |
+| :--- | :--- | :--- | :--- |
+| Cultura, prioridad | Civitatis, alta directa | El alta de afiliados que publique Civitatis ese día. La ruta `/es/afiliados/` se comprueba antes de citarla en la solicitud. | Una URL de ficha de producto con `aid=bcn_xplorer`. |
+| Gastronomía | TheFork España dentro de Awin, si el programa sigue abierto a publishers | Alta de publisher en Awin y, después, solicitud al programa TheFork ES. | `theforkmanager.com`: es el backoffice de restaurantes. |
+| Monumentos | Tiqets, solo si el panel entrega una URL de seguimiento | El portal de afiliados que figure en la propia Tiqets. | Dar por hecho que un agregador ya incluye a Tiqets. |
+| Agregador, opcional | Travelpayouts, si el operador prefiere una sola cuenta para programas que el panel liste ese día | `https://www.travelpayouts.com/` | Afirmar que la cuenta agrupa Tiqets, GetYourGuide y Booking, o que la aprobación es inmediata. |
+| Movilidad | Cabify o Free Now, solo si existe un programa de publisher con URL de seguimiento | El enlace de alta que entregue ese programa. | `cabify.com/es` y `free-now.com/es`, que son las webs de viajero. |
+
+`GetYourGuide` queda fuera del catálogo de esta historia. Entra en un PBI posterior el día en que haya URL de ejemplo y un valor nuevo en los dos enums.
+
+##### Checklist
+
+1. **VB-01.** El origen público que se va a declarar en las solicitudes responde. Civitatis y Awin piden un sitio; la historia no supone el criterio con el que aprueban.
+2. **VB-02.** Solicitar Civitatis. Anotar la URL de ejemplo y el nombre del parámetro de seguimiento.
+3. **VB-03.** Solicitar Awin y el programa TheFork ES. El identificador `AFFILIATE_THEFORK_ID` solo se crea si el ejemplo de Awin se rellena con un único token. Si el seguimiento es una URL envuelta completa, la variable guarda esa plantilla, no un id inventado.
+4. **VB-04.** Poner las variables en `src/.env.web` (y el equivalente local de desarrollo). El despliegue las lleva a `shared/.env.web`. No se escribe `shared/.env.local`.
+
+Sin VB-02 o VB-03 el código correspondiente sigue en fail-soft: la ruta se genera y el botón de ese proveedor no se pinta.
+
+--------------------------------------------------------------------------------
+
+#### 4. Comportamiento objetivo
+
+##### 4.1. Catálogo
+
+Un módulo del feature `planner/affiliate` declara cada proveedor con:
+
+* clave canónica del itinerario (`THEFORK`, `CIVITATIS`, y `TIQETS` solo cuando VB entregue URL de ejemplo);
+* clave de plantilla cuando difiera (`THE_FORK` se mapea a `THEFORK` en la frontera; el JSON ya guardado no se reescribe en esta historia);
+* categoría que puede dispararlo (`GASTRONOMY` o `CULTURE`);
+* activo solo si la variable de entorno asociada tiene valor;
+* plantilla de búsqueda tomada de la URL de ejemplo del operador, con un hueco para el texto de la parada.
+
+`CABIFY` y `FREE_NOW` siguen en el enum de plantilla. No pasan al enum de `EnrichedRoute` en los tres PBI de esta historia.
+
+##### 4.2. Resolución en dos niveles
+
+El modelo sigue sin escribir URLs. El resolutor, en servidor:
+
+1. **Ficha curada.** Si el nodo trae un `affiliateRefs[].campaignUrl` del proveedor activo, o si el tramo es un `BOOKABLE_TOUR` con `primaryAffiliateBookingUrl` ya persistida por la historia del motor híbrido, se usa esa URL tal cual. Si la ficha ya incluye el seguimiento, no se le concatena otro id.
+2. **Búsqueda firmada.** Si no hay ficha y la categoría del nodo (ya corregida por el corte A de `PBI-ORCH-PRO-001`) tiene un proveedor activo, se rellena la plantilla de búsqueda con el título de la parada.
+
+Si el proveedor está inactivo, el nodo queda sin `affiliateUrl` y sin botón de ese proveedor. No se sustituye Tiqets por Civitatis, ni se deja el literal `bcn_xplorer`. Otro proveedor solo aparece si ese nodo tiene su propia ficha curada para él.
+
+`priceEstimate` y `rating` salen vacíos salvo que vengan en la ficha curada.
+
+##### 4.3. Dónde se pinta
+
+El botón sigue en la opción del lienzo (`HybridCanvas`), con `target="_blank"` y `rel="noopener noreferrer"`. `OrchestratorBlock` es el turno de diálogo y no aloja el CTA.
+
+Disparadores que el enum ya nombra y que esta historia usa:
+
+| Disparador | Cuándo hay botón |
+| :--- | :--- |
+| `MEAL_TIME` | Nodo `GASTRONOMY` con TheFork activo. |
+| `POST_WARNING` | El nodo tiene `antiTrapShield.warnings`. El botón, si existe por la fila anterior, se asocia a ese aviso. El aviso sigue saliendo aunque no haya afiliado. |
+| `HIGH_QUEUE_MONUMENT` | El conocimiento táctico del nodo marca cola alta y hay proveedor cultural activo. El copy de acceso prioritario que ya existe se conserva. |
+| Cabecera `BOOKABLE_TOUR` | Un botón con `primaryAffiliateBookingUrl`, cuando esa columna exista y tenga valor. |
+
+La lluvia y el cierre de ruta a pie no activan Cabify ni Free Now aquí. `ROUTE_END` permanece en el enum y ningún PBI de esta historia lo enciende.
+
+##### 4.4. Clic
+
+El `href` del botón es una ruta interna de salida. Esa ruta escribe un `TelemetryLog` y responde con redirección al proveedor.
+
+El evento nuevo no reutiliza `PROVIDER_AFFILIATE_FETCH`. Ese nombre sigue significando «la ruta se enriqueció». El de clic lleva `eventType` propio, `sessionId` (la cookie `bx_session_id` cuando exista), proveedor, id del waypoint y, si la ruta nació de una plantilla, el id de plantilla.
+
+`/Admin/Logs` ya lista `TelemetryLog`. Esta historia no añade un panel de conversión.
+
+--------------------------------------------------------------------------------
+
+#### 5. Coreografía
 
 ```mermaid
 flowchart TD
-    subgraph Generacion ["1. Fase de Ensamblaje de Ruta (Servidor)"]
-        Node["Nodo del Itinerario (IA o Template)"] --> CheckOrigin{¿Tiene URL exacta en GuideTemplate?}
-        CheckOrigin -- Sí (Nivel 1) --> ExactURL["Toma URL verificada + Inyecta ID Afiliado (.env)"]
-        CheckOrigin -- No (Nivel 2: Ruta IA) --> EvalFriction{¿Qué fricción tiene el nodo?}
-        EvalFriction -- Gastronomía / Escudo Anti-Trampas --> SearchFork["Construye Deep Link de búsqueda en TheFork BCN"]
-        EvalFriction -- Monumento / Tour --> SearchCulture["Construye Deep Link en Civitatis / Tiqets BCN"]
-        EvalFriction -- Fin de Ruta / Cansancio --> SearchMobility["Construye Deep Link en Cabify"]
-        ExactURL & SearchFork & SearchCulture & SearchMobility --> EnvCheck{¿Proveedor activo y con credencial configurada?}
-        EnvCheck -- No (Fail-Soft) --> OmitButton["No renderiza botón CPA (Evita enlaces rotos)"]
-        EnvCheck -- Sí --> RenderCTA["Adjunta CTA validado al JSON del Itinerario"]
+    subgraph servidor ["Ensamblaje en servidor"]
+        Nodo["Nodo ya clasificado"] --> Curada{"¿Hay campaignUrl o primaryAffiliateBookingUrl de un proveedor activo?"}
+        Curada -- Sí --> Ficha["Usa la URL curada sin añadir otro id"]
+        Curada -- No --> Plantilla{"¿La categoría tiene proveedor activo y plantilla de búsqueda?"}
+        Plantilla -- Sí --> Busqueda["Rellena la plantilla con el título"]
+        Plantilla -- No --> Omite["Nodo sin affiliateUrl"]
+        Ficha --> Json["El JSON del itinerario lleva la ruta interna de salida"]
+        Busqueda --> Json
     end
 
-    subgraph Interaccion ["2. Fase de Conversión (Explorador en UI)"]
-        RenderCTA --> UserClick(["Usuario pulsa botón CPA en OrchestratorBlock"])
-        UserClick --> Telemetry["Registra evento en TelemetryLog (Proveedor + Nodo + SessionId)"]
-        UserClick --> ExternalRedirect["Abre pestaña externa hacia el Proveedor con tracking activo"]
+    subgraph salida ["Clic en HybridCanvas"]
+        Json --> Ancla["El enlace abre la ruta interna"]
+        Ancla --> Log["Inserta TelemetryLog del clic"]
+        Log --> Redir["Redirige al proveedor"]
     end
 ```
 
 --------------------------------------------------------------------------------
 
-#### 5. Normativas Arquitectónicas (Certificación Yunque S+)
-1. **Cero Credenciales Hardcodeadas:** Todos los identificadores de afiliado (`partner_id`, `marker`, `publisher_id`) deben leerse exclusivamente desde variables de entorno, respetando las lecciones aprendidas en las auditorías de seguridad del proyecto (`AUD-OPS-STEEL-001`)[cite: 19].
-2. **Degradación Elegante (`Fail-Soft`):** Si aún no hemos completado el alta en uno de los proveedores (ej. tenemos `Civitatis` activo pero aún no `Tiqets`), el sistema simplemente omitirá o sustituirá ese proveedor sin lanzar errores ni romper la generación de la ruta[cite: 19].
-3. **Cuarteto de Oráculos Obligatorio:** Todo desarrollo derivado deberá superar `tsc --noEmit`, `eslint --max-warnings 0`, `vitest run` y `npm run build`[cite: 19].
+#### 6. Normas
+
+1. **Credencial fuera del fuente.** El token de seguimiento se lee del entorno. El literal `bcn_xplorer` sale de `affiliate-enricher.service.ts` y de `static-affiliate-catalog.ts`. Un valor por defecto en código, del tipo que retiró el F-01 de `AUD-OPS-STEEL-001`, no sirve como id de afiliado.
+2. **Fail-soft comercial, distinto del fail-closed de un secreto.** Si falta la variable, la generación de la ruta continúa y el botón de ese proveedor no se renderiza. No se aborta el itinerario.
+3. **Un solo sistema de nombres en cada frontera.** `THE_FORK` en plantilla y `THEFORK` en itinerario se traducen en el resolutor. Telemetría de enriquecimiento y de clic usan la clave del itinerario.
+4. **Oráculos.** Cada PBI cierra con `tsc --noEmit`, `eslint` y `vitest run` sobre sus archivos. `npm run build` se añade cuando el PBI toca un componente de cliente.
 
 --------------------------------------------------------------------------------
 
-#### 6. Criterios de Aceptación (Verificación Empírica)
+#### 7. Criterios de aceptación
 
-##### Escenario 1: Resolución de Enlace Exacto en Ruta Predefinida (Nivel 1)
-* **Dado** que el proveedor `CIVITATIS` está activo y tiene su identificador configurado en el entorno.
-* **Cuando** se genera un itinerario que incluye una parada o ruta predefinida con URL curada (ej. *"FreeTour de La Sombra del Viento"*).
-* **Entonces** el nodo muestra el botón de acción con la URL exacta del tour incluyendo el parámetro de afiliado real de `BarcelonaXplorer`[cite: 19, 22, 23].
+##### Escenario 1 — Ficha curada
 
-##### Escenario 2: Generación Determinista de Enlace de Búsqueda en Ruta de IA (Nivel 2)
-* **Dado** un itinerario generado dinámicamente por la IA que incluye una parada gastronómica con advertencia del `Escudo Anti-Trampas` en el barrio de El Born[cite: 22, 27].
-* **Cuando** el servicio de afiliación procesa el nodo sin URL predefinida.
-* **Entonces** genera de forma determinista (sin intervención del LLM) un enlace válido hacia `TheFork` parametrizado con la zona/restaurante y las credenciales de afiliado activas[cite: 5, 23, 27].
+* **Dado** Civitatis activo y un ítem de plantilla cuyo `affiliateRefs` contiene `campaignUrl` de Civitatis, o un `BOOKABLE_TOUR` con `primaryAffiliateBookingUrl` ya guardada.
+* **Cuando** el resolutor procesa ese nodo.
+* **Entonces** el botón usa esa URL, sin concatenar un segundo identificador, y el `href` visible pasa por la ruta interna de salida.
 
-##### Escenario 3: Comportamiento Fail-Soft ante Proveedor No Configurado
-* **Dado** que un proveedor del catálogo (ej. `TIQETS`) aún no tiene su clave de afiliado definida en las variables de entorno del servidor.
-* **Cuando** el orquestador genera una ruta con monumentos culturales.
-* **Entonces** el sistema no muestra botones rotos ni enlaces de ejemplo ficticios para `TIQETS`, priorizando otro proveedor cultural activo (como `CIVITATIS`) o mostrando únicamente la información táctica del nodo[cite: 19, 23].
+##### Escenario 2 — Búsqueda firmada
 
-##### Escenario 4: Registro de Telemetría de Conversión CPA
-* **Dado** un itinerario renderizado en pantalla con botones de afiliación activos[cite: 19].
-* **Cuando** el usuario hace clic en un botón de reserva (ej. `TheFork` o `Civitatis`)[cite: 23, 27].
-* **Entonces** el usuario es dirigido a la plataforma del proveedor en una nueva pestaña y se persiste asíncronamente un registro en `TelemetryLog` indicando el proveedor, el nodo de origen y el `bx_session_id`[cite: 19, 22].
+* **Dado** TheFork activo, el corte A de `PBI-ORCH-PRO-001` ya aplicado, y una parada cuya categoría es `GASTRONOMY` por una palabra completa de la lista gastronómica, sin `campaignUrl`.
+* **Cuando** el resolutor procesa el nodo.
+* **Entonces** la URL de destino cumple la plantilla copiada del ejemplo de Awin, con el título de la parada en el hueco de búsqueda, y `tag=bcn_xplorer` no aparece.
+
+##### Escenario 3 — Proveedor sin credencial
+
+* **Dado** Tiqets declarado en catálogo y sin variable de entorno.
+* **Cuando** se enriquece una parada cultural.
+* **Entonces** no hay botón Tiqets, no hay URL con id de relleno y no se inventa un botón Civitatis para esa parada salvo que ella misma tenga ficha o regla de Civitatis.
+
+##### Escenario 4 — Clic
+
+* **Dado** un botón de afiliado visible en el lienzo.
+* **Cuando** el usuario lo pulsa.
+* **Entonces** el navegador abre al proveedor en otra pestaña y existe una fila nueva en `TelemetryLog`, distinta de `PROVIDER_AFFILIATE_FETCH`, con proveedor, waypoint y `sessionId`.
+
+##### Escenario 5 — La ciudad no arrastra un afiliado de esta historia
+
+* **Dado** el corte A de `PBI-ORCH-PRO-001` pendiente o ya hecho.
+* **Cuando** esta historia se implementa.
+* **Entonces** `PBI-AFF-002` no se da por cerrado si una parada que solo dice «Barcelona» o «barrio» sigue llevando `THEFORK`.
 
 --------------------------------------------------------------------------------
 
-#### 7. Desglose Táctico Propuesto en PBIs (Regla <= 3 Archivos Adyacentes)[cite: 21]
-1. **`PBI-AFF-001` (Catálogo de Proveedores y Configuración de Entorno):** Definición de esquemas de proveedores (`THEFORK`, `CIVITATIS`, `TIQETS`, `GETYOURGUIDE`, `CABIFY`), variables de entorno en `.env.example` y servicio de validación de estado (`Fail-Soft`)[cite: 19, 23].
-2. **`PBI-AFF-002` (Motor Determinista `AffiliateLinkResolver`):** Implementación de la lógica de resolución en dos niveles (URL exacta de `GuideTemplate` vs. plantilla de búsqueda parametrizada) y sustitución del ejemplo primitivo de `TheFork` en el `planner`[cite: 19, 22].
-3. **`PBI-AFF-003` (Telemetría de Clics e Inyección Visual en `OrchestratorBlock`):** Registro de eventos de conversión hacia `TelemetryLog` al pulsar los CTAs y ajuste visual de los botones bajo el `Escudo Anti-Trampas`[cite: 19, 20, 22, 27].
+#### 8. Desglose
+
+Cada PBI cabe en tres archivos adyacentes del feature. El corte A de [`PBI-ORCH-PRO-001`](file:///home/racso/Proyectos/BarcelonaXplorer/Documentacion/PBI/Pendiente/Fricciones_interaccion_PRO_ruta_generada.md) no se absorbe aquí.
+
+1. **`PBI-AFF-001` — Catálogo y entorno.** Esquema de proveedor activo, nombres de variable en `src/.env.example` alineados con `src/.env.web`, y mapeo `THE_FORK` → `THEFORK`. Sin credencial, el proveedor queda inactivo. No pinta botones nuevos.
+2. **`PBI-AFF-002` — Resolutor.** Sustituye las plantillas con `bcn_xplorer` en el enriquecedor y retira esas URLs del catálogo estático. Nivel 1 lee `affiliateRefs.campaignUrl`. El nivel 2 espera al corte A de `PBI-ORCH-PRO-001`. `primaryAffiliateBookingUrl` se consume cuando la historia del motor híbrido la haya persistido; hasta entonces el nivel 1 solo lee `affiliateRefs`.
+3. **`PBI-AFF-003` — Salida y clic.** Ruta interna que registra el evento de clic y redirige. El ancla de `HybridCanvas` apunta a esa ruta.
+
+Quedan fuera de estos tres PBI: alta de `GetYourGuide`, enum de movilidad dentro de `EnrichedRoute`, CTA por lluvia y cualquier panel distinto de `/Admin/Logs`.
+
+--------------------------------------------------------------------------------
+
+#### Anexo — Correcciones de este refinamiento
+
+El borrador se contrastó con `affiliate-enricher.service.ts`, los dos enums, `hybrid-canvas.tsx`, `telemetry.schema.ts`, `ansible/deploy.yml`, `/Admin/Logs` y la historia del motor híbrido.
+
+| Afirmación retirada | Hecho vigente |
+| :--- | :--- |
+| Marcadores `[cite: …]` y autoría «Tormentosa» | No hay fuente en el repo. El autor de la historia es el Vértice Biológico. |
+| El código solo tiene un ejemplo estático de TheFork que hay que abandonar | El enriquecedor ya asigna `THEFORK` y `CIVITATIS` con plantillas de búsqueda. El fallo es el literal `bcn_xplorer` y la subcadena `bar`. |
+| `TRAVELPAYOUTS_MARKER_ID` agrupa Tiqets, GetYourGuide y Booking, con alta inmediata y sin tráfico mínimo | Travelpayouts es una red opcional. Su catálogo y su criterio de aprobación se leen en el alta. |
+| TheFork se gestiona en `theforkmanager.com` y el enlace será `awin1.com/cread.php` | TheFork Manager es el backoffice de restaurantes. El formato de seguimiento es el que entregue Awin en la URL de ejemplo. |
+| Cabify y Free Now se dan de alta en sus webs públicas, con deep link de app | Esas URLs son de viajero. Sin programa de publisher no hay variable ni botón. |
+| `GetYourGuide` en el catálogo inicial | No está en los enums. Queda para un PBI posterior, con URL de ejemplo. |
+| Credenciales en `.env.local` y `shared/.env.local` | El playbook copia `src/.env.web` a `shared/.env.web`. |
+| Free tour de *La sombra del viento* en Civitatis, o una entrada a Santa Maria del Mar, como ficha ya curada | La historia del motor híbrido fija un tour de pago, en `DRAFT`, pendiente de la ficha `es`. |
+| El LLM describe la necesidad y un servicio adivina el barrio | El LLM no escribe la URL. La categoría sale de palabras clave. El barrio no es un campo del resolutor. |
+| Si Tiqets no está configurado, se muestra Civitatis en su lugar | Se omite el botón del proveedor inactivo. |
+| El clic se anota en `PROVIDER_AFFILIATE_FETCH` y se ve como conversión en `/Admin/Logs` | Ese evento es el enriquecimiento, y ya se lista en `/Admin/Logs`. El clic no se registra. |
+| El botón vive en `OrchestratorBlock` | El ancla está en `HybridCanvas`. |
+| Lluvia o fatiga peatonal activan Cabify en la ruta | `enrichRoute` no recibe clima. Cabify no está en `EnrichedRoute`. |
+| Cuarteto de oráculos con `npm run build` siempre | Los tres oráculos del axioma IV. `npm run build` cuando hay componente de cliente. |
+| `STATIC_AFFILIATE_CATALOG` como respaldo operativo | El archivo existe y ningún servicio lo importa. Sus URLs llevan el mismo literal. |
